@@ -257,8 +257,14 @@
   }
 
   document.addEventListener('click',(e)=>{
+    const exitChoice=e.target.closest('[data-exit-choice]');
+    if(exitChoice){
+      e.preventDefault();
+      handleExitActionChoice(exitChoice.dataset.exitChoice);
+      return;
+    }
     const logout=e.target.closest('.logout-btn');
-    if(logout){ e.preventDefault(); showScreen('home'); return; }
+    if(logout){ e.preventDefault(); openExitModal(); return; }
     const navBtn=e.target.closest('[data-role-nav]');
     if(navBtn){ showScreen(navBtn.dataset.roleNav); return; }
     const actionBtn=e.target.closest('[data-role-action]');
@@ -298,7 +304,6 @@
     if(!nav) return;
     const dashboardScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
     nav.classList.toggle('app-mobile-nav-visible', dashboardScreens.includes(screenName));
-    // Visibility is owned by responsive CSS. JS only updates state/classes.
     nav.removeAttribute('style');
     const completedSteps = Object.values(growthProgress).filter(Boolean).length;
     const readyToTeach = completedSteps === 3;
@@ -311,7 +316,7 @@
       : '';
     ['mobileHome','mobileLearn','mobilePeople','mobileQuestions','mobileMode'].forEach(id => $(id)?.classList.remove('active'));
     const activeId={home:'mobileHome',learn:'mobileLearn',people:'mobilePeople',questions:'mobileQuestions',mode:'mobileMode'}[active];
-    if(activeId) $(activeId)?.classList.add('active');
+    if(activeId) safeSetActiveMobileButton(activeId);
     const indicator=$('mobileNavIndicator');
     const indexMap={home:0,learn:1,people:2,questions:3,mode:4};
     if(indicator){ const idx=indexMap[active]; indicator.style.transform = idx == null ? 'translateX(0)' : `translateX(calc(${idx} * (100% + 2px)))`; }
@@ -347,6 +352,17 @@
     });
   }
   function closeMobileLearnMenu(){ $('mobileLearnMenu')?.classList.remove('show'); }
+
+  function safeSetActiveMobileButton(id){
+    if(!id) return;
+    const el = $(id);
+    if(!el) return;
+    ['mobileHome','mobileLearn','mobilePeople','mobileQuestions','mobileMode'].forEach(candidate => {
+      const item = $(candidate);
+      if(item) item.classList.toggle('active', candidate === id);
+    });
+  }
+
   on('mobileHome','click',()=>{ closeMobileLearnMenu(); showScreen(currentRole==='tree'?'tree':'leaf'); });
   on('mobileLearn','click',()=>{ const menu=$('mobileLearnMenu'); if(menu) menu.classList.toggle('show'); });
   on('mobileLearnNotes','click',()=>{ closeMobileLearnMenu(); showScreen('notesFull'); });
@@ -406,8 +422,21 @@
     const tree = $('treeOrb');
     const treePill = $('treePill');
     const leafPill = $('leafPill');
+    const homeSubText = $('homeSubText');
+    const homeHintText = $('homeHintText');
     if(!tree) return;
     const unlocked = !!canTeach;
+
+    if(homeSubText){
+      homeSubText.textContent = unlocked
+        ? 'Choose your role and continue where you left off.'
+        : 'Start as a Leaf. Learn, share, and help others. When you are ready, your Tree path opens.';
+    }
+    if(homeHintText){
+      homeHintText.textContent = unlocked
+        ? 'Choose your role. You can move between Leaf and Tree any time.'
+        : 'The Leaf is your starting point. The Tree opens after you have learned, shared, and helped.';
+    }
 
     tree.classList.toggle('locked', !unlocked);
     tree.classList.toggle('unlocked', unlocked);
@@ -467,8 +496,10 @@
     setTimeout(() => { const first = $('emailOrPhone'); if(first) first.focus(); }, 120);
   }
   function closePanel(){
-    $('scrim') && $('scrim').classList.remove('show');
-    $('panel') && $('panel').classList.remove('show');
+    const panel = $('panel');
+    const scrim = $('scrim');
+    if(panel) panel.classList.remove('show', 'mode-signup');
+    if(scrim) scrim.classList.remove('show');
   }
 
   on('leafOrb', 'click', () => openPanel('leaf', false));
@@ -476,6 +507,32 @@
   on('leafPill', 'click', () => openPanel('leaf', false));
   on('backBtn', 'click', closePanel);
   on('scrim', 'click', closePanel);
+
+  const onboardingKey = 'e_leaf_onboarding_seen_v1';
+
+  async function maybeShowOnboarding(){
+    try{
+      const seen = await store.get(onboardingKey);
+      if(seen && seen.value === 'true'){
+        const overlay = $('onboardingOverlay');
+        if(overlay) overlay.classList.remove('show');
+        return;
+      }
+    }catch(err){ }
+
+    const overlay = $('onboardingOverlay');
+    if(overlay) overlay.classList.add('show');
+  }
+
+  async function dismissOnboarding(){
+    try{ await store.set(onboardingKey, 'true'); }catch(err){ }
+    const overlay = $('onboardingOverlay');
+    if(overlay) overlay.classList.remove('show');
+  }
+
+  on('onboardingStartBtn', 'click', dismissOnboarding);
+  on('onboardingSkipBtn', 'click', dismissOnboarding);
+  on('onboardingCloseBtn', 'click', dismissOnboarding);
 
   // ---- auth mode toggle ----
   function setMode(signup){
@@ -1663,8 +1720,37 @@
     $('modal') && $('modal').classList.remove('show');
     modalSubmitHandler = null;
   }
+
+  function openExitModal(){
+    openModal('Leaving E-Leaf?', `
+      <div class="modal-option-list">
+        <button type="button" class="modal-option-btn modal-option-logout" data-exit-choice="logout">
+          <strong>Log out</strong>
+          <span>Sign out of your account. Your progress will remain saved.</span>
+        </button>
+        <button type="button" class="modal-option-btn modal-option-cancel" data-exit-choice="cancel">
+          <strong>Cancel</strong>
+        </button>
+      </div>
+    `);
+  }
+
+  async function handleExitActionChoice(choice){
+    closeModal();
+    if(choice === 'logout'){
+      await logout();
+      return;
+    }
+    // Cancel keeps the user exactly where they were.
+  }
+
   on('modalClose', 'click', closeModal);
   on('modalScrim', 'click', closeModal);
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && $('modal') && $('modal').classList.contains('show')){
+      closeModal();
+    }
+  });
   on('modal', 'submit', (e) => {
     e.preventDefault();
     if(e.target && e.target.matches('[data-modal-form]') && modalSubmitHandler){
@@ -1822,15 +1908,6 @@
   on('studentsBackHome', 'click', () => showScreen('tree'));
   on('scheduleClassBtn', 'click', openScheduleClassModal);
 
-  on('logoutBtnClasses', 'click', () => logout());
-  on('logoutBtnStudents', 'click', () => logout());
-  on('logoutBtnLive', 'click', () => logout());
-  on('logoutBtnNotesFull', 'click', () => logout());
-  on('logoutBtnTrees', 'click', () => logout());
-  on('logoutBtnChat', 'click', () => logout());
-  on('logoutBtnQuestions', 'click', () => logout());
-  on('logoutBtnLeaderboard', 'click', () => logout());
-
   // ---- login/signup prototype ----
   async function enterAfterAuth(isSignup){
     const treeLogin = authPath === 'tree';
@@ -1955,9 +2032,9 @@
     setMode(false);
     updateHomePath();
   }
-  on('logoutBtnLeaf', 'click', logout);
-  on('logoutBtnBT', 'click', logout);
-  on('logoutBtnTree', 'click', logout);
+  on('logoutBtnLeaf', 'click', openExitModal);
+  on('logoutBtnBT', 'click', openExitModal);
+  on('logoutBtnTree', 'click', openExitModal);
 
   // ---- growth transition ----
   async function growToTree(){
@@ -2071,11 +2148,14 @@
   }
 
   // ---- initialize ----
-  loadUserState().then(() => {
+  loadUserState().then(async () => {
     updateHomePath();
     renderGrowthState();
     updateMobileNav('home');
-  }).catch(()=>{});
+    await maybeShowOnboarding();
+  }).catch(async () => {
+    await maybeShowOnboarding();
+  });
   seedIfNeeded().catch(err => console.warn('E-Leaf: seeding skipped', err));
 })();
 

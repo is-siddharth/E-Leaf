@@ -55,7 +55,7 @@
   <div class="home-center">
     <div class="eyebrow">EVERY TREE BEGINS AS A LEAF</div>
     <h1>Learn first. <em>Teach later.</em></h1>
-    <p class="home-sub">Start as a Leaf. Learn, share, and help others. When you are ready, your Tree path opens.</p>
+    <p class="home-sub" id="homeSubText">Start as a Leaf. Learn, share, and help others. When you are ready, your Tree path opens.</p>
   </div>
 
   <div class="orbs-row">
@@ -77,8 +77,57 @@
     </div>
   </div>
 
-  <div class="home-hint">The Leaf is your starting point. The Tree opens after you have learned, shared, and helped.</div>
+  <div class="home-hint" id="homeHintText">The Leaf is your starting point. The Tree opens after you have learned, shared, and helped.</div>
   <div class="home-footer">E-Leaf · Built with warmth for learners &amp; teachers</div>
+</div>
+
+<div class="onboarding-overlay" id="onboardingOverlay" aria-hidden="true">
+  <div class="onboarding-modal">
+    <button class="onboarding-close" id="onboardingCloseBtn" type="button" aria-label="Skip onboarding">Skip</button>
+    <div class="onboarding-badge">Welcome to E-Leaf</div>
+    <h2>Start simple. Grow with clarity.</h2>
+    <p class="onboarding-intro">Here’s how the platform works, in plain language.</p>
+
+    <div class="onboarding-grid">
+      <div class="onboarding-card">
+        <div class="onboarding-icon">
+          <svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
+        </div>
+        <h3>Learn as a Leaf</h3>
+        <p>Explore classes, save useful notes, ask questions, and build your confidence before moving further.</p>
+      </div>
+
+      <div class="onboarding-card">
+        <div class="onboarding-icon tree-icon">
+          <svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+        </div>
+        <h3>Grow into a Tree</h3>
+        <p>Complete three quiet steps — learn, share, and help — and your Tree path unlocks whenever you are ready.</p>
+      </div>
+
+      <div class="onboarding-card">
+        <div class="onboarding-icon glow-icon">
+          <svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>
+        </div>
+        <h3>Move between roles</h3>
+        <p>You can always return to Leaf mode or continue as Tree when the time feels right.</p>
+      </div>
+    </div>
+
+    <div class="onboarding-callout">
+      <div class="onboarding-callout-title">How E-Leaf helps</div>
+      <ul>
+        <li>Start as a Leaf to learn in a calm, guided space.</li>
+        <li>Share notes, join classes, and help other learners.</li>
+        <li>When you’re ready, step into Tree mode and teach.</li>
+      </ul>
+    </div>
+
+    <div class="onboarding-actions">
+      <button class="onboarding-secondary" id="onboardingSkipBtn" type="button">Skip for now</button>
+      <button class="onboarding-primary" id="onboardingStartBtn" type="button">Start exploring</button>
+    </div>
+  </div>
 </div>
 
 <div class="scrim" id="scrim"></div>

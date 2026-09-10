@@ -43,14 +43,22 @@
       const { data, error } = await state.client.from('profiles').select('*').eq('id', userId).maybeSingle();
 
       if (error) {
-        console.warn('E-Leaf: unable to fetch profile', error);
+        const shouldSilence = error.code === 'PGRST205' || error.code === '42P01' || /does not exist|not found/i.test(error.message || '');
+        if (!shouldSilence) {
+          console.warn('E-Leaf: unable to fetch profile', error);
+        }
+        state.profile = null;
         return null;
       }
 
       state.profile = data || null;
       return data;
     } catch (error) {
-      console.warn('E-Leaf: profile lookup failed', error);
+      const shouldSilence = error && (error.code === 'PGRST205' || error.code === '42P01' || /does not exist|not found/i.test(error.message || ''));
+      if (!shouldSilence) {
+        console.warn('E-Leaf: profile lookup failed', error);
+      }
+      state.profile = null;
       return null;
     }
   }
