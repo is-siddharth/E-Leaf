@@ -1,0 +1,747 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-demo-mode="true">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Leaf  -  A Place to Grow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<!-- ===== reusable icon symbols ===== -->
+<svg class="icon-defs">
+  <symbol id="ic-leaf" viewBox="0 0 64 64">
+    <path d="M32 6C46 11 54 22 54 34C54 48 44 58 32 58C20 58 10 48 10 34C10 22 18 11 32 6Z" fill="currentColor"/>
+    <path d="M32 10v44M32 24c-4 2-8 5-8 5M32 34c-5 2-9 6-9 6M32 44c-5 2-8 5-8 5" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="ic-tree" viewBox="0 0 64 64">
+    <circle cx="24" cy="26" r="12" fill="currentColor"/>
+    <circle cx="40" cy="26" r="12" fill="currentColor"/>
+    <circle cx="32" cy="18" r="13" fill="currentColor"/>
+    <rect x="28" y="34" width="8" height="18" rx="2" fill="currentColor"/>
+    <circle cx="22" cy="20" r="2.3" fill="#a9c9a0"/>
+    <circle cx="34" cy="13" r="2.1" fill="#a9c9a0"/>
+    <circle cx="43" cy="23" r="2" fill="#a9c9a0"/>
+    <path d="M31 38v12M35 42l-3 3M29 46l3 3" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-note" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="ic-class" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="ic-friends" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M14.5 20c.3-2.4 1.8-4.3 3.9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="ic-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor"/></symbol>
+  <symbol id="ic-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0v4l2 3H4l2-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 16l4-4-4-4M20 12H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><path d="M4 12l5 5 11-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-chalk" viewBox="0 0 24 24"><path d="M4 20l3-1 10-10-2-2L5 17z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 5l4 4" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="ic-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="14" r="1.2" fill="currentColor"/><circle cx="12" cy="14" r="1.2" fill="currentColor"/><circle cx="16" cy="14" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="ic-students" viewBox="0 0 24 24"><path d="M3 9l9-4 9 4-9 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="ic-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-4 3.1-6 7-6s6.4 2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
+
+<!-- ===================== HOME SCREEN ===================== -->
+<div class="screen active" id="screen-home">
+  <div class="rising-particles" id="risingParticles"></div>
+
+  <div class="home-top">
+    <div class="home-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+    <div class="home-tag">A PLACE TO GROW</div>
+  </div>
+
+  <div class="home-center">
+    <div class="eyebrow">EVERY TREE BEGINS AS A LEAF</div>
+    <h1>Learn first. <em>Teach later.</em></h1>
+    <p class="home-sub">Start as a Leaf. Learn, share, and help others. When you are ready, your Tree path opens.</p>
+  </div>
+
+  <div class="orbs-row">
+    <div class="orb-col">
+      <div class="orb leaf" id="leafOrb" tabindex="0" role="button" aria-label="Join as a learner">
+        <svg class="glyph"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
+      </div>
+      <button class="pill-btn" id="leafPill">Join as Learner</button>
+      <div class="orb-caption">Students who learn</div>
+    </div>
+
+    <div class="orb-col">
+      <div class="orb tree locked" id="treeOrb" tabindex="0" role="button" aria-label="Tree path locked">
+        <svg class="glyph"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+        <div class="lock-badge"><svg><use href="#ic-lock" xlink:href="#ic-lock"/></svg></div>
+      </div>
+      <button class="pill-btn tree-pill" id="treePill">Tree Locked</button>
+      <div class="orb-caption">You must join as Leaf first</div>
+    </div>
+  </div>
+
+  <div class="home-hint">The Leaf is your starting point. The Tree opens after you have learned, shared, and helped.</div>
+  <div class="home-footer">E-Leaf · Built with warmth for learners &amp; teachers</div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="panel" id="panel">
+  <div class="panel-top">
+    <button class="back-btn" id="backBtn"><svg style="width:16px;height:16px;"><use href="#ic-back" xlink:href="#ic-back"/></svg>Back</button>
+  </div>
+  <div class="mode-toggle" id="authModeToggle">
+    <button id="modeLogin" class="active">Log in</button>
+    <button id="modeSignup">Create account</button>
+  </div>
+  <h2 id="panelTitle">Welcome back</h2>
+  <p class="sub" id="panelSub">Log in to keep learning where you left off.</p>
+  <form id="authForm">
+    <div class="field signup-only">
+      <label for="name">Full name</label>
+      <input type="text" id="name" placeholder="e.g. Almost Fake" autocomplete="name">
+    </div>
+    <div class="field">
+      <label for="emailOrPhone">Email</label>
+      <input type="email" id="emailOrPhone" placeholder="you@example.com" autocomplete="email">
+    </div>
+    
+    <div class="field">
+      <label for="password" id="passwordLabel">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+    <div class="password-hint" id="passwordHint">Use at least 8 characters for a new account.</div>
+    </div>
+    <div class="field signup-only">
+      <label for="confirmPassword">Confirm password</label>
+      <input type="password" id="confirmPassword" placeholder="Re-enter your password" autocomplete="new-password">
+    </div>
+    <button type="submit" class="submit-btn" id="submitBtn">Log in</button>
+  </form>
+  <p class="fine-print" id="finePrint">New here? <span id="switchToSignup">Create a Leaf account</span></p>
+</div>
+
+<div class="screen" id="screen-welcome">
+  <div class="welcome-shell" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;background:linear-gradient(135deg,#edf7ea 0%,#dfeecb 100%);">
+    <div class="welcome-card" style="width:min(620px,92vw);background:rgba(255,255,255,0.74);border:1px solid rgba(112,146,95,0.22);border-radius:28px;padding:40px 36px;box-shadow:0 20px 50px rgba(63,92,55,0.16);text-align:center;color:#1f3120;backdrop-filter:blur(10px);">
+      <div class="welcome-badge" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;background:var(--moss-deep);color:#fff;font-size:.76rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">E-Leaf</div>
+      <h1 style="margin:18px 0 12px;font-size:clamp(2rem,4vw,3rem);font-family:'Fraunces',serif;font-weight:600;line-height:1.05;">Welcome, <span id="welcomeUserName">Leaf</span></h1>
+      <p style="margin:0 auto;max-width:440px;font-size:1rem;line-height:1.6;color:var(--ink-soft);">Explore your learning space, keep track of what grows next, and step into your journey with clarity.</p>
+      <button id="welcomeContinueBtn" type="button" style="margin-top:24px;padding:14px 22px;border:none;border-radius:999px;background:var(--moss-deep);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 16px 28px rgba(74,110,58,0.25);">Explore your learning space</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LEAF DASHBOARD ===================== -->
+<div class="screen" id="screen-dashboard-leaf">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill growth-path-pill">PATH TO TREE<div class="path-track"><div class="growth-path-fill"></div></div><span class="growth-path-count">0/3</span></div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnLeaf" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+
+    <div class="dash-side">
+      <button class="side-link active" id="navHomeLeaf"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link" id="navNotesLeaf"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg>Notes</button>
+      <button class="side-link" id="navClassesLeaf"><svg><use href="#ic-class" xlink:href="#ic-class"/></svg>Classes</button>
+      <button class="side-link" id="navTreesLeaf"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Trees</button>
+      <button class="side-link" id="navQuestionsLeaf"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Questions</button>
+      <button class="side-link" id="navDiscussionLeaf"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Discussion</button>
+      <button class="side-link" id="navProgressLeaf"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Progress</button>
+      <button class="side-link" id="navLeaderboardLeaf"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Recognition</button>
+      
+      <button class="side-link highlight" id="sideBecomeTree"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg><span>Become a Tree</span></button>
+    </div>
+
+    <div class="dash-main">
+      <div class="watermark" style="width:340px;height:340px;top:-40px;right:-60px;color:var(--moss);"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></div>
+
+      <div class="personal-home">
+        <div class="personal-hero">
+          <div class="eyebrow">YOUR LEARNING SPACE</div>
+          <h1 id="personalGreeting">Good morning, Almost.</h1>
+          <p>Here’s what needs your attention next.</p>
+          <div class="home-focus">
+            <div class="focus-copy"><span class="focus-icon">🌿</span><div><strong id="currentLearningSubject">Learning Biology</strong><span id="currentLearningDetail">One idea at a time.</span></div></div>
+            <div class="waiting-count" id="waitingCount">3 things waiting for you</div>
+          </div>
+        </div>
+
+        <div class="leaf-daily-grid">
+          <div class="leaf-main-column">
+            <div class="leaf-primary-card" id="homeUpcomingClassCard">
+              <div class="class-status-row"><div class="workspace-kicker" style="margin:0">Upcoming class</div><span class="class-status-pill" id="homeClassStatus"><span class="class-status-dot"></span>Upcoming</span></div>
+              <h2 class="upcoming-class-title" id="homeClassTitle">Intro to Ecosystems</h2>
+              <div class="class-detail-grid"><span><strong id="homeClassSubject">Environmental Science</strong></span><span id="homeClassWhen">Today · 5:30 PM</span><span id="homeClassTeacher">with Willow Tree</span></div>
+              <div class="class-home-actions"><button class="pill-btn" style="margin-top:0" id="homeClassPrimaryBtn">Explore class ></button><button class="class-secondary-btn" id="homeAllClassesBtn">View all classes</button></div>
+            </div>
+
+            <div class="workspace-card next-card">
+              <div class="workspace-kicker">One thing you can help with</div>
+              <div class="question-quote" id="helpQuestion">“What actually limits photosynthesis rate indoors?”</div>
+              <div class="workspace-meta" id="helpQuestionMeta">Most recent community question</div>
+              <span class="tiny-tag" id="helpQuestionSubject">Biology</span><br>
+              <button class="workspace-action" id="helpQuestionBtn">See the question ></button>
+            </div>
+
+            <div class="workspace-card">
+              <div class="workspace-kicker">Discussion <span class="leaf-only-badge">Leaf only</span></div>
+              <h3>Learn together, not alone.</h3>
+              <div class="workspace-meta">Topic-based conversations for Leaves to compare ideas, collaborate, and work things out together.</div>
+              <div class="discussion-preview" id="homeDiscussionPreview"></div>
+              <button class="workspace-action" id="openDiscussionBtn">Open Discussion ></button>
+            </div>
+            <div class="workspace-card quick-note-card">
+              <div class="workspace-kicker" style="color:#74672e">Quick note</div>
+              <h3>Write it down before you forget.</h3>
+              <textarea id="quickLeafNote" maxlength="400" placeholder="A thought, formula, question, explanation…"></textarea>
+              <div class="quick-note-actions"><span class="quick-note-hint" id="quickLeafNoteStatus">Private to you</span><button class="quick-note-save" id="saveQuickLeafNote">Keep note</button></div>
+            </div>
+
+          </div>
+
+          <div class="leaf-side-column">
+            <div class="workspace-card">
+              <div class="workspace-kicker">Your garden</div>
+              <h3>Subject progress</h3>
+              <div class="subject-progress-list" id="learningGarden"></div>
+              <button class="workspace-action" id="seeAllProgressBtn">See all progress ></button>
+              <div class="garden-contribution-title">Your contribution</div>
+              <div class="garden-statline" id="gardenStats" style="margin-top:0;padding-top:0;border-top:0"><span><strong>0</strong> notes planted</span><span><strong>0</strong> questions answered</span><span><strong>0</strong> classes attended</span></div>
+            </div>
+
+            <div class="side-card" id="growthCard">
+              <div class="eyebrow"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>GROW INTO A TREE</div>
+              <h3>Three quiet steps to become a Tree</h3>
+              <div class="desc">Learn, share, and help. Nothing to collect. Nothing to race.</div>
+              <div class="progress-track"><div id="leafProgressFill" style="width:0%"></div></div>
+              <div class="progress-label" id="leafProgressLabel">0 of 3 complete</div>
+              <ul class="checklist" id="leafGrowthChecklist"></ul>
+              <div class="growth-summary" id="growthSummary"><strong>Start with learning.</strong> Attend a class, plant a useful note, or answer a question.</div>
+              <button class="grow-btn" id="miniGrowBtn" disabled><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>I’m ready to teach</button>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LEAF PROGRESS ===================== -->
+<div class="screen" id="screen-progress">
+  <div class="dash">
+    <div class="dash-nav"><div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div><div class="nav-right"><div class="who"><div class="avatar" style="background:var(--moss-deep)">AF</div><div class="who-text"><div class="name">Almost Fake</div><div class="role">Leaf</div></div></div></div></div>
+    <div class="dash-side"></div>
+    <div class="dash-main"><div class="watermark" style="width:320px;height:320px;top:-35px;right:-55px;color:var(--moss);"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></div><div class="personal-home"><div class="personal-hero"><div class="eyebrow">YOUR GARDEN</div><h1>Your progress.</h1><p>See what you’ve completed, what you’re learning now, and what comes next.</p></div><div class="tracker-grid" id="progressTrackerGrid"></div></div></div>
+  </div>
+</div>
+
+<!-- ===================== LEAF DISCUSSION ===================== -->
+<div class="screen" id="screen-discussion">
+  <div class="dash">
+    <div class="dash-nav"><div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div><div class="nav-right"><div class="who"><div class="avatar" style="background:var(--moss-deep)">AF</div><div class="who-text"><div class="name">Almost Fake</div><div class="role">Leaf</div></div></div></div></div>
+    <div class="dash-side"></div>
+    <div class="dash-main"><div class="watermark" style="width:320px;height:320px;top:-35px;right:-55px;color:var(--moss);"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></div><div class="personal-home"><div class="personal-hero"><div class="eyebrow">LEAF DISCUSSION</div><h1>Work things out together.</h1><p>A Leaf-only space for topic conversations, collaboration, and shared learning.</p></div><div class="workspace-card" style="margin-bottom:16px"><div class="workspace-kicker">Community note</div><div class="workspace-copy">Keep discussions about learning. Use report controls when something is off-topic or inappropriate; moderation tools can grow with the platform.</div><button class="pill-btn" style="margin-top:14px" id="startDiscussionBtn">Start a discussion</button></div><div class="discussion-page-list" id="discussionPageList"></div></div></div>
+  </div>
+</div>
+
+<!-- ===================== BECOME A TREE ===================== -->
+<div class="screen" id="screen-become-tree">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill growth-path-pill">PATH TO TREE<div class="path-track"><div class="growth-path-fill"></div></div><span class="growth-path-count">0/3</span></div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnBT" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" data-role-nav="leaf"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link" data-role-nav="notesFull"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg>Notes</button>
+      <button class="side-link" data-role-nav="classes"><svg><use href="#ic-class" xlink:href="#ic-class"/></svg>Classes</button>
+      <button class="side-link" data-role-nav="trees"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Trees</button>
+      <button class="side-link" data-role-nav="questions"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Questions</button>
+      <button class="side-link" data-role-nav="discussion"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Discussion</button>
+      <button class="side-link" data-role-nav="progress"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Progress</button>
+      <button class="side-link" data-role-nav="leaderboard"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Recognition</button>
+      <button class="side-link highlight active"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Become a Tree</button>
+    </div>
+    <div class="dash-main">
+      <div class="side-card become-card">
+        <div class="eyebrow"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>YOUR GROWTH</div>
+        <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:1.7rem;margin:10px 0 8px;">Three quiet steps to become a Tree</h1>
+        <div class="desc" style="color:var(--ink-soft);">Do them in any order. There's no rush  -  this is a garden, not a race.</div>
+        <div class="progress-track"><div id="btProgressFill" style="width:0%"></div></div>
+        <div class="progress-label" id="btProgressLabel" style="margin-bottom:22px;">0 of 3 complete</div>
+        <ul class="checklist" id="btGrowthChecklist" style="margin-bottom:26px;"></ul>
+        <button class="grow-btn" id="mainGrowBtn" disabled><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>I’m ready to teach</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Persistent mode switch -->
+<div class="global-mode-switch" id="globalModeSwitch">
+  <button class="role-switch role-switch-leaf" id="globalModeButton" type="button" title="Switch between Leaf and Tree mode" aria-label="Current mode: Leaf. Switch to Tree mode">
+    <span class="role-track"><span class="role-icon role-icon-leaf"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span><span class="role-icon role-icon-tree"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></span><span class="role-knob" aria-hidden="true"></span></span>
+  </button>
+</div>
+
+
+<!-- Persistent Quick Notes assistant -->
+<div class="quick-notes-fab-wrap" id="quickNotesAssistant" aria-live="polite">
+  <div class="quick-notes-panel" id="quickNotesPanel">
+    <div class="quick-notes-head"><div><strong>Quick Notes</strong><span>Private notes you can reach from anywhere.</span></div><button class="quick-notes-close" id="quickNotesClose" type="button" aria-label="Close quick notes">×</button></div>
+    <div class="quick-notes-tabs"><button class="quick-notes-tab active" type="button" data-quick-role="leaf">Leaf notes</button><button class="quick-notes-tab" type="button" data-quick-role="tree">Tree notes</button></div>
+    <div class="quick-notes-compose"><textarea id="quickNotesInput" maxlength="500" placeholder="Write it down before you forget…"></textarea><div class="quick-notes-compose-row"><span id="quickNotesRoleHint">Saving to Leaf notes</span><button class="quick-notes-save" id="quickNotesSave" type="button">Keep note</button></div></div>
+    <div class="quick-notes-list" id="quickNotesList"></div>
+  </div>
+  <button class="quick-notes-fab" id="quickNotesFab" type="button" title="Quick Notes" aria-label="Open Quick Notes"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg></button>
+</div>
+
+<!-- ===================== MOBILE NAV ===================== -->
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+  <span class="mobile-nav-indicator" id="mobileNavIndicator" aria-hidden="true"></span>
+  <button id="mobileHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg><span>Home</span></button>
+  <button id="mobileLearn"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg><span>Learn</span></button>
+  <button id="mobilePeople"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg><span>People</span></button>
+  <button id="mobileQuestions"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg><span>Questions</span></button>
+  <button id="mobileMode" class="mobile-mode"><svg id="mobileModeIcon"><use href="#ic-tree" xlink:href="#ic-tree"/></svg><span id="mobileModeText">Switch</span></button>
+</nav>
+<div class="mobile-learn-menu" id="mobileLearnMenu" aria-label="More navigation">
+  <button id="mobileLearnNotes" data-mobile-role="both"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg>Notes</button>
+  <button id="mobileLearnClasses" data-mobile-role="both"><svg><use href="#ic-cal" xlink:href="#ic-cal"/></svg>Classes</button>
+  <button id="mobileLearnQuestions" data-mobile-role="leaf"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Questions</button>
+  <button id="mobileLearnDiscussion" data-mobile-role="leaf"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Discussion</button>
+  <button id="mobileLearnProgress" data-mobile-role="leaf"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Progress</button>
+  <button id="mobileLearnRecognition" data-mobile-role="both"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Recognition</button>
+  <button id="mobileLearnPlan" data-mobile-role="tree"><svg><use href="#ic-cal" xlink:href="#ic-cal"/></svg>Plan Lesson</button>
+  <button id="mobileLearnStudents" data-mobile-role="tree"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Students</button>
+</div>
+<div class="mobile-lock-hint" id="mobileLockHint" role="status" aria-live="polite">Complete the 3 growth conditions to unlock Tree mode.</div>
+
+<!-- ===================== GROWTH TRANSITION OVERLAY ===================== -->
+<div id="growth-overlay">
+  <div class="grow-stage">
+    <svg id="grow-leaf"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
+    <svg id="grow-tree"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+  </div>
+  <div class="grow-line">You've grown. Now you carry the responsibility to teach.</div>
+</div>
+
+<!-- ===================== TREE DASHBOARD ===================== -->
+<div class="screen" id="screen-dashboard-tree">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" style="background:var(--bark-pale); color:var(--bark-deep);">GROWN INTO A TREE</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who"><div class="avatar" style="background:var(--bark-deep)">AF</div><div class="who-text"><div class="name">Almost Fake</div><div class="role">Tree</div></div></div>
+        <button class="logout-btn" id="logoutBtnTree" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link active" id="navHomeTree"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link" data-role-action="leafMode"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>Leaf Dashboard</button>
+      <button class="side-link" id="navNotesTree"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg>Notes</button>
+      <button class="side-link" id="navClassesTree"><svg><use href="#ic-class" xlink:href="#ic-class"/></svg>Classes</button>
+      <button class="side-link" id="navTakeClass"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Take Class</button>
+      <button class="side-link" id="navUploadNotes"><svg><use href="#ic-upload" xlink:href="#ic-upload"/></svg>Plant Notes</button>
+      <button class="side-link" id="navScheduleClass"><svg><use href="#ic-cal" xlink:href="#ic-cal"/></svg>Plan Lesson</button>
+      <button class="side-link" id="navStudents"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Students</button>
+      <button class="side-link" id="navPostQuestion"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Post a Question</button>
+      <button class="side-link" id="navLeaderboardTree"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Recognition</button>
+      <div class="side-quote">"A tree gives shade it will never sit in."</div>
+    </div>
+    <div class="dash-main">
+      <div class="watermark" style="width:380px;height:380px;top:-30px;right:-70px;color:var(--bark);"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></div>
+      <div class="tree-personal-home">
+        <div class="tree-personal-hero">
+          <div class="eyebrow">YOUR TEACHING SPACE</div>
+          <h1 id="treePersonalGreeting">Good morning, Almost.</h1>
+          <p>You’ve grown into a Tree. Here’s what needs your attention next.</p>
+          <div class="tree-focus">
+            <div class="tree-focus-copy"><span class="tree-focus-icon">🌳</span><div><strong id="treeFocusTitle">Your next teaching step</strong><span id="treeFocusDetail">Plant an idea, prepare a class, or help a Leaf.</span></div></div>
+            <div class="tree-waiting" id="treeWaitingCount">A few things to tend to</div>
+          </div>
+        </div>
+
+        <div class="tree-personal-grid">
+          <div class="tree-personal-stack">
+            <div class="tree-workspace-card tree-reminder-card">
+              <div class="tree-workspace-kicker">Your upcoming class</div>
+              <h2 id="treeNextClassTitle">Nothing on your calendar yet.</h2>
+              <div class="tree-workspace-meta" id="treeNextClassMeta">Plan a lesson when you are ready, or keep learning as a Leaf.</div>
+              <div class="tree-action-row"><button class="tree-soft-action" id="treeNextClassBtn">View class ></button><button class="tree-soft-action" id="treeScheduleNextBtn">Plan a lesson</button></div>
+            </div>
+
+            <div class="tree-workspace-card">
+              <div class="tree-workspace-kicker">From other Trees</div>
+              <h3>Want to join as a Leaf?</h3>
+              <div class="tree-other-class-list" id="treeOtherClasses"><div class="tree-workspace-meta">Classes from other Trees will appear here.</div></div>
+            </div>
+
+            <div class="tree-workspace-card">
+              <div class="tree-workspace-kicker">Plan your next lecture</div>
+              <h3>Give your next idea a place on the calendar.</h3>
+              <div class="tree-workspace-meta">Plan a lesson around Biology or Environmental Science, keep a date in view, and build your teaching rhythm.</div>
+              <div class="tree-action-row"><button class="tree-soft-action" id="treePlanLessonBtn">Open lesson planner ></button></div>
+            </div>
+
+            <div class="tree-workspace-card tree-help-card">
+              <div class="tree-workspace-kicker">Ask the Leaves</div>
+              <h3>Post a question for learners.</h3>
+              <div class="tree-workspace-meta">Ask for ideas, examples, misconceptions, or reflections from the Leaf community.</div>
+              <div class="tree-action-row"><button class="tree-soft-action" id="treePostQuestionBtn">Post a question ></button></div>
+            </div>
+
+            <div class="tree-quick-note">
+              <div class="tree-note-tape"></div>
+              <div class="tree-note-kicker">Teaching note</div>
+              <h3>Write it down before you forget.</h3>
+              <textarea id="treeQuickNote" maxlength="400" placeholder="What should you teach next? A tip, example, or explanation…"></textarea>
+              <div class="tree-quick-note-actions"><span id="treeQuickNoteStatus">Private to you</span><button id="saveTreeQuickNote">Keep note</button></div>
+            </div>
+          </div>
+
+          <div class="tree-personal-stack">
+            <div class="tree-workspace-card tree-growth-card">
+              <div class="tree-workspace-kicker">Your growth as a Tree</div>
+              <h3>You keep growing by teaching - and learning.</h3>
+              <div class="tree-stat-grid" id="treeStats"><div class="tree-stat"><strong>0</strong><span>classes taught</span></div><div class="tree-stat"><strong>0</strong><span>classes attended</span></div><div class="tree-stat"><strong>0</strong><span>notes planted</span></div></div>
+              <div class="tree-unit-heading"><span>Teaching progress</span><span>by subject</span></div>
+              <div class="tree-teaching-progress" id="treeTeachingProgress"></div>
+            </div>
+
+            <div class="tree-workspace-card">
+              <div class="tree-workspace-kicker">Your classes taken</div>
+              <h3>A Tree stays a Leaf, too.</h3>
+              <div class="tree-class-list" id="treeTakenClasses"><div class="tree-workspace-meta">Your attended classes will appear here.</div></div>
+              <button class="workspace-action" id="treeSeeClassesBtn">See all classes ></button>
+            </div>
+
+            <div class="tree-workspace-card">
+              <div class="tree-workspace-kicker">Your notes</div>
+              <h3 id="treeOwnNotesTitle">0 notes planted</h3>
+              <div class="tree-workspace-meta" id="treeOwnNotesMeta">Review your notes occasionally. A good explanation often gets better with time.</div>
+              <button class="workspace-action" id="treeReviewNotesBtn">Review my notes ></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PLAN LESSON (TREE) ===================== -->
+<div class="screen" id="screen-plan-lesson">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" style="background:var(--bark-pale);color:var(--bark-deep);">PLAN LESSON</div>
+      <div class="nav-right"><svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg><div class="who"><div class="avatar" style="background:var(--bark-deep)">AF</div><div class="who-text"><div class="name">Almost Fake</div><div class="role">Tree</div></div></div></div>
+    </div>
+    <div class="dash-side"></div>
+    <div class="dash-main">
+      <div class="tree-plan-page">
+        <div class="watermark tree-plan-watermark"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></div>
+        <div class="personal-hero tree-plan-hero"><div class="eyebrow" style="color:var(--bark-deep)">YOUR TEACHING CALENDAR</div><h1>Plan your next lesson.</h1><p>Choose what to teach, when to teach it, and keep the plan in one place.</p></div>
+        <div class="tree-plan-grid">
+          <div class="workspace-card tree-calendar-card"><div class="workspace-kicker">Your calendar</div><div class="tree-calendar-head"><button class="tree-calendar-nav" id="planPrevMonth">‹</button><h3 id="planMonthLabel">This month</h3><button class="tree-calendar-nav" id="planNextMonth">›</button></div><div class="tree-calendar-week"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div><div class="tree-calendar-grid" id="planCalendarGrid"></div></div>
+          <div class="tree-plan-side">
+            <div class="workspace-card"><div class="workspace-kicker">Your subjects</div><h3>Lesson plans</h3><div class="tree-lesson-list" id="treeLessonPlanList"></div><button class="workspace-action" id="planNewLessonBtn">+ Plan a lesson</button></div>
+            <div class="workspace-card"><div class="workspace-kicker">Coming up</div><div class="tree-plan-upcoming" id="treePlanUpcoming"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CLASSES ===================== -->
+<div class="screen" id="screen-classes">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" id="classesRolePill">CLASSES</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" id="classesAvatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role" id="classesRoleText">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnClasses" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side" id="classesSideNav">
+      <button class="side-link" id="classesBackHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link" id="classesNavNotes"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg>Notes</button>
+      <button class="side-link active" id="classesNavClasses"><svg><use href="#ic-class" xlink:href="#ic-class"/></svg>Classes</button>
+      <button class="side-link" id="classesNavTrees"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Trees</button>
+      <button class="side-link" id="classesNavQuestions"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Questions</button>
+      <button class="side-link highlight" id="classesNavGrowth"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Growth</button>
+      <div class="classes-tree-links" id="classesTreeLinks">
+        <button class="side-link" id="classesTreeTake"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Take a Class</button>
+        <button class="side-link" id="classesTreeUpload"><svg><use href="#ic-upload" xlink:href="#ic-upload"/></svg>Upload Notes</button>
+        <button class="side-link" id="classesTreeSchedule"><svg><use href="#ic-cal" xlink:href="#ic-cal"/></svg>Schedule Class</button>
+        <button class="side-link" id="classesTreeStudents"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Students</button>
+        <button class="side-link" id="classesTreePost"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Post a Question</button>
+      </div>
+      <div class="side-quote">"Show up. That's most of learning."</div>
+    </div>
+    <div class="dash-main">
+      <div class="list-head">
+        <h1>Classes</h1>
+        <button class="pill-btn" style="margin-top:0;display:none;" id="scheduleClassBtn">+ Schedule a class</button>
+      </div>
+      <div class="class-list" id="classList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== STUDENTS (Tree only) ===================== -->
+<div class="screen" id="screen-students">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" style="background:var(--bark-pale); color:var(--bark-deep);">YOUR STUDENTS</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" style="background:var(--bark-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role">Tree</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnStudents" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="studentsBackHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link active"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Students</button>
+      <div class="side-quote">"A tree gives shade it will never sit in."</div>
+    </div>
+    <div class="dash-main">
+      <div class="list-head"><h1>Your Students</h1></div>
+      <div class="students-grid" id="studentsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LIVE CLASS ===================== -->
+<div class="screen" id="screen-live-class">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" style="background:#fde2e2; color:#a23c3c;">● LIVE</div>
+      <div class="nav-right">
+        <button class="logout-btn" id="logoutBtnLive" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="liveBackToClasses"><svg><use href="#ic-back" xlink:href="#ic-back"/></svg>Back to Classes</button>
+    </div>
+    <div class="dash-main">
+      <div class="list-head"><h1 id="liveClassTitle">Class</h1></div>
+      <div class="live-wrap">
+        <div class="live-stage">
+          <div class="pulse-dot"><span></span>DEMO SESSION</div>
+          <svg class="placeholder-icon"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+        </div>
+        <div class="live-side">
+          <div class="live-card">
+            <h4>Attendees</h4>
+            <div id="liveAttendees"></div>
+          </div>
+          <div class="live-card">
+            <h4 id="liveActionTitle">Session</h4>
+            <p style="font-size:0.82rem;color:var(--ink-soft);margin:0 0 14px;" id="liveActionDesc">This is a demo session  -  no real video or audio is connected yet.</p>
+            <button class="grow-btn ready" id="liveEndBtn">End class</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="modalScrim"></div>
+
+<!-- ===================== NOTES (FULL) ===================== -->
+<div class="screen" id="screen-notes-full">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" id="notesFullRolePill">ALL NOTES</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" id="notesFullAvatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role" id="notesFullRoleText">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnNotesFull" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="notesFullBackHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link active"><svg><use href="#ic-note" xlink:href="#ic-note"/></svg>Notes</button>
+      <div class="side-quote">"Every note planted is a small act of teaching."</div>
+    </div>
+    <div class="dash-main">
+      <div class="notes-toolbar">
+        <div><h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:1.6rem;margin:0;">Notes</h1><div class="notes-view-tabs"><button class="notes-view-tab active" data-notes-view="mine">My Notes</button><button class="notes-view-tab" data-notes-view="explore">Explore Notes</button><button class="notes-view-tab" data-notes-view="saved">Saved for later</button></div></div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <select class="sort-select" id="notesSortSelect">
+            <option value="recent">Sort by: Most recent</option>
+            <option value="rating">Sort by: Highest rated</option>
+          </select>
+          <button class="pill-btn" style="margin-top:0;" id="addNoteBtnFull">+ Plant a note</button>
+        </div>
+      </div>
+      <div id="notesFullList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TREES DIRECTORY ===================== -->
+<div class="screen" id="screen-trees">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill">MEET THE TREES</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnTrees" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="treesBackHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link active"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Trees</button>
+      <div class="side-quote">"A good question is half the answer."</div>
+    </div>
+    <div class="dash-main">
+      <div class="list-head"><h1>Meet the Trees</h1></div>
+      <div class="trees-grid" id="treesGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CHAT (ASK A DOUBT) ===================== -->
+<div class="screen" id="screen-chat">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill">ASK A DOUBT</div>
+      <div class="nav-right">
+        <button class="logout-btn" id="logoutBtnChat" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="chatBackToTrees"><svg><use href="#ic-back" xlink:href="#ic-back"/></svg>Back to Trees</button>
+    </div>
+    <div class="dash-main">
+      <div class="chat-wrap">
+        <div class="chat-head">
+          <div class="avatar" id="chatAvatar" style="background:var(--bark-deep)">WP</div>
+          <h3 id="chatTreeName">Willow Peer</h3>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Type your doubt...">
+          <button id="chatSendBtn">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== QUESTIONS ===================== -->
+<div class="screen" id="screen-questions">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" id="questionsRolePill">QUESTIONS</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" id="questionsAvatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role" id="questionsRoleText">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnQuestions" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="questionsBackHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link active"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Questions</button>
+      <div class="side-quote">"Curiosity, answered together."</div>
+    </div>
+    <div class="dash-main">
+      <div class="list-head">
+        <h1 id="questionsTitle">Questions from Trees</h1>
+        <button class="pill-btn" style="margin-top:0;display:none;" id="postQuestionBtn">+ Post a question</button>
+      </div>
+      <div id="questionsList" class="questions-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HELPFUL LEAVES ===================== -->
+<div class="screen" id="screen-leaderboard">
+  <div class="dash">
+    <div class="dash-nav">
+      <div class="dash-logo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+      <div class="path-pill" id="leaderboardRolePill">RECOGNITION</div>
+      <div class="nav-right">
+        <svg class="bell"><use href="#ic-bell" xlink:href="#ic-bell"/></svg>
+        <div class="who">
+          <div class="avatar" id="leaderboardAvatar" style="background:var(--moss-deep)">AF</div>
+          <div class="who-text"><div class="name">Almost Fake</div><div class="role" id="leaderboardRoleText">Leaf</div></div>
+        </div>
+        <button class="logout-btn" id="logoutBtnLeaderboard" title="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </div>
+    <div class="dash-side">
+      <button class="side-link" id="leaderboardBackHome"><svg><use href="#ic-home" xlink:href="#ic-home"/></svg>Home</button>
+      <button class="side-link active"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Recognition</button>
+      <div class="side-quote">"Help well. Grow together."</div>
+    </div>
+    <div class="dash-main">
+      <div class="list-head"><h1>Recognition</h1></div>
+      <p style="font-size:0.82rem;color:var(--ink-soft);margin:-6px 0 20px;max-width:560px;">People who helped someone learn recently. No positions, no points, no race.</p>
+      <div class="leaderboard-list" id="leaderboardList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-head">
+    <h3 id="modalTitle">Title</h3>
+    <button type="button" class="modal-close" id="modalClose" aria-label="Close dialog">&times;</button>
+  </div>
+  <div id="modalBody"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg><span id="toastText"></span></div>
+
+<script src="assets/js/config.js"></script>
+<script src="node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
+<script src="assets/js/supabaseClient.js"></script>
+<script src="assets/js/state.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/mockData.js"></script>
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>
+
