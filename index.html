@@ -53,18 +53,18 @@
   </div>
 
   <div class="home-center">
-    <div class="eyebrow">EVERY TREE BEGINS AS A LEAF</div>
-    <h1>Learn first. <em>Teach later.</em></h1>
-    <p class="home-sub" id="homeSubText">Start as a Leaf. Learn, share, and help others. When you are ready, your Tree path opens.</p>
+    <div class="eyebrow">WELCOME TO E-LEAF</div>
+    <h1>Start as a learner. Grow into a teacher.</h1>
+    <p class="home-sub" id="homeSubText">Start as a Learner. Grow into a Teacher when you are ready.</p>
   </div>
 
   <div class="orbs-row">
     <div class="orb-col">
-      <div class="orb leaf" id="leafOrb" tabindex="0" role="button" aria-label="Join as a learner">
+      <div class="orb leaf" id="leafOrb" tabindex="0" role="button" aria-label="Come as learner">
         <svg class="glyph"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
       </div>
-      <button class="pill-btn" id="leafPill">Join as Learner</button>
-      <div class="orb-caption">Students who learn</div>
+      <button class="pill-btn" id="leafPill">Come as Learner</button>
+      <div class="orb-caption">Learn, share, and help others.</div>
     </div>
 
     <div class="orb-col">
@@ -72,8 +72,8 @@
         <svg class="glyph"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
         <div class="lock-badge"><svg><use href="#ic-lock" xlink:href="#ic-lock"/></svg></div>
       </div>
-      <button class="pill-btn tree-pill" id="treePill">Tree Locked</button>
-      <div class="orb-caption">You must join as Leaf first</div>
+      <button class="pill-btn tree-pill" id="treePill">Grow into Teacher</button>
+      <div class="orb-caption">The Tree opens after you have grown.</div>
     </div>
   </div>
 
@@ -85,8 +85,8 @@
   <div class="onboarding-modal">
     <button class="onboarding-close" id="onboardingCloseBtn" type="button" aria-label="Skip onboarding">Skip</button>
     <div class="onboarding-badge">Welcome to E-Leaf</div>
-    <h2>Start simple. Grow with clarity.</h2>
-    <p class="onboarding-intro">Here’s how the platform works, in plain language.</p>
+    <h2>Every Tree begins as a Leaf</h2>
+    <p class="onboarding-intro">Learn first. Teach later.</p>
 
     <div class="onboarding-grid">
       <div class="onboarding-card">
@@ -117,52 +117,83 @@
     <div class="onboarding-callout">
       <div class="onboarding-callout-title">How E-Leaf helps</div>
       <ul>
-        <li>Start as a Leaf to learn in a calm, guided space.</li>
-        <li>Share notes, join classes, and help other learners.</li>
-        <li>When you’re ready, step into Tree mode and teach.</li>
+        <li>Start as a Leaf to learn, share, and help others grow.</li>
+        <li>Build confidence in the learning space before stepping into teaching.</li>
+        <li>When you are ready, your Tree path opens.</li>
       </ul>
     </div>
 
     <div class="onboarding-actions">
       <button class="onboarding-secondary" id="onboardingSkipBtn" type="button">Skip for now</button>
-      <button class="onboarding-primary" id="onboardingStartBtn" type="button">Start exploring</button>
+      <button class="onboarding-primary" id="onboardingStartBtn" type="button">Start as a Leaf</button>
     </div>
   </div>
 </div>
 
 <div class="scrim" id="scrim"></div>
 <div class="panel" id="panel">
-  <div class="panel-top">
-    <button class="back-btn" id="backBtn"><svg style="width:16px;height:16px;"><use href="#ic-back" xlink:href="#ic-back"/></svg>Back</button>
+  <div class="panel-particles" id="panelParticles" aria-hidden="true"></div>
+  <div class="panel-shell">
+    <div class="panel-visual panel-visual-left" aria-hidden="true">
+      <div class="identity-orb leaf">
+        <svg class="glyph"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
+      </div>
+      <div class="identity-label">Leaf</div>
+      <div class="identity-sub">Come as a Learner</div>
+    </div>
+
+    <div class="panel-inner">
+      <div class="panel-form-wrap">
+        <div class="panel-top">
+          <button class="back-btn" id="backBtn"><svg style="width:16px;height:16px;"><use href="#ic-back" xlink:href="#ic-back"/></svg>Back</button>
+        </div>
+        <div class="panel-journey-line" aria-label="Choose your path">
+          <div class="panel-journey-kicker">Welcome to E-Leaf.</div>
+          <h1 class="panel-journey-title">
+            <span>Come as a Learner.</span>
+            <em>Grow into a Teacher.</em>
+          </h1>
+          <p class="panel-journey-copy">A place to learn, share what you discover, and help others grow.</p>
+        </div>
+        <div class="mode-toggle" id="authModeToggle">
+          <button id="modeLogin" class="active">Log in</button>
+          <button id="modeSignup">Create account</button>
+        </div>
+        <h2 id="panelTitle">Welcome back</h2>
+        <p class="sub" id="panelSub">Log in to keep learning where you left off.</p>
+        <form id="authForm">
+          <div class="field signup-only">
+            <label for="name">Full name</label>
+            <input type="text" id="name" placeholder="e.g. Almost Fake" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="emailOrPhone">Email</label>
+            <input type="email" id="emailOrPhone" placeholder="you@example.com" autocomplete="email">
+          </div>
+
+          <div class="field">
+            <label for="password" id="passwordLabel">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+            <div class="password-hint" id="passwordHint">Use at least 8 characters for a new account.</div>
+          </div>
+          <div class="field signup-only">
+            <label for="confirmPassword">Confirm password</label>
+            <input type="password" id="confirmPassword" placeholder="Re-enter your password" autocomplete="new-password">
+          </div>
+          <button type="submit" class="submit-btn" id="submitBtn">Log in</button>
+        </form>
+        <p class="fine-print" id="finePrint">New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button></p>
+      </div>
+    </div>
+
+    <div class="panel-visual panel-visual-right" aria-hidden="true">
+      <div class="identity-orb tree">
+        <svg class="glyph"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+      </div>
+      <div class="identity-label">Tree</div>
+      <div class="identity-sub">Grow into Teacher</div>
+    </div>
   </div>
-  <div class="mode-toggle" id="authModeToggle">
-    <button id="modeLogin" class="active">Log in</button>
-    <button id="modeSignup">Create account</button>
-  </div>
-  <h2 id="panelTitle">Welcome back</h2>
-  <p class="sub" id="panelSub">Log in to keep learning where you left off.</p>
-  <form id="authForm">
-    <div class="field signup-only">
-      <label for="name">Full name</label>
-      <input type="text" id="name" placeholder="e.g. Almost Fake" autocomplete="name">
-    </div>
-    <div class="field">
-      <label for="emailOrPhone">Email</label>
-      <input type="email" id="emailOrPhone" placeholder="you@example.com" autocomplete="email">
-    </div>
-    
-    <div class="field">
-      <label for="password" id="passwordLabel">Password</label>
-      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
-    <div class="password-hint" id="passwordHint">Use at least 8 characters for a new account.</div>
-    </div>
-    <div class="field signup-only">
-      <label for="confirmPassword">Confirm password</label>
-      <input type="password" id="confirmPassword" placeholder="Re-enter your password" autocomplete="new-password">
-    </div>
-    <button type="submit" class="submit-btn" id="submitBtn">Log in</button>
-  </form>
-  <p class="fine-print" id="finePrint">New here? <span id="switchToSignup">Create a Leaf account</span></p>
 </div>
 
 <div class="screen" id="screen-welcome">

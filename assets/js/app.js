@@ -424,73 +424,127 @@
     const leafPill = $('leafPill');
     const homeSubText = $('homeSubText');
     const homeHintText = $('homeHintText');
+    const homeScreen = $('screen-home');
     if(!tree) return;
+    const authenticated = !!currentUser.id;
     const unlocked = !!canTeach;
+    const unauthenticatedView = !authenticated;
+    if(homeScreen) homeScreen.classList.toggle('home-authenticated', authenticated);
 
     if(homeSubText){
-      homeSubText.textContent = unlocked
-        ? 'Choose your role and continue where you left off.'
-        : 'Start as a Leaf. Learn, share, and help others. When you are ready, your Tree path opens.';
+      if(unauthenticatedView){
+        homeSubText.textContent = 'Welcome to E-Leaf. Log in to continue, or create an account to begin.';
+      } else if(unlocked){
+        homeSubText.textContent = 'Welcome back. Choose how you want to continue: Leaf or Tree.';
+      } else {
+        homeSubText.textContent = 'Every Tree begins as a Leaf. Learn first. Teach later.';
+      }
     }
     if(homeHintText){
-      homeHintText.textContent = unlocked
-        ? 'Choose your role. You can move between Leaf and Tree any time.'
-        : 'The Leaf is your starting point. The Tree opens after you have learned, shared, and helped.';
+      if(unauthenticatedView){
+        homeHintText.textContent = 'Start with login or create an account. Your Tree path unlocks after you begin learning.';
+      } else if(unlocked){
+        homeHintText.textContent = 'You can continue as Leaf or step into Tree mode whenever you are ready.';
+      } else {
+        homeHintText.textContent = 'Choose Leaf to begin learning. The Tree role unlocks after you complete your growth steps.';
+      }
     }
 
     tree.classList.toggle('locked', !unlocked);
     tree.classList.toggle('unlocked', unlocked);
-    tree.setAttribute('aria-label', unlocked ? 'Continue as Tree' : 'Tree path locked');
+    tree.setAttribute('aria-label', unauthenticatedView ? 'E-Leaf philosophy visual' : (unlocked ? 'Continue as Tree' : 'Tree path locked'));
 
     const caption = tree.parentElement && tree.parentElement.querySelector('.orb-caption');
-    if(caption) caption.textContent = unlocked ? 'Your teaching role' : 'Unlocks after you grow';
+    if(caption) caption.textContent = unauthenticatedView ? 'Every Tree begins as a Leaf.' : (unlocked ? 'Your teaching role is ready.' : 'The Tree opens after you have grown.');
 
     if(leafPill){
-      leafPill.textContent = unlocked ? 'Continue as Leaf' : 'Join as Learner';
-      leafPill.setAttribute('aria-label', unlocked ? 'Continue as Leaf' : 'Join as Learner');
+      leafPill.textContent = unauthenticatedView ? 'Login' : (unlocked ? 'Continue as Leaf' : 'Start as Leaf');
+      leafPill.setAttribute('aria-label', unauthenticatedView ? 'Login' : (unlocked ? 'Continue as Leaf' : 'Start as Leaf'));
     }
 
     if(treePill){
-      treePill.textContent = unlocked ? 'Continue as Tree' : 'Tree Locked';
-      treePill.classList.toggle('is-locked', !unlocked);
-      treePill.disabled = !unlocked;
-      treePill.setAttribute('aria-label', unlocked ? 'Continue as Tree' : 'Tree path locked');
+      treePill.textContent = unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Grow into Teacher');
+      treePill.classList.toggle('is-locked', !unlocked && !unauthenticatedView);
+      treePill.disabled = !unauthenticatedView && !unlocked;
+      treePill.setAttribute('aria-label', unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Tree path locked'));
     }
 
     const lock = tree.querySelector('.lock-badge');
-    if(lock) lock.style.display = unlocked ? 'none' : '';
+    if(lock) lock.style.display = unauthenticatedView ? '' : (unlocked ? 'none' : '');
+
+    const leafOrb = $('leafOrb');
+    const treeOrb = $('treeOrb');
+    [leafOrb, treeOrb].forEach((orb) => {
+      if(!orb) return;
+      orb.style.pointerEvents = unauthenticatedView ? 'none' : '';
+      orb.setAttribute('tabindex', unauthenticatedView ? '-1' : '0');
+      orb.setAttribute('aria-hidden', unauthenticatedView ? 'true' : 'false');
+    });
+  }
+
+  function handleLeafSelection(){
+    if(!currentUser.id){
+      openPanel('leaf', false);
+      return;
+    }
+
+    currentRole = 'leaf';
+    showScreen('leaf');
   }
 
   function handleTreeOrb(){
-    if(canTeach) openPanel('tree', true);
-    else showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
+    if(!currentUser.id){
+      openPanel('leaf', false);
+      setMode(true);
+      return;
+    }
+
+    if(canTeach){
+      currentRole = 'tree';
+      showScreen('tree');
+      return;
+    }
+
+    showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
   }
   on('treeOrb', 'click', handleTreeOrb);
   on('treeOrb', 'keydown', (e) => {
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handleTreeOrb(); }
   });
   on('treePill', 'click', () => {
+    if(!currentUser.id){
+      openPanel('leaf', false);
+      setMode(true);
+      return;
+    }
     if(canTeach) openPanel('tree', true);
     else showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
   });
 
   function openPanel(path='leaf', forceLogin=false){
     authPath = path === 'tree' ? 'tree' : 'leaf';
+    const authenticated = !!currentUser.id;
     setMode(false);
     const toggle = $('authModeToggle');
-    if(toggle) toggle.style.display = authPath === 'tree' || canTeach ? 'none' : '';
+    if(toggle) toggle.style.display = authPath === 'tree' ? 'none' : '';
     const panelTitle = $('panelTitle');
     const panelSub = $('panelSub');
     const finePrint = $('finePrint');
-    if(authPath === 'tree'){
+
+    if(!authenticated){
+      if(panelTitle) panelTitle.textContent = 'Welcome to E-Leaf';
+      if(panelSub) panelSub.textContent = 'Log in to continue, or create an account to begin your E-Leaf journey.';
+      if(finePrint) finePrint.innerHTML = 'New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button>';
+    } else if(authPath === 'tree'){
       if(panelTitle) panelTitle.textContent = 'Welcome back, Tree';
       if(panelSub) panelSub.textContent = 'Log in with the same credentials you use for your Leaf account.';
-      if(finePrint) finePrint.textContent = 'Your Tree access is part of the same E-Leaf account.';
-    }else if(canTeach){
+      if(finePrint) finePrint.innerHTML = 'Your Tree access is part of the same E-Leaf account.';
+    } else if(canTeach){
       if(panelTitle) panelTitle.textContent = 'Welcome back';
       if(panelSub) panelSub.textContent = 'Log in to continue as a Leaf.';
-      if(finePrint) finePrint.textContent = 'Use the same credentials you use for your Tree account.';
+      if(finePrint) finePrint.innerHTML = 'Use the same credentials you use for your Tree account.';
     }
+
     $('scrim') && $('scrim').classList.add('show');
     $('panel') && $('panel').classList.add('show');
     setTimeout(() => { const first = $('emailOrPhone'); if(first) first.focus(); }, 120);
@@ -502,9 +556,9 @@
     if(scrim) scrim.classList.remove('show');
   }
 
-  on('leafOrb', 'click', () => openPanel('leaf', false));
-  on('leafOrb', 'keydown', (e) => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openPanel('leaf', false); } });
-  on('leafPill', 'click', () => openPanel('leaf', false));
+  on('leafOrb', 'click', handleLeafSelection);
+  on('leafOrb', 'keydown', (e) => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handleLeafSelection(); } });
+  on('leafPill', 'click', handleLeafSelection);
   on('backBtn', 'click', closePanel);
   on('scrim', 'click', closePanel);
 
@@ -514,14 +568,19 @@
     try{
       const seen = await store.get(onboardingKey);
       if(seen && seen.value === 'true'){
-        const overlay = $('onboardingOverlay');
-        if(overlay) overlay.classList.remove('show');
-        return;
+        return false;
       }
     }catch(err){ }
 
+    if(!currentUser.id){
+      const overlay = $('onboardingOverlay');
+      if(overlay) overlay.classList.remove('show');
+      return false;
+    }
+
     const overlay = $('onboardingOverlay');
     if(overlay) overlay.classList.add('show');
+    return true;
   }
 
   async function dismissOnboarding(){
@@ -538,14 +597,13 @@
   function setMode(signup){
     const panel = $('panel');
     const treeLogin = authPath === 'tree';
-    const returningUser = !!canTeach;
-    const effectiveSignup = signup && !treeLogin && !returningUser;
+    const effectiveSignup = !!signup;
     if(panel) panel.classList.toggle('mode-signup', effectiveSignup);
     $('modeLogin') && $('modeLogin').classList.toggle('active', !effectiveSignup);
     $('modeSignup') && $('modeSignup').classList.toggle('active', effectiveSignup);
     const panelTitle = $('panelTitle'), panelSub = $('panelSub'), submitBtn = $('submitBtn'),
           passwordLabel = $('passwordLabel'), finePrint = $('finePrint'), toggle = $('authModeToggle');
-    if(toggle) toggle.style.display = (treeLogin || returningUser) ? 'none' : '';
+    if(toggle) toggle.style.display = treeLogin ? 'none' : '';
 
     if(treeLogin){
       if(panelTitle) panelTitle.textContent = 'Welcome back, Tree';
@@ -553,24 +611,18 @@
       if(submitBtn) submitBtn.textContent = 'Log in';
       if(passwordLabel) passwordLabel.textContent = 'Password';
       if(finePrint) finePrint.textContent = 'Your Tree access is part of the same E-Leaf account.';
-    }else if(returningUser){
-      if(panelTitle) panelTitle.textContent = 'Welcome back';
-      if(panelSub) panelSub.textContent = 'Log in to continue as a Leaf.';
-      if(submitBtn) submitBtn.textContent = 'Log in';
-      if(passwordLabel) passwordLabel.textContent = 'Password';
-      if(finePrint) finePrint.textContent = 'Use the same credentials you use for your Tree account.';
     }else if(effectiveSignup){
-      if(panelTitle) panelTitle.textContent = 'Grow your Leaf account';
-      if(panelSub) panelSub.textContent = 'A few details and you can start learning.';
+      if(panelTitle) panelTitle.textContent = 'Create your E-Leaf account';
+      if(panelSub) panelSub.textContent = 'Create a new account to begin your E-Leaf journey.';
       if(submitBtn) submitBtn.textContent = 'Create account';
       if(passwordLabel) passwordLabel.textContent = 'Choose a password';
-      if(finePrint) finePrint.innerHTML = 'Already a member? <button type="button" class="auth-switch-link">Log in</button>';
+      if(finePrint) finePrint.innerHTML = 'Already a member? <button type="button" id="switchToLogin" class="auth-switch-link">Log in</button>';
     }else{
       if(panelTitle) panelTitle.textContent = 'Welcome back';
       if(panelSub) panelSub.textContent = 'Log in to keep learning where you left off.';
       if(submitBtn) submitBtn.textContent = 'Log in';
       if(passwordLabel) passwordLabel.textContent = 'Password';
-      if(finePrint) finePrint.innerHTML = 'New here? <button type="button" class="auth-switch-link">Create a Leaf account</button>';
+      if(finePrint) finePrint.innerHTML = 'New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button>';
     }
   }
   window.setMode = setMode;
@@ -579,7 +631,10 @@
   on('modeSignup', 'click', () => setMode(true));
   on('switchToSignup', 'click', () => setMode(true));
   document.addEventListener('click', (e) => {
-    if(e.target.closest('.auth-switch-link')) setMode(!$('panel').classList.contains('mode-signup'));
+    const link = e.target.closest('.auth-switch-link');
+    if(!link) return;
+    if(link.id === 'switchToSignup') setMode(true);
+    else if(link.id === 'switchToLogin') setMode(false);
   });
 
   // ---- app state ----
@@ -1911,7 +1966,7 @@
   // ---- login/signup prototype ----
   async function enterAfterAuth(isSignup){
     const treeLogin = authPath === 'tree';
-    const effectiveSignup = !!isSignup && !treeLogin && !canTeach;
+    const effectiveSignup = !!isSignup;
     const nameInput=$('name');
     const identifier=$('emailOrPhone');
     const password=$('password');
@@ -1951,9 +2006,10 @@
           currentUser.name = normalizeDisplayName(data.session.user);
           applyIdentityUI();
           closePanel();
-          currentRole = targetRole;
-          showScreen('welcome');
+          currentRole = 'leaf';
+          showScreen('home');
           await saveUserState();
+          await maybeShowOnboarding();
           return;
         }
 
@@ -1964,7 +2020,8 @@
         };
         applyIdentityUI();
         closePanel();
-        showScreen('welcome');
+        currentRole = 'leaf';
+        showScreen('home');
         showToast('Account created. Please confirm your email, then log in with the same credentials.');
         return;
       }
@@ -1982,9 +2039,10 @@
       }
 
       closePanel();
-      currentRole = targetRole;
-      showScreen(targetRole);
+      currentRole = 'leaf';
+      showScreen('home');
       await saveUserState();
+      await maybeShowOnboarding();
     } catch(err) {
       console.error('E-Leaf: failed to authenticate with Supabase', err);
       showToast(mapSupabaseAuthError(err));
@@ -2029,8 +2087,8 @@
     applyIdentityUI();
     closePanel();
     showScreen('home');
-    setMode(false);
     updateHomePath();
+    openPanel('leaf', false);
   }
   on('logoutBtnLeaf', 'click', openExitModal);
   on('logoutBtnBT', 'click', openExitModal);
@@ -2147,14 +2205,30 @@
     }
   }
 
+  const panelParticleHost = $('panelParticles');
+  if(panelParticleHost){
+    for(let i=0;i<12;i++){
+      const p = document.createElement('div');
+      p.className = 'rp' + (i % 3 === 0 ? ' leafy' : '');
+      p.style.left = (Math.random()*100) + '%';
+      p.style.bottom = (Math.random()*18) + '%';
+      p.style.animationDelay = (Math.random()*10) + 's';
+      p.style.animationDuration = (11 + Math.random()*8) + 's';
+      panelParticleHost.appendChild(p);
+    }
+  }
+
   // ---- initialize ----
-  loadUserState().then(async () => {
+  loadUserState().then(() => {
     updateHomePath();
     renderGrowthState();
     updateMobileNav('home');
-    await maybeShowOnboarding();
-  }).catch(async () => {
-    await maybeShowOnboarding();
+
+    if(!currentUser.id){
+      setTimeout(() => openPanel('leaf', false), 120);
+    }
+  }).catch(() => {
+    setTimeout(() => openPanel('leaf', false), 120);
   });
   seedIfNeeded().catch(err => console.warn('E-Leaf: seeding skipped', err));
 })();
