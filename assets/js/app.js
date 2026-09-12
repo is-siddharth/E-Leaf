@@ -1,4 +1,4 @@
-﻿
+
 (function(){
   // ---- tiny defensive helpers: optional elements can be absent on some screens ----
   function $(id){ return document.getElementById(id); }
@@ -463,7 +463,7 @@
     }
 
     if(treePill){
-      treePill.textContent = unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Grow into Teacher');
+      treePill.textContent = unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Grow into a Teacher');
       treePill.classList.toggle('is-locked', !unlocked && !unauthenticatedView);
       treePill.disabled = !unauthenticatedView && !unlocked;
       treePill.setAttribute('aria-label', unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Tree path locked'));
@@ -488,20 +488,17 @@
       return;
     }
 
-    currentRole = 'leaf';
-    showScreen('leaf');
+    beginWelcome('leaf');
   }
 
   function handleTreeOrb(){
     if(!currentUser.id){
       openPanel('leaf', false);
-      setMode(true);
       return;
     }
 
     if(canTeach){
-      currentRole = 'tree';
-      showScreen('tree');
+      beginWelcome('tree');
       return;
     }
 
@@ -514,10 +511,9 @@
   on('treePill', 'click', () => {
     if(!currentUser.id){
       openPanel('leaf', false);
-      setMode(true);
       return;
     }
-    if(canTeach) openPanel('tree', true);
+    if(canTeach) beginWelcome('tree');
     else showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
   });
 
@@ -526,24 +522,14 @@
     const authenticated = !!currentUser.id;
     setMode(false);
     const toggle = $('authModeToggle');
-    if(toggle) toggle.style.display = authPath === 'tree' ? 'none' : '';
+    if(toggle) toggle.style.display = '';
     const panelTitle = $('panelTitle');
     const panelSub = $('panelSub');
     const finePrint = $('finePrint');
 
-    if(!authenticated){
-      if(panelTitle) panelTitle.textContent = 'Welcome to E-Leaf';
-      if(panelSub) panelSub.textContent = 'Log in to continue, or create an account to begin your E-Leaf journey.';
-      if(finePrint) finePrint.innerHTML = 'New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button>';
-    } else if(authPath === 'tree'){
-      if(panelTitle) panelTitle.textContent = 'Welcome back, Tree';
-      if(panelSub) panelSub.textContent = 'Log in with the same credentials you use for your Leaf account.';
-      if(finePrint) finePrint.innerHTML = 'Your Tree access is part of the same E-Leaf account.';
-    } else if(canTeach){
-      if(panelTitle) panelTitle.textContent = 'Welcome back';
-      if(panelSub) panelSub.textContent = 'Log in to continue as a Leaf.';
-      if(finePrint) finePrint.innerHTML = 'Use the same credentials you use for your Tree account.';
-    }
+    if(panelTitle) panelTitle.textContent = 'Welcome to E-Leaf';
+    if(panelSub) panelSub.textContent = 'Log in to continue, or create an account to begin your E-Leaf journey.';
+    if(finePrint) finePrint.innerHTML = 'New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button>';
 
     $('scrim') && $('scrim').classList.add('show');
     $('panel') && $('panel').classList.add('show');
@@ -562,56 +548,19 @@
   on('backBtn', 'click', closePanel);
   on('scrim', 'click', closePanel);
 
-  const onboardingKey = 'e_leaf_onboarding_seen_v1';
-
-  async function maybeShowOnboarding(){
-    try{
-      const seen = await store.get(onboardingKey);
-      if(seen && seen.value === 'true'){
-        return false;
-      }
-    }catch(err){ }
-
-    if(!currentUser.id){
-      const overlay = $('onboardingOverlay');
-      if(overlay) overlay.classList.remove('show');
-      return false;
-    }
-
-    const overlay = $('onboardingOverlay');
-    if(overlay) overlay.classList.add('show');
-    return true;
-  }
-
-  async function dismissOnboarding(){
-    try{ await store.set(onboardingKey, 'true'); }catch(err){ }
-    const overlay = $('onboardingOverlay');
-    if(overlay) overlay.classList.remove('show');
-  }
-
-  on('onboardingStartBtn', 'click', dismissOnboarding);
-  on('onboardingSkipBtn', 'click', dismissOnboarding);
-  on('onboardingCloseBtn', 'click', dismissOnboarding);
 
   // ---- auth mode toggle ----
   function setMode(signup){
     const panel = $('panel');
-    const treeLogin = authPath === 'tree';
     const effectiveSignup = !!signup;
     if(panel) panel.classList.toggle('mode-signup', effectiveSignup);
     $('modeLogin') && $('modeLogin').classList.toggle('active', !effectiveSignup);
     $('modeSignup') && $('modeSignup').classList.toggle('active', effectiveSignup);
     const panelTitle = $('panelTitle'), panelSub = $('panelSub'), submitBtn = $('submitBtn'),
           passwordLabel = $('passwordLabel'), finePrint = $('finePrint'), toggle = $('authModeToggle');
-    if(toggle) toggle.style.display = treeLogin ? 'none' : '';
+    if(toggle) toggle.style.display = '';
 
-    if(treeLogin){
-      if(panelTitle) panelTitle.textContent = 'Welcome back, Tree';
-      if(panelSub) panelSub.textContent = 'Log in with the same credentials you use for your Leaf account.';
-      if(submitBtn) submitBtn.textContent = 'Log in';
-      if(passwordLabel) passwordLabel.textContent = 'Password';
-      if(finePrint) finePrint.textContent = 'Your Tree access is part of the same E-Leaf account.';
-    }else if(effectiveSignup){
+    if(effectiveSignup){
       if(panelTitle) panelTitle.textContent = 'Create your E-Leaf account';
       if(panelSub) panelSub.textContent = 'Create a new account to begin your E-Leaf journey.';
       if(submitBtn) submitBtn.textContent = 'Create account';
@@ -640,10 +589,14 @@
   // ---- app state ----
   let currentRole = 'leaf'; // active mode, not permission
   let canTeach = false;
+  let authGateActive = true; // Every application entry begins at authentication.
+  let welcomeTimer = null;
+  let welcomeDestination = 'leaf';
   let currentUser = { name: 'Almost Fake', id: null, email: '' };
   let liveContext = null; // { classId, isTeacher }
   let supabaseAuthUnsubscribe = null;
   const progressKey = 'e_leaf_progress_v2';
+  function userProgressKey(){ return currentUser.id ? `${progressKey}:${currentUser.id}` : progressKey; }
   let growthProgress = { learned:false, shared:false, helped:false };
 
   function normalizeDisplayName(user){
@@ -704,6 +657,8 @@
   applyIdentityUI();
 
   async function loadUserState(){
+    canTeach = false;
+    growthProgress = { learned:false, shared:false, helped:false };
     try{
       if(window.ELeafSupabase && window.ELeafSupabase.ready){
         const session = await window.ELeafSupabase.getSession();
@@ -713,6 +668,7 @@
           currentUser.name = normalizeDisplayName(session.user);
           const profile = await window.ELeafSupabase.getProfile(session.user.id);
           if(profile && profile.full_name) currentUser.name = profile.full_name;
+          if(profile && typeof profile.tree_unlocked === 'boolean') canTeach = profile.tree_unlocked;
         } else {
           currentUser.id = null;
           currentUser.email = '';
@@ -727,6 +683,7 @@
               currentUser.name = normalizeDisplayName(session.user);
               const profile = await window.ELeafSupabase.getProfile(session.user.id);
               if(profile && profile.full_name) currentUser.name = profile.full_name;
+              if(profile && typeof profile.tree_unlocked === 'boolean') canTeach = profile.tree_unlocked;
             } else {
               currentUser.id = null;
               currentUser.email = '';
@@ -738,7 +695,7 @@
         }
       }
 
-      const r = await store.get(progressKey);
+      const r = await store.get(userProgressKey());
       if(r && r.value){
         const data = JSON.parse(r.value);
         growthProgress = { ...growthProgress, ...(data.progress || {}) };
@@ -753,7 +710,7 @@
     updateHomePath();
   }
   async function saveUserState(){
-    try{ await store.set(progressKey, JSON.stringify({ name:currentUser.name, canTeach, progress:growthProgress })); }catch(e){}
+    try{ if(currentUser.id) await store.set(userProgressKey(), JSON.stringify({ name:currentUser.name, canTeach, progress:growthProgress })); }catch(e){}
   }
   async function markProgress(key){
     if(!growthProgress[key]){ growthProgress[key] = true; await saveUserState(); }
@@ -768,6 +725,7 @@
   }
   function renderGrowthState(){
     const done = Object.values(growthProgress).filter(Boolean).length;
+    if(currentUser.id) syncGrowthProgressFromActivity();
     const pct = Math.round(done/3*100);
     document.querySelectorAll('.growth-path-pill').forEach(pill => {
       const fill = pill.querySelector('.growth-path-fill');
@@ -909,6 +867,62 @@
     return items;
   }
 
+  function attendanceKey(classId){
+    return currentUser.id ? `attendance:${currentUser.id}:${classId}` : null;
+  }
+
+  async function getUserAttendedClassIds(){
+    if(!currentUser.id) return new Set();
+    const ids = new Set();
+    try{
+      const records = await getAllByPrefix(`attendance:${currentUser.id}:`);
+      records.forEach(r => { if(r && r.classId) ids.add(r.classId); });
+    }catch(e){}
+    return ids;
+  }
+
+  async function hydrateClassAttendance(classes){
+    const attendedIds = await getUserAttendedClassIds();
+    return classes.map(c => ({ ...c, attended: attendedIds.has(c.id) }));
+  }
+
+  let growthSyncInFlight = false;
+  async function syncGrowthProgressFromActivity(){
+    if(!currentUser.id || growthSyncInFlight) return;
+    growthSyncInFlight = true;
+    try{
+      const classes = await hydrateClassAttendance(await getAllByPrefix('class:'));
+      const hasAttendance = classes.some(c => c.attended && c.teacher !== currentUser.name);
+
+      // The demo originally stored attendance directly on the shared class record.
+      // If a user's existing personal progress shows other completed contributions,
+      // migrate that legacy attendance into a user-scoped record once.
+      if(!hasAttendance && !growthProgress.learned){
+        let legacyClass = null;
+        try{
+          const all = await getAllByPrefix('class:');
+          legacyClass = all.find(c => c.demo && c.attended === true);
+        }catch(e){}
+        if(legacyClass && (growthProgress.shared || growthProgress.helped)){
+          const key = attendanceKey(legacyClass.id);
+          if(key) await store.set(key, JSON.stringify({ classId: legacyClass.id, attendedAt: Date.now(), migrated: true }));
+        }
+      }
+
+      const refreshed = await hydrateClassAttendance(await getAllByPrefix('class:'));
+      const learned = refreshed.some(c => c.attended && c.teacher !== currentUser.name);
+      if(learned && !growthProgress.learned){
+        growthProgress.learned = true;
+        await saveUserState();
+        renderGrowthState();
+      }
+    }catch(e){
+      console.warn('E-Leaf: could not reconcile Tree growth activity', e);
+    }finally{
+      growthSyncInFlight = false;
+    }
+  }
+
   async function ensureDemoClass(){
     const demoId = 'c-demo-growth';
     try{
@@ -951,9 +965,9 @@
   }
 
   const demoTrees = [
-    { id:'t1', name:'Willow Peer', initials:'WP', color:'#6b4a34', expertise:['Biology','Environmental Science'], email:'willow.peer@e-leaf.demo', phone:'+91 90000 11111', availability:'Mon–Fri, 4–6pm', bio:'Field biologist turned teacher; loves ecosystem walks and slow, visual explanations.' },
-    { id:'t2', name:'Elias Grove', initials:'EG', color:'#4a3324', expertise:['Mathematics'], email:'elias.grove@e-leaf.demo', phone:'+91 90000 22222', availability:'Tue & Thu, 6–8pm', bio:'Makes linear algebra feel like geometry, not memorization.' },
-    { id:'t3', name:'Nadia Fern', initials:'NF', color:'#8a6b4f', expertise:['Environmental Science','Biology'], email:'nadia.fern@e-leaf.demo', phone:'+91 90000 33333', availability:'Weekends, 10am–1pm', bio:'Runs the "Reading the Forest" note series; big on real-world field notes.' }
+    { id:'t1', name:'Willow Peer', initials:'WP', color:'#6b4a34', expertise:['Biology','Environmental Science'], email:'willow.peer@e-leaf.demo', phone:'+91 90000 11111', availability:'Mon-Fri, 4-6pm', bio:'Field biologist turned teacher; loves ecosystem walks and slow, visual explanations.' },
+    { id:'t2', name:'Elias Grove', initials:'EG', color:'#4a3324', expertise:['Mathematics'], email:'elias.grove@e-leaf.demo', phone:'+91 90000 22222', availability:'Tue & Thu, 6-8pm', bio:'Makes linear algebra feel like geometry, not memorization.' },
+    { id:'t3', name:'Nadia Fern', initials:'NF', color:'#8a6b4f', expertise:['Environmental Science','Biology'], email:'nadia.fern@e-leaf.demo', phone:'+91 90000 33333', availability:'Weekends, 10am-1pm', bio:'Runs the "Reading the Forest" note series; big on real-world field notes.' }
   ];
   const currentTreeExpertise = ['Biology', 'Environmental Science'];
 
@@ -1156,7 +1170,7 @@
   ];
   const leafDiscussions = [
     {title:'Best way to remember the stages of mitosis?', subject:'Biology', author:'Maya Leaf', replies:8, body:'I understand each stage separately, but I keep mixing up the order during revision.'},
-    {title:'Study group for determinants this week?', subject:'Mathematics', author:'Arjun Leaf', replies:5, body:'Looking for 2–3 people to work through determinant problems together.'},
+    {title:'Study group for determinants this week?', subject:'Mathematics', author:'Arjun Leaf', replies:5, body:'Looking for 2-3 people to work through determinant problems together.'},
     {title:'Does anyone have a simple ecosystem case study?', subject:'Environmental Science', author:'Nina Leaf', replies:3, body:'Something small enough to understand before the next class would help.'}
   ];
   function quickLeafNotes(){ try{return JSON.parse(localStorage.getItem('eleaf_quick_notes')||'[]')}catch(e){return []} }
@@ -1169,6 +1183,7 @@
     if(!$('personalGreeting')) return;
     $('personalGreeting').textContent=`${timeGreeting()}, ${(currentUser.name||'Almost').split(' ')[0]}.`;
     let notes=[], classes=[], questions=[]; try{notes=await getAllByPrefix('note:')}catch(e){} try{classes=await getAllByPrefix('class:')}catch(e){} try{questions=await getAllByPrefix('question:')}catch(e){}
+    classes = await hydrateClassAttendance(classes);
     const upcoming=classes.filter(c=>c.status==='scheduled'||c.status==='live').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
     const next=upcoming[0]||classes[0];
     if(next){
@@ -1180,7 +1195,7 @@
     if(recentQuestion){ $('helpQuestion').textContent=`“${recentQuestion.title}”`; $('helpQuestionSubject').textContent=recentQuestion.subject||'Community'; $('helpQuestionMeta').textContent=`Most recent community question${recentQuestion.author?' · '+recentQuestion.author:''}`; }
     const myNotes=notes.filter(n=>n.author===currentUser.name).length;
     const myAnswers=questions.reduce((n,q)=>n+(q.answers||[]).filter(a=>a.author===currentUser.name).length,0);
-    const attended=classes.filter(c=>c.attended).length;
+    const attended=classes.filter(c=>c.attended && c.teacher!==currentUser.name).length;
     $('gardenStats').innerHTML=`<span><strong>${myNotes}</strong> notes planted</span><span><strong>${myAnswers}</strong> questions answered</span><span><strong>${attended}</strong> classes attended</span>`;
     renderSubjectProgressPreview(); renderDiscussionPreview();
     $('waitingCount').textContent=`${[next,recentQuestion,leafDiscussions[0]].filter(Boolean).length} things waiting for you`;
@@ -1232,6 +1247,7 @@
   async function renderTreeHome(){
     const greet=$('treePersonalGreeting'); if(greet) greet.textContent=`${timeGreeting()}, ${(currentUser.name||'Almost').split(' ')[0]}.`;
     let notes=[], classes=[], questions=[]; try{notes=await getAllByPrefix('note:')}catch(e){} try{classes=await getAllByPrefix('class:')}catch(e){} try{questions=await getAllByPrefix('question:')}catch(e){}
+    classes = await hydrateClassAttendance(classes);
     const myNotes=notes.filter(n=>n.author===currentUser.name);
     const myClasses=classes.filter(c=>c.teacher===currentUser.name);
     const taught=myClasses.length;
@@ -1407,7 +1423,7 @@
     if(!r || !r.value) return;
     const q = JSON.parse(r.value);
     q.answers = q.answers || [];
-    q.answers.push({ id:'a' + Date.now(), author: currentUser.name, text, createdAt: Date.now() });
+    q.answers.push({ id:'a' + Date.now(), author: currentUser.name, authorId: currentUser.id, text, createdAt: Date.now() });
     await store.set('question:' + qId, JSON.stringify(q));
     await markProgress('helped');
     showToast('Answer submitted. You helped another learner grow.');
@@ -1487,6 +1503,7 @@
         title: (fd.get('title') || 'Untitled note').trim(),
         description: (fd.get('description') || '').trim(),
         author: currentUser.name,
+        authorId: currentUser.id,
         rating: 0,
         createdAt: Date.now()
       };
@@ -1556,6 +1573,7 @@
 
     let classes = [];
     try{ classes = await getAllByPrefix('class:'); }catch(e){ classes = []; }
+    classes = await hydrateClassAttendance(classes);
     classes = classes.map(c => ({...c, status: normalizeClassStatus(c)}));
     classes.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
@@ -1612,14 +1630,12 @@
     const t = e.target.closest('button');
     if(!t) return;
     if(t.dataset.demoAttend){
-      const r = await store.get('class:' + t.dataset.demoAttend);
-      if(r && r.value){
-        const c = JSON.parse(r.value);
-        c.attended = true;
-        await store.set('class:' + c.id, JSON.stringify(c));
-      }
+      const classId = t.dataset.demoAttend;
+      const key = attendanceKey(classId);
+      if(!key){ showToast('Please log in before attending a class.'); return; }
+      await store.set(key, JSON.stringify({ classId, attendedAt: Date.now() }));
       await markProgress('learned');
-      showToast('Demo class attended  -  Learn step complete.');
+      showToast('Demo class attended. Learn step complete.');
       renderClasses();
       return;
     }
@@ -1963,6 +1979,47 @@
   on('studentsBackHome', 'click', () => showScreen('tree'));
   on('scheduleClassBtn', 'click', openScheduleClassModal);
 
+  // ---- post-auth welcome transition ----
+  function beginWelcome(role){
+    if(!currentUser.id) return;
+    clearTimeout(welcomeTimer);
+    currentRole = role === 'tree' && canTeach ? 'tree' : 'leaf';
+    welcomeDestination = currentRole;
+    const screen = screens.welcome;
+    const title = $('welcomeTitle');
+    const subtext = $('welcomeSubtext');
+    const name = $('welcomeUserName');
+    const eyebrow = $('welcomeEyebrow');
+    const mark = $('welcomeRoleMark');
+    if(name) name.textContent = currentUser.name || 'there';
+    if(eyebrow) eyebrow.textContent = currentRole === 'tree' ? 'WELCOME, TREE' : 'WELCOME, LEAF';
+    if(title) title.textContent = currentRole === 'tree' ? 'Welcome to your Tree Dashboard.' : 'Welcome to your Leaf Dashboard.';
+    if(subtext) subtext.textContent = currentRole === 'tree'
+      ? `${currentUser.name || 'Your'} teaching space is ready.`
+      : `${currentUser.name || 'Your'} learning space is ready.`;
+    if(mark){
+      mark.classList.toggle('tree', currentRole === 'tree');
+      mark.innerHTML = `<svg><use href="${currentRole === 'tree' ? '#ic-tree' : '#ic-leaf'}" xlink:href="${currentRole === 'tree' ? '#ic-tree' : '#ic-leaf'}"/></svg>`;
+    }
+    // Render the destination first so the welcome moment reveals the actual
+    // dashboard beneath it rather than loading the dashboard after the message.
+    const destination = welcomeDestination === 'tree' ? 'tree' : 'leaf';
+    showScreen(destination);
+    screen.classList.remove('welcome-exit');
+    screen.classList.add('active', 'welcome-overlay-active');
+
+    // Give the user a comfortable reading moment, then let the translucent
+    // welcome layer and its blur settle away into the already-rendered dashboard.
+    const readingDelay = 2200;
+    const exitDuration = 850;
+    welcomeTimer = setTimeout(() => {
+      screen.classList.add('welcome-exit');
+      welcomeTimer = setTimeout(() => {
+        screen.classList.remove('active', 'welcome-overlay-active', 'welcome-exit');
+      }, exitDuration);
+    }, readingDelay);
+  }
+
   // ---- login/signup prototype ----
   async function enterAfterAuth(isSignup){
     const treeLogin = authPath === 'tree';
@@ -1986,8 +2043,6 @@
     try {
       const email = (identifier?.value || '').trim();
       const passwordValue = password?.value || '';
-      const targetRole = treeLogin && canTeach ? 'tree' : 'leaf';
-
       if(effectiveSignup){
         const { data, error } = await window.ELeafSupabase.signUp({
           email,
@@ -2007,21 +2062,23 @@
           applyIdentityUI();
           closePanel();
           currentRole = 'leaf';
+          authGateActive = false;
+          updateHomePath();
           showScreen('home');
           await saveUserState();
-          await maybeShowOnboarding();
           return;
         }
 
         currentUser = {
           name: (nameInput?.value || '').trim() || 'Almost Fake',
-          id: data?.user?.id || null,
+          id: null,
           email: email
         };
         applyIdentityUI();
-        closePanel();
         currentRole = 'leaf';
+        authGateActive = true;
         showScreen('home');
+        openPanel('leaf', false);
         showToast('Account created. Please confirm your email, then log in with the same credentials.');
         return;
       }
@@ -2040,15 +2097,15 @@
 
       closePanel();
       currentRole = 'leaf';
+      authGateActive = false;
+      updateHomePath();
       showScreen('home');
       await saveUserState();
-      await maybeShowOnboarding();
     } catch(err) {
       console.error('E-Leaf: failed to authenticate with Supabase', err);
       showToast(mapSupabaseAuthError(err));
     }
   }
-  on('welcomeContinueBtn', 'click', () => showScreen('leaf'));
 
   on('authForm', 'submit', (e) => {
     e.preventDefault();
@@ -2081,9 +2138,11 @@
       }
     }
 
+    clearTimeout(welcomeTimer);
     currentRole = 'leaf';
     liveContext = null;
     currentUser = { name: 'Almost Fake', id: null, email: '' };
+    authGateActive = true;
     applyIdentityUI();
     closePanel();
     showScreen('home');
@@ -2108,12 +2167,12 @@
       : 'Welcome back, Tree.';
 
     // Reset the overlay without using a display:none state. The overlay must
-    // remain mounted so the next Leaf -> Tree transition can always start.
+    // remain mounted so the next Leaf to Tree transition can always start.
     overlay.classList.remove('idle','quick','morph','reveal-text','complete','forward-mirror','reverse','fadeout');
     overlay.classList.add('show');
 
     // The first transformation uses the slower, meaningful morph.
-    // The repeat transformation uses the same rhythm as the working Tree -> Leaf transition.
+    // The repeat transformation uses the same rhythm as the working Tree to Leaf transition.
     if(!firstGrowth) overlay.classList.add('forward-mirror');
 
     if(reduce){
@@ -2151,7 +2210,7 @@
     await savePromise;
 
     // Keep the overlay mounted and reset its visual state while hidden.
-    // Never enter a display:none state: the next Leaf -> Tree transition must
+    // Never enter a display:none state: the next Leaf to Tree transition must
     // start from the same mounted overlay.
     overlay.classList.remove('morph','reveal-text','quick','complete','forward-mirror','reverse','fadeout','show','idle');
     updateHomePath();
@@ -2159,7 +2218,7 @@
   }
   on('miniGrowBtn', 'click', growToTree);
   on('mainGrowBtn', 'click', growToTree);
-  // ---- subtle Tree -> Leaf transition ----
+  // ---- subtle Tree to Leaf transition ----
   async function switchToLeafMode(){
     if(currentRole !== 'tree'){ showScreen('leaf'); return; }
     const overlay = $('growth-overlay');
@@ -2173,7 +2232,7 @@
       overlay.classList.add('morph','reveal-text');
       await new Promise(r=>setTimeout(r,1200));
     }else{
-      // Mirror the repeat Leaf -> Tree transition: show the current role first,
+      // Mirror the repeat Leaf to Tree transition: show the current role first,
       // hold briefly, morph to the destination role, then reveal the message.
       overlay.classList.add('quick');
       await new Promise(r=>setTimeout(r,380));
@@ -2219,16 +2278,22 @@
   }
 
   // ---- initialize ----
+  // Authentication is the only entry point. A restored Supabase session may identify
+  // the returning user, but it must never choose a dashboard or role before login.
   loadUserState().then(() => {
+    authGateActive = true;
+    currentRole = 'leaf';
+    clearTimeout(welcomeTimer);
     updateHomePath();
     renderGrowthState();
     updateMobileNav('home');
-
-    if(!currentUser.id){
-      setTimeout(() => openPanel('leaf', false), 120);
-    }
+    showScreen('home');
+    openPanel('leaf', false);
   }).catch(() => {
-    setTimeout(() => openPanel('leaf', false), 120);
+    authGateActive = true;
+    currentRole = 'leaf';
+    showScreen('home');
+    openPanel('leaf', false);
   });
   seedIfNeeded().catch(err => console.warn('E-Leaf: seeding skipped', err));
 })();

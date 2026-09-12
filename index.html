@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-demo-mode="true">
 <head>
 <meta charset="UTF-8">
@@ -44,7 +44,7 @@
 </svg>
 
 <!-- ===================== HOME SCREEN ===================== -->
-<div class="screen active" id="screen-home">
+<div class="screen" id="screen-home">
   <div class="rising-particles" id="risingParticles"></div>
 
   <div class="home-top">
@@ -60,10 +60,10 @@
 
   <div class="orbs-row">
     <div class="orb-col">
-      <div class="orb leaf" id="leafOrb" tabindex="0" role="button" aria-label="Come as learner">
+      <div class="orb leaf" id="leafOrb" tabindex="0" role="button" aria-label="Come as a Learner">
         <svg class="glyph"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
       </div>
-      <button class="pill-btn" id="leafPill">Come as Learner</button>
+      <button class="pill-btn" id="leafPill">Come as a Learner</button>
       <div class="orb-caption">Learn, share, and help others.</div>
     </div>
 
@@ -72,7 +72,7 @@
         <svg class="glyph"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
         <div class="lock-badge"><svg><use href="#ic-lock" xlink:href="#ic-lock"/></svg></div>
       </div>
-      <button class="pill-btn tree-pill" id="treePill">Grow into Teacher</button>
+      <button class="pill-btn tree-pill" id="treePill">Grow into a Teacher</button>
       <div class="orb-caption">The Tree opens after you have grown.</div>
     </div>
   </div>
@@ -81,60 +81,15 @@
   <div class="home-footer">E-Leaf · Built with warmth for learners &amp; teachers</div>
 </div>
 
-<div class="onboarding-overlay" id="onboardingOverlay" aria-hidden="true">
-  <div class="onboarding-modal">
-    <button class="onboarding-close" id="onboardingCloseBtn" type="button" aria-label="Skip onboarding">Skip</button>
-    <div class="onboarding-badge">Welcome to E-Leaf</div>
-    <h2>Every Tree begins as a Leaf</h2>
-    <p class="onboarding-intro">Learn first. Teach later.</p>
-
-    <div class="onboarding-grid">
-      <div class="onboarding-card">
-        <div class="onboarding-icon">
-          <svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
-        </div>
-        <h3>Learn as a Leaf</h3>
-        <p>Explore classes, save useful notes, ask questions, and build your confidence before moving further.</p>
-      </div>
-
-      <div class="onboarding-card">
-        <div class="onboarding-icon tree-icon">
-          <svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
-        </div>
-        <h3>Grow into a Tree</h3>
-        <p>Complete three quiet steps — learn, share, and help — and your Tree path unlocks whenever you are ready.</p>
-      </div>
-
-      <div class="onboarding-card">
-        <div class="onboarding-icon glow-icon">
-          <svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>
-        </div>
-        <h3>Move between roles</h3>
-        <p>You can always return to Leaf mode or continue as Tree when the time feels right.</p>
-      </div>
-    </div>
-
-    <div class="onboarding-callout">
-      <div class="onboarding-callout-title">How E-Leaf helps</div>
-      <ul>
-        <li>Start as a Leaf to learn, share, and help others grow.</li>
-        <li>Build confidence in the learning space before stepping into teaching.</li>
-        <li>When you are ready, your Tree path opens.</li>
-      </ul>
-    </div>
-
-    <div class="onboarding-actions">
-      <button class="onboarding-secondary" id="onboardingSkipBtn" type="button">Skip for now</button>
-      <button class="onboarding-primary" id="onboardingStartBtn" type="button">Start as a Leaf</button>
-    </div>
-  </div>
-</div>
-
-<div class="scrim" id="scrim"></div>
-<div class="panel" id="panel">
+<div class="scrim show" id="scrim"></div>
+<div class="panel show" id="panel">
   <div class="panel-particles" id="panelParticles" aria-hidden="true"></div>
   <div class="panel-shell">
-    <div class="panel-visual panel-visual-left" aria-hidden="true">
+    <div class="panel-visual panel-visual-left" tabindex="0" role="group" aria-label="About starting as a Leaf">
+      <div class="identity-info-card leaf-info-card">
+        <div class="identity-info-kicker">START AS A LEAF</div>
+        <p>You first join as a Leaf. Learn, take classes, share what you discover, and help others grow.</p>
+      </div>
       <div class="identity-orb leaf">
         <svg class="glyph"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
       </div>
@@ -186,23 +141,29 @@
       </div>
     </div>
 
-    <div class="panel-visual panel-visual-right" aria-hidden="true">
+    <div class="panel-visual panel-visual-right" tabindex="0" role="group" aria-label="About growing into a Tree">
       <div class="identity-orb tree">
         <svg class="glyph"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
       </div>
       <div class="identity-label">Tree</div>
-      <div class="identity-sub">Grow into Teacher</div>
+      <div class="identity-sub">Grow into a Teacher</div>
+      <div class="identity-info-card tree-info-card">
+        <div class="identity-info-kicker">GROW INTO A TREE</div>
+        <p>A Tree is what your Leaf grows into. Learn, share, and help others first. Once you earn it, you can teach - and still return to learning as a Leaf.</p>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="screen" id="screen-welcome">
-  <div class="welcome-shell" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;background:linear-gradient(135deg,#edf7ea 0%,#dfeecb 100%);">
-    <div class="welcome-card" style="width:min(620px,92vw);background:rgba(255,255,255,0.74);border:1px solid rgba(112,146,95,0.22);border-radius:28px;padding:40px 36px;box-shadow:0 20px 50px rgba(63,92,55,0.16);text-align:center;color:#1f3120;backdrop-filter:blur(10px);">
-      <div class="welcome-badge" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;background:var(--moss-deep);color:#fff;font-size:.76rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">E-Leaf</div>
-      <h1 style="margin:18px 0 12px;font-size:clamp(2rem,4vw,3rem);font-family:'Fraunces',serif;font-weight:600;line-height:1.05;">Welcome, <span id="welcomeUserName">Leaf</span></h1>
-      <p style="margin:0 auto;max-width:440px;font-size:1rem;line-height:1.6;color:var(--ink-soft);">Explore your learning space, keep track of what grows next, and step into your journey with clarity.</p>
-      <button id="welcomeContinueBtn" type="button" style="margin-top:24px;padding:14px 22px;border:none;border-radius:999px;background:var(--moss-deep);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 16px 28px rgba(74,110,58,0.25);">Explore your learning space</button>
+  <div class="welcome-shell">
+    <div class="welcome-card" role="status" aria-live="polite">
+      <div class="welcome-role-mark" id="welcomeRoleMark" aria-hidden="true">
+        <svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg>
+      </div>
+      <div class="eyebrow" id="welcomeEyebrow">WELCOME</div>
+      <h1 id="welcomeTitle">Welcome to your Leaf Dashboard.</h1>
+      <p id="welcomeSubtext"><span id="welcomeUserName">Leaf</span>, your learning space is ready.</p>
     </div>
   </div>
 </div>
