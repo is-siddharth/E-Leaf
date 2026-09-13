@@ -435,7 +435,7 @@
       if(unauthenticatedView){
         homeSubText.textContent = 'Welcome to E-Leaf. Log in to continue, or create an account to begin.';
       } else if(unlocked){
-        homeSubText.textContent = 'Welcome back. Choose how you want to continue: Leaf or Tree.';
+        homeSubText.textContent = 'Welcome back. Choose how you want to continue: Learner or Teacher.';
       } else {
         homeSubText.textContent = 'Every Tree begins as a Leaf. Learn first. Teach later.';
       }
@@ -444,29 +444,29 @@
       if(unauthenticatedView){
         homeHintText.textContent = 'Start with login or create an account. Your Tree path unlocks after you begin learning.';
       } else if(unlocked){
-        homeHintText.textContent = 'You can continue as Leaf or step into Tree mode whenever you are ready.';
+        homeHintText.textContent = 'You can continue as a Learner or step into Teacher mode whenever you are ready.';
       } else {
-        homeHintText.textContent = 'Choose Leaf to begin learning. The Tree role unlocks after you complete your growth steps.';
+        homeHintText.textContent = 'Choose Learner to begin learning. Teacher access unlocks after you complete your growth steps.';
       }
     }
 
     tree.classList.toggle('locked', !unlocked);
     tree.classList.toggle('unlocked', unlocked);
-    tree.setAttribute('aria-label', unauthenticatedView ? 'E-Leaf philosophy visual' : (unlocked ? 'Continue as Tree' : 'Tree path locked'));
+    tree.setAttribute('aria-label', unauthenticatedView ? 'E-Leaf philosophy visual' : (unlocked ? 'Continue as a Teacher' : 'Tree path locked'));
 
     const caption = tree.parentElement && tree.parentElement.querySelector('.orb-caption');
     if(caption) caption.textContent = unauthenticatedView ? 'Every Tree begins as a Leaf.' : (unlocked ? 'Your teaching role is ready.' : 'The Tree opens after you have grown.');
 
     if(leafPill){
-      leafPill.textContent = unauthenticatedView ? 'Login' : (unlocked ? 'Continue as Leaf' : 'Start as Leaf');
-      leafPill.setAttribute('aria-label', unauthenticatedView ? 'Login' : (unlocked ? 'Continue as Leaf' : 'Start as Leaf'));
+      leafPill.textContent = unauthenticatedView ? 'Come as a Learner' : 'Continue as a Learner';
+      leafPill.setAttribute('aria-label', unauthenticatedView ? 'Come as a Learner' : 'Continue as a Learner');
     }
 
     if(treePill){
-      treePill.textContent = unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Grow into a Teacher');
+      treePill.textContent = unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as a Teacher' : 'Grow into a Teacher');
       treePill.classList.toggle('is-locked', !unlocked && !unauthenticatedView);
       treePill.disabled = !unauthenticatedView && !unlocked;
-      treePill.setAttribute('aria-label', unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as Tree' : 'Tree path locked'));
+      treePill.setAttribute('aria-label', unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as a Teacher' : 'Tree path locked'));
     }
 
     const lock = tree.querySelector('.lock-badge');
@@ -652,66 +652,104 @@
     return msg;
   }
 
-  // Initialize persistent application chrome only after all role/growth state exists.
-  syncTopNavbars();
-  applyIdentityUI();
-
-  async function loadUserState(){
-    canTeach = false;
-    growthProgress = { learned:false, shared:false, helped:false };
-    try{
-      if(window.ELeafSupabase && window.ELeafSupabase.ready){
-        const session = await window.ELeafSupabase.getSession();
-        if(session && session.user){
-          currentUser.id = session.user.id || null;
-          currentUser.email = session.user.email || '';
-          currentUser.name = normalizeDisplayName(session.user);
-          const profile = await window.ELeafSupabase.getProfile(session.user.id);
-          if(profile && profile.full_name) currentUser.name = profile.full_name;
-          if(profile && typeof profile.tree_unlocked === 'boolean') canTeach = profile.tree_unlocked;
-        } else {
-          currentUser.id = null;
-          currentUser.email = '';
-          currentUser.name = 'Almost Fake';
-        }
-
-        if(!supabaseAuthUnsubscribe){
-          supabaseAuthUnsubscribe = window.ELeafSupabase.listenForAuthChanges(async (event, session) => {
-            if(session && session.user){
-              currentUser.id = session.user.id || null;
-              currentUser.email = session.user.email || '';
-              currentUser.name = normalizeDisplayName(session.user);
-              const profile = await window.ELeafSupabase.getProfile(session.user.id);
-              if(profile && profile.full_name) currentUser.name = profile.full_name;
-              if(profile && typeof profile.tree_unlocked === 'boolean') canTeach = profile.tree_unlocked;
-            } else {
-              currentUser.id = null;
-              currentUser.email = '';
-              currentUser.name = 'Almost Fake';
-            }
-            applyIdentityUI();
-            updateHomePath();
-          });
-        }
-      }
-
-      const r = await store.get(userProgressKey());
-      if(r && r.value){
-        const data = JSON.parse(r.value);
-        growthProgress = { ...growthProgress, ...(data.progress || {}) };
-        canTeach = !!data.canTeach;
-        if(data.name && !currentUser.id) currentUser.name = data.name;
-      }
-    }catch(e){
-      console.warn('E-Leaf: failed to restore persisted auth state', e);
-    }
-
-    applyIdentityUI();
+  function resetUserScopedState(){
+  currentUser = {id:null, name:"Leaf", email:""};
+  canTeach = false;
+  growthProgress = {
+    learned: false,
+    shared: false,
+    helped: false
+  };
+  currentRole = "leaf";
+  if(typeof updateHomePath === "function"){
     updateHomePath();
   }
-  async function saveUserState(){
-    try{ if(currentUser.id) await store.set(userProgressKey(), JSON.stringify({ name:currentUser.name, canTeach, progress:growthProgress })); }catch(e){}
+}
+
+async function loadUserState(){
+    resetUserScopedState();
+
+    let session = null;
+    let profile = null;
+    const sb = window.ELeafSupabase;
+
+    try{
+      session = sb?.ready ? await sb.getSession() : null;
+    }catch(error){
+      console.warn('Unable to restore Supabase session.', error);
+    }
+
+    if(!session?.user){
+      return currentUser;
+    }
+
+    const user = session.user;
+    currentUser = {
+      id: user.id,
+      name: normalizeDisplayName(user),
+      email: user.email || ''
+    };
+
+    // The auth client already resolves the profile. Read it through the same
+    // adapter so the UI never depends on an undefined global Supabase client.
+    try{
+      profile = sb?.getProfile ? await sb.getProfile(user.id) : null;
+      if(profile){
+        currentUser.name = profile.full_name || currentUser.name;
+        currentUser.email = profile.email || currentUser.email;
+        if(typeof profile.tree_unlocked === 'boolean') canTeach = profile.tree_unlocked;
+      }
+    }catch(error){
+      console.warn('Unable to load profile.', error);
+    }
+
+    const savedKey = `e_leaf_progress_v2:${user.id}`;
+    try{
+      const raw = localStorage.getItem(savedKey);
+      if(raw){
+        const saved = JSON.parse(raw);
+        if(saved && typeof saved === 'object'){
+          growthProgress = {
+            learned: saved.learned === true,
+            shared: saved.shared === true,
+            helped: saved.helped === true
+          };
+          if(typeof profile?.tree_unlocked !== 'boolean') canTeach = saved.canTeach === true && saved.learned === true && saved.shared === true && saved.helped === true;
+        }
+      }
+    }catch(error){
+      console.warn('Unable to load user progress.', error);
+    }
+
+    // Reconcile from the actual user-owned activity records. This makes the
+    // Tree path recover correctly even when progress was saved before a reload.
+    try{
+      await syncGrowthProgressFromActivity();
+    }catch(error){
+      console.warn('Unable to reconcile growth progress.', error);
+    }
+
+    return currentUser;
   }
+  async function saveUserState(){
+  const userId = currentUser?.id;
+  if(!userId) return;
+
+  const progressKey = `e_leaf_progress_v2:${userId}`;
+  const payload = {
+    learned: growthProgress.learned === true,
+    shared: growthProgress.shared === true,
+    helped: growthProgress.helped === true,
+    canTeach: canTeach === true,
+    updatedAt: new Date().toISOString()
+  };
+
+  try{
+    localStorage.setItem(progressKey, JSON.stringify(payload));
+  }catch(error){
+    console.warn("Unable to save user progress.", error);
+  }
+}
   async function markProgress(key){
     if(!growthProgress[key]){ growthProgress[key] = true; await saveUserState(); }
     renderGrowthState();
@@ -725,7 +763,6 @@
   }
   function renderGrowthState(){
     const done = Object.values(growthProgress).filter(Boolean).length;
-    if(currentUser.id) syncGrowthProgressFromActivity();
     const pct = Math.round(done/3*100);
     document.querySelectorAll('.growth-path-pill').forEach(pill => {
       const fill = pill.querySelector('.growth-path-fill');
@@ -788,6 +825,13 @@
     const activeEntry = Object.entries(screens).find(([,el]) => el && el.classList.contains('active'));
     if(activeEntry) updateMobileNav(activeEntry[0]);
   }
+
+
+  // Initialize persistent application chrome only after role/growth state exists.
+  // Keeping this after the state declarations prevents a temporal-dead-zone crash
+  // during first page load.
+  syncTopNavbars();
+  applyIdentityUI();
 
 
   // ---- tiny escaping helper (safe to render user-entered text) ----
@@ -881,46 +925,61 @@
     return ids;
   }
 
-  async function hydrateClassAttendance(classes){
-    const attendedIds = await getUserAttendedClassIds();
-    return classes.map(c => ({ ...c, attended: attendedIds.has(c.id) }));
+  async function hydrateClassAttendance(classList){
+    if(!currentUser?.id || !Array.isArray(classList)) return Array.isArray(classList) ? classList : [];
+    let attendedIds = new Set();
+    try{ attendedIds = await getUserAttendedClassIds(); }catch(e){}
+    return classList.map(c => ({ ...c, attended: attendedIds.has(c.id) }));
   }
 
-  let growthSyncInFlight = false;
+  let growthSyncInFlight = null;
   async function syncGrowthProgressFromActivity(){
-    if(!currentUser.id || growthSyncInFlight) return;
-    growthSyncInFlight = true;
-    try{
-      const classes = await hydrateClassAttendance(await getAllByPrefix('class:'));
-      const hasAttendance = classes.some(c => c.attended && c.teacher !== currentUser.name);
+    if(!currentUser?.id) return growthProgress;
+    if(growthSyncInFlight) return growthSyncInFlight;
 
-      // The demo originally stored attendance directly on the shared class record.
-      // If a user's existing personal progress shows other completed contributions,
-      // migrate that legacy attendance into a user-scoped record once.
-      if(!hasAttendance && !growthProgress.learned){
-        let legacyClass = null;
-        try{
-          const all = await getAllByPrefix('class:');
-          legacyClass = all.find(c => c.demo && c.attended === true);
-        }catch(e){}
-        if(legacyClass && (growthProgress.shared || growthProgress.helped)){
-          const key = attendanceKey(legacyClass.id);
-          if(key) await store.set(key, JSON.stringify({ classId: legacyClass.id, attendedAt: Date.now(), migrated: true }));
-        }
-      }
+    growthSyncInFlight = (async () => {
+      let notes = [];
+      let questions = [];
+      let attendedIds = new Set();
+      try{ notes = await getAllByPrefix('note:'); }catch(e){}
+      try{ questions = await getAllByPrefix('question:'); }catch(e){}
+      try{ attendedIds = await getUserAttendedClassIds(); }catch(e){}
 
-      const refreshed = await hydrateClassAttendance(await getAllByPrefix('class:'));
-      const learned = refreshed.some(c => c.attended && c.teacher !== currentUser.name);
-      if(learned && !growthProgress.learned){
-        growthProgress.learned = true;
-        await saveUserState();
-        renderGrowthState();
-      }
-    }catch(e){
-      console.warn('E-Leaf: could not reconcile Tree growth activity', e);
-    }finally{
-      growthSyncInFlight = false;
+      const userId = currentUser.id;
+      const mine = (record) => record && record.authorId === userId;
+      const myNotes = notes.filter(mine);
+      const myAnswers = questions.reduce((count, q) => {
+        // Help is earned by answering another Tree's question, not your own.
+        if(q?.teacherId === userId) return count;
+        return count + (Array.isArray(q?.answers) ? q.answers.filter(a => mine(a)).length : 0);
+      }, 0);
+
+      const next = {
+        learned: growthProgress.learned === true || attendedIds.size > 0,
+        shared: growthProgress.shared === true || myNotes.length > 0,
+        helped: growthProgress.helped === true || myAnswers > 0
+      };
+      const changed = next.learned !== growthProgress.learned || next.shared !== growthProgress.shared || next.helped !== growthProgress.helped;
+      growthProgress = next;
+
+      const allThree = next.learned && next.shared && next.helped;
+      // In the prototype, Tree capability is permanently retained once earned.
+      // A profile-level tree_unlocked value remains authoritative when present.
+      if(allThree) canTeach = true;
+
+      if(changed) await saveUserState();
+      return growthProgress;
+    })();
+
+    try{ return await growthSyncInFlight; }
+    finally{ growthSyncInFlight = null; }
+  }
+
+  async function reconcileGrowthStateAndRender(){
+    if(currentUser?.id){
+      try{ await syncGrowthProgressFromActivity(); }catch(e){}
     }
+    renderGrowthState();
   }
 
   async function ensureDemoClass(){
@@ -1021,7 +1080,7 @@
         <p>${escapeHtml(n.description || '')}</p>
         <div class="note-meta">by ${escapeHtml(n.author || 'You')}</div>
         <div class="stars">${starsHtml(n.rating)}</div>
-        ${n.author !== currentUser.name ? `<button class="note-save-btn ${isNoteSaved(n.id)?'saved':''}" data-save-note="${escapeHtml(n.id)}">${isNoteSaved(n.id)?'Saved ✓':'Save for later'}</button>` : ''}
+        ${n.authorId !== currentUser.id ? `<button class="note-save-btn ${isNoteSaved(n.id)?'saved':''}" data-save-note="${escapeHtml(n.id)}">${isNoteSaved(n.id)?'Saved ✓':'Save for later'}</button>` : ''}
       </div>
     `;
   }
@@ -1050,8 +1109,8 @@
     let notes = [];
     try{ notes = await getAllByPrefix('note:'); }catch(e){ notes = []; }
     const allNotes = notes.slice();
-    if(activeNotesView === 'mine') notes = notes.filter(n => n.author === currentUser.name);
-    if(activeNotesView === 'explore') notes = notes.filter(n => n.author !== currentUser.name);
+    if(activeNotesView === 'mine') notes = notes.filter(n => n.authorId === currentUser.id);
+    if(activeNotesView === 'explore') notes = notes.filter(n => n.authorId !== currentUser.id);
     if(activeNotesView === 'saved'){ const saved = new Set(savedNoteIds()); notes = notes.filter(n => saved.has(n.id)); }
     if(notes.length === 0){
       const emptyCopy = activeNotesView === 'mine' ? 'Your planted notes will live here.' : activeNotesView === 'saved' ? 'Nothing saved yet. Save a useful note from Explore Notes.' : 'No shared notes to explore yet.';
@@ -1114,7 +1173,7 @@
           <div class="profile-preview-body">
             <h4>${escapeHtml(t.name)}</h4>
             <div class="profile-preview-meta">${escapeHtml(t.expertise.slice(0,2).join(' · '))}</div>
-            <div class="profile-preview-link">Know more ></div>
+            <div class="profile-preview-link">Know more</div>
           </div>
         </button>
       `).join('');
@@ -1188,13 +1247,13 @@
     const next=upcoming[0]||classes[0];
     if(next){
       $('homeClassTitle').textContent=next.title||'Upcoming class'; $('homeClassSubject').textContent=next.subject||'General'; $('homeClassWhen').textContent=fmtDate(next.date,next.time); $('homeClassTeacher').textContent=`with ${next.teacher||next.author||'a Tree'}`;
-      const live=next.status==='live'; $('homeClassStatus').classList.toggle('live',live); $('homeClassStatus').innerHTML=`<span class="class-status-dot"></span>${live?'Live now':'Upcoming'}`; $('homeClassPrimaryBtn').textContent=live?'Join now >':'Explore class >'; $('homeClassPrimaryBtn').dataset.classId=next.id||'';
+      const live=next.status==='live'; $('homeClassStatus').classList.toggle('live',live); $('homeClassStatus').innerHTML=`<span class="class-status-dot"></span>${live?'Live now':'Upcoming'}`; $('homeClassPrimaryBtn').textContent=live?'Join now':'Explore class'; $('homeClassPrimaryBtn').dataset.classId=next.id||'';
       $('currentLearningSubject').textContent=`Learning ${next.subject||'something new'}`; $('currentLearningDetail').textContent=next.title||'One idea at a time.';
     }
     const recentQuestion=[...questions].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0]||questions[0];
     if(recentQuestion){ $('helpQuestion').textContent=`“${recentQuestion.title}”`; $('helpQuestionSubject').textContent=recentQuestion.subject||'Community'; $('helpQuestionMeta').textContent=`Most recent community question${recentQuestion.author?' · '+recentQuestion.author:''}`; }
-    const myNotes=notes.filter(n=>n.author===currentUser.name).length;
-    const myAnswers=questions.reduce((n,q)=>n+(q.answers||[]).filter(a=>a.author===currentUser.name).length,0);
+    const myNotes=notes.filter(n=>n.authorId===currentUser.id).length;
+    const myAnswers=questions.reduce((n,q)=>n+(q.answers||[]).filter(a=>a.authorId===currentUser.id).length,0);
     const attended=classes.filter(c=>c.attended && c.teacher!==currentUser.name).length;
     $('gardenStats').innerHTML=`<span><strong>${myNotes}</strong> notes planted</span><span><strong>${myAnswers}</strong> questions answered</span><span><strong>${attended}</strong> classes attended</span>`;
     renderSubjectProgressPreview(); renderDiscussionPreview();
@@ -1248,13 +1307,13 @@
     const greet=$('treePersonalGreeting'); if(greet) greet.textContent=`${timeGreeting()}, ${(currentUser.name||'Almost').split(' ')[0]}.`;
     let notes=[], classes=[], questions=[]; try{notes=await getAllByPrefix('note:')}catch(e){} try{classes=await getAllByPrefix('class:')}catch(e){} try{questions=await getAllByPrefix('question:')}catch(e){}
     classes = await hydrateClassAttendance(classes);
-    const myNotes=notes.filter(n=>n.author===currentUser.name);
-    const myClasses=classes.filter(c=>c.teacher===currentUser.name);
+    const myNotes=notes.filter(n=>n.authorId===currentUser.id);
+    const myClasses=classes.filter(c=>c.teacherId===currentUser.id || (!c.teacherId && c.teacher===currentUser.name));
     const taught=myClasses.length;
     const attended=classes.filter(c=>c.attended && c.teacher!==currentUser.name).length;
     const scheduled=myClasses.filter(c=>c.status==='scheduled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
     const next=scheduled[0];
-    const q=questions.find(x=>!(x.answers||[]).some(a=>a.author===currentUser.name))||questions[0];
+    const q=questions.find(x=>!(x.answers||[]).some(a=>a.authorId===currentUser.id))||questions[0];
     if(next){ $('treeNextClassTitle').textContent=next.title; $('treeNextClassMeta').textContent=`${next.subject} · ${fmtDate(next.date,next.time)} · your class`; $('treeFocusTitle').textContent=`Preparing ${next.title}`; $('treeFocusDetail').textContent='Your next class is already on the calendar.'; }
     else { $('treeNextClassTitle').textContent='What would you like to teach next?'; $('treeNextClassMeta').textContent='Start with a class you already know well, or make space for a new idea.'; $('treeFocusTitle').textContent='Your next teaching step'; $('treeFocusDetail').textContent='Plant an idea, prepare a class, or help a Leaf.'; }
     const qn=treeQuickNote(); if($('treeQuickNote')) $('treeQuickNote').value=qn; if($('treeQuickNoteStatus')) $('treeQuickNoteStatus').textContent=qn?'Saved privately':'Private to you'; const tn=treeTeachingNotes(); const latest=tn[0];
@@ -1379,7 +1438,7 @@
     let questions = [];
     try{ questions = await getAllByPrefix('question:'); }catch(e){ questions = []; }
     questions.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-    if(currentRole === 'tree'){ questions = questions.filter(q => q.teacher === currentUser.name); }
+    if(currentRole === 'tree'){ questions = questions.filter(q => q.teacherId === currentUser.id || (!q.teacherId && q.teacher === currentUser.name)); }
 
     if(questions.length === 0){
       host.innerHTML = currentRole === 'tree'
@@ -1416,18 +1475,21 @@
     if(!form) return;
     e.preventDefault();
     const qId = form.dataset.answerForm;
+    if(!currentUser?.id){ showToast('Please log in before answering.'); return; }
     const input = form.querySelector('textarea[name="answer"], input[name="answer"]');
     const text = ((input && input.value) || '').trim();
     if(!text) return;
     const r = await store.get('question:' + qId);
     if(!r || !r.value) return;
     const q = JSON.parse(r.value);
-    q.answers = q.answers || [];
+    if(q.teacherId === currentUser.id){ showToast('You cannot answer your own question.'); return; }
+    q.answers = Array.isArray(q.answers) ? q.answers : [];
+    if(q.answers.some(a => a.authorId === currentUser.id)){ showToast('You have already answered this question.'); return; }
     q.answers.push({ id:'a' + Date.now(), author: currentUser.name, authorId: currentUser.id, text, createdAt: Date.now() });
     await store.set('question:' + qId, JSON.stringify(q));
     await markProgress('helped');
     showToast('Answer submitted. You helped another learner grow.');
-    renderQuestions();
+    await renderQuestions();
   });
 
   function openPostQuestionModal(){
@@ -1447,6 +1509,7 @@
         title: (fd.get('title') || 'Untitled question').trim(),
         body: (fd.get('body') || '').trim(),
         teacher: currentUser.name,
+        teacherId: currentUser.id,
         createdAt: Date.now(),
         answers: []
       };
@@ -1489,6 +1552,7 @@
   }
 
   function openAddNoteModal(){
+    if(!currentUser?.id){ showToast('Please log in before planting a note.'); return; }
     openModal('Plant a note', `
       <form data-modal-form>
         <div class="field"><label>Subject</label><input name="subject" required placeholder="e.g. Biology"></div>
@@ -1525,7 +1589,7 @@
     const now=new Date(); if(!window._treePlanMonth) window._treePlanMonth=new Date(now.getFullYear(),now.getMonth(),1);
     const month=window._treePlanMonth; const y=month.getFullYear(), m=month.getMonth(); $('planMonthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
     let classes=[]; try{classes=await getAllByPrefix('class:')}catch(e){}
-    const own=classes.filter(c=>c.teacher===currentUser.name);
+    const own=classes.filter(c=>c.teacherId===currentUser.id || (!c.teacherId && c.teacher===currentUser.name));
     const first=new Date(y,m,1); const start=(first.getDay()+6)%7; const days=new Date(y,m+1,0).getDate(); let html='';
     for(let i=0;i<start;i++) html+='<span class="tree-calendar-day empty"></span>';
     for(let d=1;d<=days;d++){ const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const count=own.filter(c=>c.date===ds).length; html+=`<button class="tree-calendar-day${count?' has-class':''}" data-plan-date="${ds}"><span>${d}</span>${count?`<i>${count}</i>`:''}</button>`; }
@@ -1583,7 +1647,7 @@
     }
 
     function actionsFor(c){
-      const isOwnClass = c.teacher === currentUser.name;
+      const isOwnClass = c.teacherId === currentUser.id || (!c.teacherId && c.teacher === currentUser.name);
       if(currentRole === 'tree'){
         if(isOwnClass){
           if(c.status === 'scheduled') return `<button class="pill-btn" style="margin-top:0;background:var(--bark-deep);" data-start-class="${escapeHtml(c.id)}">Start class</button>`;
@@ -1659,6 +1723,9 @@
     if(!r || !r.value) return;
     const c = JSON.parse(r.value);
     if(c.status !== 'live'){ showToast("This class hasn't started yet"); return; }
+    if(!currentUser?.id){ showToast('Please log in before joining a class.'); return; }
+    const key = attendanceKey(c.id);
+    if(key) await store.set(key, JSON.stringify({ classId:c.id, attendedAt:Date.now() }));
     await markProgress('learned');
     openLiveClass(c, false);
   }
@@ -1684,6 +1751,7 @@
         date: fd.get('date') || '',
         time: fd.get('time') || '',
         teacher: currentUser.name,
+        teacherId: currentUser.id,
         status: 'scheduled'
       };
       await store.set('class:' + c.id, JSON.stringify(c));
@@ -1711,6 +1779,7 @@
         date: today.toISOString().slice(0,10),
         time: today.toTimeString().slice(0,5),
         teacher: currentUser.name,
+        teacherId: currentUser.id,
         status: 'live'
       };
       await store.set('class:' + c.id, JSON.stringify(c));
@@ -2022,7 +2091,6 @@
 
   // ---- login/signup prototype ----
   async function enterAfterAuth(isSignup){
-    const treeLogin = authPath === 'tree';
     const effectiveSignup = !!isSignup;
     const nameInput=$('name');
     const identifier=$('emailOrPhone');
@@ -2056,14 +2124,13 @@
         }
 
         if(data?.session){
-          currentUser.id = data.session.user?.id || null;
-          currentUser.email = data.session.user?.email || email;
-          currentUser.name = normalizeDisplayName(data.session.user);
+          await loadUserState();
           applyIdentityUI();
           closePanel();
           currentRole = 'leaf';
           authGateActive = false;
           updateHomePath();
+          await reconcileGrowthStateAndRender();
           showScreen('home');
           await saveUserState();
           return;
@@ -2090,15 +2157,17 @@
       }
 
       if(data?.session){
-        currentUser.id = data.session.user?.id || null;
-        currentUser.email = data.session.user?.email || email;
-        currentUser.name = normalizeDisplayName(data.session.user);
+        // A successful login must hydrate this specific account before the UI
+        // decides what the user has completed. This is what separates a
+        // returning user's path from a brand-new account.
+        await loadUserState();
       }
 
       closePanel();
       currentRole = 'leaf';
       authGateActive = false;
       updateHomePath();
+      await reconcileGrowthStateAndRender();
       showScreen('home');
       await saveUserState();
     } catch(err) {
@@ -2125,6 +2194,7 @@
 
   // ---- logout ----
   async function logout(){
+  resetUserScopedState();
     if(window.ELeafSupabase && window.ELeafSupabase.ready){
       try{
         const { error } = await window.ELeafSupabase.signOut();
@@ -2141,7 +2211,7 @@
     clearTimeout(welcomeTimer);
     currentRole = 'leaf';
     liveContext = null;
-    currentUser = { name: 'Almost Fake', id: null, email: '' };
+    currentUser = { name: 'Leaf', id: null, email: '' };
     authGateActive = true;
     applyIdentityUI();
     closePanel();
@@ -2280,7 +2350,8 @@
   // ---- initialize ----
   // Authentication is the only entry point. A restored Supabase session may identify
   // the returning user, but it must never choose a dashboard or role before login.
-  loadUserState().then(() => {
+  loadUserState().then(async () => {
+    await seedIfNeeded();
     authGateActive = true;
     currentRole = 'leaf';
     clearTimeout(welcomeTimer);
@@ -2295,6 +2366,5 @@
     showScreen('home');
     openPanel('leaf', false);
   });
-  seedIfNeeded().catch(err => console.warn('E-Leaf: seeding skipped', err));
 })();
 

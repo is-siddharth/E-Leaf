@@ -54,8 +54,8 @@
 
   <div class="home-center">
     <div class="eyebrow">WELCOME TO E-LEAF</div>
-    <h1>Start as a learner. Grow into a teacher.</h1>
-    <p class="home-sub" id="homeSubText">Start as a Learner. Grow into a Teacher when you are ready.</p>
+    <h1>Come as a Learner. Grow into a Teacher.</h1>
+    <p class="home-sub" id="homeSubText">Come as a Learner. Grow into a Teacher.</p>
   </div>
 
   <div class="orbs-row">
@@ -104,9 +104,9 @@
         </div>
         <div class="panel-journey-line" aria-label="Choose your path">
           <div class="panel-journey-kicker">Welcome to E-Leaf.</div>
-          <h1 class="panel-journey-title">
-            <span>Come as a Learner.</span>
-            <em>Grow into a Teacher.</em>
+          <h1 class="panel-journey-title" aria-label="Come as a Learner. Grow into a Teacher.">
+            <span class="journey-identity-row"><svg aria-hidden="true"><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>Come as a Learner.</span></span>
+            <span class="journey-identity-row teacher"><svg aria-hidden="true"><use href="#ic-tree" xlink:href="#ic-tree"/></svg><em>Grow into a Teacher.</em></span>
           </h1>
           <p class="panel-journey-copy">A place to learn, share what you discover, and help others grow.</p>
         </div>
@@ -217,7 +217,7 @@
               <div class="class-status-row"><div class="workspace-kicker" style="margin:0">Upcoming class</div><span class="class-status-pill" id="homeClassStatus"><span class="class-status-dot"></span>Upcoming</span></div>
               <h2 class="upcoming-class-title" id="homeClassTitle">Intro to Ecosystems</h2>
               <div class="class-detail-grid"><span><strong id="homeClassSubject">Environmental Science</strong></span><span id="homeClassWhen">Today · 5:30 PM</span><span id="homeClassTeacher">with Willow Tree</span></div>
-              <div class="class-home-actions"><button class="pill-btn" style="margin-top:0" id="homeClassPrimaryBtn">Explore class ></button><button class="class-secondary-btn" id="homeAllClassesBtn">View all classes</button></div>
+              <div class="class-home-actions"><button class="pill-btn" style="margin-top:0" id="homeClassPrimaryBtn">Explore class</button><button class="class-secondary-btn" id="homeAllClassesBtn">View all classes</button></div>
             </div>
 
             <div class="workspace-card next-card">
@@ -225,7 +225,7 @@
               <div class="question-quote" id="helpQuestion">“What actually limits photosynthesis rate indoors?”</div>
               <div class="workspace-meta" id="helpQuestionMeta">Most recent community question</div>
               <span class="tiny-tag" id="helpQuestionSubject">Biology</span><br>
-              <button class="workspace-action" id="helpQuestionBtn">See the question ></button>
+              <button class="workspace-action" id="helpQuestionBtn">See the question</button>
             </div>
 
             <div class="workspace-card">
@@ -233,7 +233,7 @@
               <h3>Learn together, not alone.</h3>
               <div class="workspace-meta">Topic-based conversations for Leaves to compare ideas, collaborate, and work things out together.</div>
               <div class="discussion-preview" id="homeDiscussionPreview"></div>
-              <button class="workspace-action" id="openDiscussionBtn">Open Discussion ></button>
+              <button class="workspace-action" id="openDiscussionBtn">Open Discussion</button>
             </div>
             <div class="workspace-card quick-note-card">
               <div class="workspace-kicker" style="color:#74672e">Quick note</div>
@@ -249,7 +249,7 @@
               <div class="workspace-kicker">Your garden</div>
               <h3>Subject progress</h3>
               <div class="subject-progress-list" id="learningGarden"></div>
-              <button class="workspace-action" id="seeAllProgressBtn">See all progress ></button>
+              <button class="workspace-action" id="seeAllProgressBtn">See all progress</button>
               <div class="garden-contribution-title">Your contribution</div>
               <div class="garden-statline" id="gardenStats" style="margin-top:0;padding-top:0;border-top:0"><span><strong>0</strong> notes planted</span><span><strong>0</strong> questions answered</span><span><strong>0</strong> classes attended</span></div>
             </div>
@@ -423,7 +423,7 @@
               <div class="tree-workspace-kicker">Your upcoming class</div>
               <h2 id="treeNextClassTitle">Nothing on your calendar yet.</h2>
               <div class="tree-workspace-meta" id="treeNextClassMeta">Plan a lesson when you are ready, or keep learning as a Leaf.</div>
-              <div class="tree-action-row"><button class="tree-soft-action" id="treeNextClassBtn">View class ></button><button class="tree-soft-action" id="treeScheduleNextBtn">Plan a lesson</button></div>
+              <div class="tree-action-row"><button class="tree-soft-action" id="treeNextClassBtn">View class</button><button class="tree-soft-action" id="treeScheduleNextBtn">Plan a lesson</button></div>
             </div>
 
             <div class="tree-workspace-card">
@@ -436,14 +436,14 @@
               <div class="tree-workspace-kicker">Plan your next lecture</div>
               <h3>Give your next idea a place on the calendar.</h3>
               <div class="tree-workspace-meta">Plan a lesson around Biology or Environmental Science, keep a date in view, and build your teaching rhythm.</div>
-              <div class="tree-action-row"><button class="tree-soft-action" id="treePlanLessonBtn">Open lesson planner ></button></div>
+              <div class="tree-action-row"><button class="tree-soft-action" id="treePlanLessonBtn">Open lesson planner</button></div>
             </div>
 
             <div class="tree-workspace-card tree-help-card">
               <div class="tree-workspace-kicker">Ask the Leaves</div>
               <h3>Post a question for learners.</h3>
               <div class="tree-workspace-meta">Ask for ideas, examples, misconceptions, or reflections from the Leaf community.</div>
-              <div class="tree-action-row"><button class="tree-soft-action" id="treePostQuestionBtn">Post a question ></button></div>
+              <div class="tree-action-row"><button class="tree-soft-action" id="treePostQuestionBtn">Post a question</button></div>
             </div>
 
             <div class="tree-quick-note">
@@ -468,14 +468,14 @@
               <div class="tree-workspace-kicker">Your classes taken</div>
               <h3>A Tree stays a Leaf, too.</h3>
               <div class="tree-class-list" id="treeTakenClasses"><div class="tree-workspace-meta">Your attended classes will appear here.</div></div>
-              <button class="workspace-action" id="treeSeeClassesBtn">See all classes ></button>
+              <button class="workspace-action" id="treeSeeClassesBtn">See all classes</button>
             </div>
 
             <div class="tree-workspace-card">
               <div class="tree-workspace-kicker">Your notes</div>
               <h3 id="treeOwnNotesTitle">0 notes planted</h3>
               <div class="tree-workspace-meta" id="treeOwnNotesMeta">Review your notes occasionally. A good explanation often gets better with time.</div>
-              <button class="workspace-action" id="treeReviewNotesBtn">Review my notes ></button>
+              <button class="workspace-action" id="treeReviewNotesBtn">Review my notes</button>
             </div>
           </div>
         </div>
@@ -776,7 +776,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg><span id="toastText"></span></div>
 
 <script src="assets/js/config.js"></script>
-<script src="node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
 <script src="assets/js/supabaseClient.js"></script>
 <script src="assets/js/state.js"></script>
 <script src="assets/js/utils.js"></script>

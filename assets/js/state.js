@@ -4,9 +4,9 @@ window.state = {
   authPath: 'leaf',
   currentScreen: 'home',
   growthProgress: {
-    learn: false,
-    share: false,
-    help: false
+    learned: false,
+    shared: false,
+    helped: false
   },
   ui: {
     toastTimer: null,
