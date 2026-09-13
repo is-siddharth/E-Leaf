@@ -2266,7 +2266,7 @@
 
   const panelParticleHost = $('panelParticles');
   if(panelParticleHost){
-    for(let i=0;i<12;i++){
+    for(let i=0;i<18;i++){
       const p = document.createElement('div');
       p.className = 'rp' + (i % 3 === 0 ? ' leafy' : '');
       p.style.left = (Math.random()*100) + '%';
