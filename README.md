@@ -50,7 +50,7 @@ people who already know something.
 
 The intended progression is:
 
-**Learn → Share → Help → Teach**
+**Learn, Share, Help, Teach**
 
 Teaching is therefore something developed through participation rather
 than simply selected from a menu.

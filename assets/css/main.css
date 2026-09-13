@@ -178,10 +178,10 @@
     position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
   }
   .panel-particles .rp{
-    width:3px; height:3px; background:rgba(217,164,65,0.55); box-shadow:0 0 4px 1px rgba(217,164,65,0.3);
+    width:3px; height:3px; background:rgba(217,164,65,0.62); box-shadow:0 0 4px 1px rgba(217,164,65,0.34);
   }
   .panel-particles .rp.leafy{
-    background:rgba(95,140,90,0.6); box-shadow:0 0 4px 1px rgba(95,140,90,0.28);
+    background:rgba(95,140,90,0.66); box-shadow:0 0 4px 1px rgba(95,140,90,0.32);
   }
 
   .panel-shell{
@@ -1577,4 +1577,15 @@
   .panel-journey-copy{ display:none; }
   .panel-journey-line{ margin-bottom:8px; }
   form{ gap:8px; }
+}
+
+/* Concise E-Leaf journey explanation beneath the main welcome line. */
+.home-philosophy{
+  margin:10px 0 0;
+  font-size:0.82rem;
+  line-height:1.5;
+  color:var(--ink-soft);
+}
+@media(max-width:680px){
+  .home-philosophy{ font-size:0.78rem; }
 }

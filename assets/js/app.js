@@ -435,18 +435,20 @@
       if(unauthenticatedView){
         homeSubText.textContent = 'Welcome to E-Leaf. Log in to continue, or create an account to begin.';
       } else if(unlocked){
-        homeSubText.textContent = 'Welcome back. Choose how you want to continue: Learner or Teacher.';
+        homeSubText.textContent = 'Learn, share, and discuss with others. Grow into a Teacher by helping others learn.';
       } else {
-        homeSubText.textContent = 'Every Tree begins as a Leaf. Learn first. Teach later.';
+        homeSubText.textContent = 'Learn, share, and discuss with others. Grow into a Teacher by helping others learn.';
       }
     }
     if(homeHintText){
       if(unauthenticatedView){
         homeHintText.textContent = 'Start with login or create an account. Your Tree path unlocks after you begin learning.';
       } else if(unlocked){
-        homeHintText.textContent = 'You can continue as a Learner or step into Teacher mode whenever you are ready.';
-      } else {
+        homeHintText.textContent = 'You can learn anytime and teach anytime. You have grown into both.';
+      } else if(isFirstVisit){
         homeHintText.textContent = 'Choose Learner to begin learning. Teacher access unlocks after you complete your growth steps.';
+      } else {
+        homeHintText.textContent = 'Keep learning and growing. Teacher access unlocks after you complete your growth steps.';
       }
     }
 
@@ -455,11 +457,11 @@
     tree.setAttribute('aria-label', unauthenticatedView ? 'E-Leaf philosophy visual' : (unlocked ? 'Continue as a Teacher' : 'Tree path locked'));
 
     const caption = tree.parentElement && tree.parentElement.querySelector('.orb-caption');
-    if(caption) caption.textContent = unauthenticatedView ? 'Every Tree begins as a Leaf.' : (unlocked ? 'Your teaching role is ready.' : 'The Tree opens after you have grown.');
+    if(caption) caption.textContent = unauthenticatedView ? 'Every Tree begins as a Leaf.' : (unlocked ? 'Keep teaching to learn.' : 'The tree opens after you have grown.');
 
     if(leafPill){
-      leafPill.textContent = unauthenticatedView ? 'Come as a Learner' : 'Continue as a Learner';
-      leafPill.setAttribute('aria-label', unauthenticatedView ? 'Come as a Learner' : 'Continue as a Learner');
+      leafPill.textContent = unauthenticatedView ? 'Come as a Learner' : (isFirstVisit ? 'Start as a Learner' : 'Continue as a Learner');
+      leafPill.setAttribute('aria-label', unauthenticatedView ? 'Come as a Learner' : (isFirstVisit ? 'Start as a Learner' : 'Continue as a Learner'));
     }
 
     if(treePill){
@@ -482,12 +484,20 @@
     });
   }
 
+  function completeFirstVisit(){
+    if(!currentUser?.id || !isFirstVisit) return;
+    try{ localStorage.setItem(`e_leaf_onboarding_v1:${currentUser.id}`, 'complete'); }catch(error){}
+    isFirstVisit = false;
+  }
+
   function handleLeafSelection(){
     if(!currentUser.id){
       openPanel('leaf', false);
       return;
     }
 
+    completeFirstVisit();
+    updateHomePath();
     beginWelcome('leaf');
   }
 
@@ -498,6 +508,8 @@
     }
 
     if(canTeach){
+      completeFirstVisit();
+      updateHomePath();
       beginWelcome('tree');
       return;
     }
@@ -513,7 +525,7 @@
       openPanel('leaf', false);
       return;
     }
-    if(canTeach) beginWelcome('tree');
+    if(canTeach){ completeFirstVisit(); updateHomePath(); beginWelcome('tree'); }
     else showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
   });
 
@@ -589,6 +601,7 @@
   // ---- app state ----
   let currentRole = 'leaf'; // active mode, not permission
   let canTeach = false;
+  let isFirstVisit = false;
   let authGateActive = true; // Every application entry begins at authentication.
   let welcomeTimer = null;
   let welcomeDestination = 'leaf';
@@ -655,6 +668,7 @@
   function resetUserScopedState(){
   currentUser = {id:null, name:"Leaf", email:""};
   canTeach = false;
+  isFirstVisit = false;
   growthProgress = {
     learned: false,
     shared: false,
@@ -728,6 +742,21 @@ async function loadUserState(){
     }catch(error){
       console.warn('Unable to reconcile growth progress.', error);
     }
+
+    // First-visit wording is intentionally separate from Tree capability.
+    // The marker is completed only after the user actually chooses a path, so
+    // a brand-new account remains a first-time user until they begin.
+    const onboardingKey = `e_leaf_onboarding_v1:${user.id}`;
+    let onboardingComplete = false;
+    try{ onboardingComplete = localStorage.getItem(onboardingKey) === 'complete'; }catch(error){}
+    if(!onboardingComplete){
+      const hasActivity = growthProgress.learned || growthProgress.shared || growthProgress.helped || canTeach;
+      if(hasActivity){
+        onboardingComplete = true;
+        try{ localStorage.setItem(onboardingKey, 'complete'); }catch(error){}
+      }
+    }
+    isFirstVisit = !onboardingComplete;
 
     return currentUser;
   }
@@ -2336,7 +2365,7 @@ async function loadUserState(){
 
   const panelParticleHost = $('panelParticles');
   if(panelParticleHost){
-    for(let i=0;i<18;i++){
+    for(let i=0;i<28;i++){
       const p = document.createElement('div');
       p.className = 'rp' + (i % 3 === 0 ? ' leafy' : '');
       p.style.left = (Math.random()*100) + '%';
