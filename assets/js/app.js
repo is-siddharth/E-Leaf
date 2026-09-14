@@ -423,6 +423,7 @@
     const treePill = $('treePill');
     const leafPill = $('leafPill');
     const homeSubText = $('homeSubText');
+    const homePhilosophyText = $('homePhilosophyText');
     const homeHintText = $('homeHintText');
     const homeScreen = $('screen-home');
     if(!tree) return;
@@ -440,6 +441,18 @@
         homeSubText.textContent = 'Learn, share, and discuss with others. Grow into a Teacher by helping others learn.';
       }
     }
+    if(homePhilosophyText){
+      if(unauthenticatedView){
+        homePhilosophyText.textContent = 'Every Tree begins as a Leaf. Learn first. Teach later.';
+      } else if(unlocked){
+        homePhilosophyText.textContent = 'Keep learning. Keep teaching. Keep growing.';
+      } else if(isFirstVisit){
+        homePhilosophyText.textContent = 'Your journey starts with learning, sharing, and helping others grow.';
+      } else {
+        homePhilosophyText.textContent = 'Keep learning, sharing, and helping others grow.';
+      }
+    }
+
     if(homeHintText){
       if(unauthenticatedView){
         homeHintText.textContent = 'Start with login or create an account. Your Tree path unlocks after you begin learning.';
