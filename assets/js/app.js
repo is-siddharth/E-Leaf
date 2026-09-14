@@ -12,6 +12,10 @@
 
   const screens = {
     home: $('screen-home'),
+    worldSelector: $('screen-world-selector'),
+    individualProfile: $('screen-individual-profile'),
+    individualLeaf: $('screen-individual-leaf'),
+    individualTree: $('screen-individual-tree'),
     welcome: $('screen-welcome'),
     leaf: $('screen-dashboard-leaf'),
     becomeTree: $('screen-become-tree'),
@@ -91,8 +95,12 @@
   function showScreen(name){
     Object.keys(screens).forEach(k => { if(screens[k]) screens[k].classList.remove('active'); });
     if(screens[name]) screens[name].classList.add('active');
-    const appScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
     applyIdentityUI();
+    if(name === 'worldSelector') return;
+    if(name === 'individualProfile'){ renderIndividualProfile(); return; }
+    if(name === 'individualLeaf'){ renderIndividualGrowth(); updateIndividualIdentity(); return; }
+    if(name === 'individualTree'){ updateIndividualIdentity(); return; }
+    const appScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
     if(appScreens.includes(name)) closePanel();
     // Keep role styling consistent across every Leaf/Tree section, including new screens.
     Object.values(screens).forEach(el => { if(el) el.classList.remove('role-tree'); });
@@ -207,6 +215,23 @@
     renderGrowthState();
   }
 
+  function sidebarTreeMarkup(role){
+    const learner = role === 'tree';
+    return `<div class="sidebar-tree-growth ${learner ? 'tree-mode' : ''}" id="sidebarTreeGrowth" tabindex="0" aria-label="${learner ? 'Keep learning as a Leaf' : 'Your path to becoming a Tree'}">
+      <div class="sidebar-tree-art" aria-hidden="true">
+        <svg class="sidebar-tree-outline"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+        <svg class="sidebar-tree-fill"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
+        <span class="sidebar-tree-learner-leaf"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span>
+      </div>
+      <div class="sidebar-tree-copy">
+        <div class="sidebar-tree-kicker">${learner ? 'A TREE STILL GROWS' : 'YOUR TREE'}</div>
+        <strong class="sidebar-tree-next" id="sidebarTreeNext">${learner ? 'Keep learning as a Leaf' : 'Next: take a class'}</strong>
+        <span class="sidebar-tree-status" id="sidebarTreeStatus">${learner ? 'Your learner side is always here' : '0 of 3 steps complete'}</span>
+      </div>
+      <div class="sidebar-tree-details" id="sidebarTreeDetails" aria-hidden="true"></div>
+    </div>`;
+  }
+
   // Keep each role's desktop navigation stable on every section screen.
   // Navigating changes only the main page; the sidebar itself does not change shape.
   function syncDesktopSidebars(screenName){
@@ -222,7 +247,8 @@
       `<button type="button" class="side-link${extra?' '+extra:''}" data-role-action="${action}"><svg><use href="#${icon}" xlink:href="#${icon}"/></svg>${label}</button>`;
 
     if(currentRole==='tree'){
-      // Matches the Tree Home sidebar exactly; no Leaf-only Trees/Growth links are injected.
+      // Tree mode keeps its existing teaching navigation, with the same persistent
+      // visual tree now occupying the unused lower sidebar space.
       side.innerHTML =
         navItem('tree','ic-home','Home',screenName==='tree')+
         actionItem('leafMode','ic-leaf','Leaf Dashboard',`leaf-dashboard-link${screenName==='tree'?' active':''}`)+
@@ -235,9 +261,10 @@
         actionItem('postQuestion','ic-sparkle','Post a Question')+
         navItem('questions','ic-sparkle','Questions',screenName==='questions')+
         navItem('leaderboard','ic-students','Recognition',screenName==='leaderboard')+
-        '<div class="side-quote">“A tree gives shade it will never sit in.”</div>';
+        sidebarTreeMarkup('tree');
     }else{
-      // Matches the Leaf Home sidebar exactly.
+      // Leaf mode keeps the existing navigation. The Tree growth card is replaced
+      // by a persistent visual guide in the lower sidebar.
       side.innerHTML =
         navItem('leaf','ic-home','Home',screenName==='leaf')+
         (canTeach
@@ -250,13 +277,25 @@
         navItem('discussion','ic-students','Discussion',screenName==='discussion')+
         navItem('progress','ic-chalk','Progress',screenName==='progress')+
         navItem('leaderboard','ic-students','Recognition',screenName==='leaderboard')+
-        (canTeach
-          ? ''
-          : navItem('becomeTree','ic-sparkle','Become a Tree',screenName==='becomeTree','highlight'));
+        sidebarTreeMarkup('leaf');
     }
   }
 
   document.addEventListener('click',(e)=>{
+    const sidebarAction=e.target.closest('[data-sidebar-tree-action]');
+    if(sidebarAction){
+      e.preventDefault();
+      const action=sidebarAction.dataset.sidebarTreeAction;
+      if(action==='takeClass'){ showScreen('classes'); return; }
+      if(action==='plantLeafNote'){ openAddNoteModal(); return; }
+      if(action==='helpSomeone'){ showScreen('questions'); return; }
+      if(action==='becomeTree'){ growToTree(); return; }
+    }
+    const sidebarTree=e.target.closest('.sidebar-tree-growth');
+    if(sidebarTree && !sidebarAction && currentRole==='tree'){
+      switchToLeafMode();
+      return;
+    }
     const exitChoice=e.target.closest('[data-exit-choice]');
     if(exitChoice){
       e.preventDefault();
@@ -613,7 +652,11 @@
 
   // ---- app state ----
   let currentRole = 'leaf'; // active mode, not permission
-  let canTeach = false;
+  let currentWorld = 'institutional'; // active product context
+  let canTeach = false; // institutional Tree capability
+  let individualCanTeach = false; // individual/global Tree capability
+  let individualIsFirstVisit = false;
+  let individualGrowthProgress = { learned:false, shared:false, helped:false };
   let isFirstVisit = false;
   let authGateActive = true; // Every application entry begins at authentication.
   let welcomeTimer = null;
@@ -681,6 +724,10 @@
   function resetUserScopedState(){
   currentUser = {id:null, name:"Leaf", email:""};
   canTeach = false;
+  individualCanTeach = false;
+  individualIsFirstVisit = false;
+  individualGrowthProgress = { learned:false, shared:false, helped:false };
+  currentWorld = 'institutional';
   isFirstVisit = false;
   growthProgress = {
     learned: false,
@@ -771,6 +818,36 @@ async function loadUserState(){
     }
     isFirstVisit = !onboardingComplete;
 
+    // Individual World state is intentionally separate from the institutional
+    // learning state. The demo persists it per authenticated user, but it does
+    // not grant or remove institutional Tree capability.
+    const individualProgressKey = `e_leaf_individual_progress_v1:${user.id}`;
+    try{
+      const raw = localStorage.getItem(individualProgressKey);
+      if(raw){
+        const saved = JSON.parse(raw);
+        if(saved && typeof saved === 'object'){
+          individualGrowthProgress = {
+            learned: saved.learned === true,
+            shared: saved.shared === true,
+            helped: saved.helped === true
+          };
+          individualCanTeach = saved.canTeach === true && Object.values(individualGrowthProgress).every(Boolean);
+        }
+      }
+    }catch(error){ console.warn('Unable to load Individual World progress.', error); }
+    const individualOnboardingKey = `e_leaf_individual_onboarding_v1:${user.id}`;
+    let individualOnboardingComplete = false;
+    try{ individualOnboardingComplete = localStorage.getItem(individualOnboardingKey) === 'complete'; }catch(error){}
+    if(!individualOnboardingComplete){
+      const hasIndividualActivity = Object.values(individualGrowthProgress).some(Boolean) || individualCanTeach;
+      if(hasIndividualActivity){
+        individualOnboardingComplete = true;
+        try{ localStorage.setItem(individualOnboardingKey, 'complete'); }catch(error){}
+      }
+    }
+    individualIsFirstVisit = !individualOnboardingComplete;
+
     return currentUser;
   }
   async function saveUserState(){
@@ -792,8 +869,129 @@ async function loadUserState(){
     console.warn("Unable to save user progress.", error);
   }
 }
+  async function saveIndividualState(){
+    const userId = currentUser?.id;
+    if(!userId) return;
+    const key = `e_leaf_individual_progress_v1:${userId}`;
+    const payload = {
+      learned: individualGrowthProgress.learned === true,
+      shared: individualGrowthProgress.shared === true,
+      helped: individualGrowthProgress.helped === true,
+      canTeach: individualCanTeach === true,
+      updatedAt: new Date().toISOString()
+    };
+    try{ localStorage.setItem(key, JSON.stringify(payload)); }catch(error){ console.warn('Unable to save Individual World progress.', error); }
+  }
+  function updateIndividualIdentity(){
+    const name=(currentUser.name||'Almost Fake').trim() || 'Almost Fake';
+    const initials=initialsForName(name);
+    ['individualLeafAvatar','individualTreeAvatar'].forEach(id=>{ const el=$(id); if(el){ el.textContent=initials; el.style.background=currentRole==='tree'?'var(--bark-deep)':'var(--moss-deep)'; } });
+    ['individualLeafName','individualTreeName'].forEach(id=>{ const el=$(id); if(el) el.textContent=name; });
+    const leafSwitch=$('individualLeafModeSwitch'), treeSwitch=$('individualTreeModeSwitch');
+    if(leafSwitch) leafSwitch.style.display=individualCanTeach?'flex':'none';
+    if(treeSwitch) treeSwitch.style.display=individualCanTeach?'flex':'none';
+  }
+
+  function completeIndividualFirstVisit(){
+    if(!currentUser?.id || !individualIsFirstVisit) return;
+    try{ localStorage.setItem(`e_leaf_individual_onboarding_v1:${currentUser.id}`, 'complete'); }catch(error){}
+    individualIsFirstVisit = false;
+  }
+  function renderIndividualProfile(){
+    const copy=$('individualProfileCopy'), philosophy=$('individualProfilePhilosophy');
+    const leafTitle=$('individualLeafChoiceTitle'), leafSub=$('individualLeafChoiceSub');
+    const treeTitle=$('individualTreeChoiceTitle'), treeSub=$('individualTreeChoiceSub'), treeAction=$('individualTreeChoiceAction');
+    const lock=$('individualTreeLock'), treeCard=$('individualTreeChoice');
+    if(copy) copy.textContent = individualCanTeach
+      ? 'You can learn as a Learner or guide others as a Teacher. Choose where you want to begin today.'
+      : individualIsFirstVisit
+        ? 'Begin as a Learner. Learn from the community, discover what interests you, and grow from there.'
+        : 'Keep learning from the community. Your path toward becoming a Teacher continues whenever you are ready.';
+    if(leafTitle) leafTitle.textContent = individualIsFirstVisit ? 'Start as a Learner' : 'Continue as a Learner';
+    if(leafSub) leafSub.textContent = individualIsFirstVisit ? 'Begin with curiosity. Learn from the community and build your own path.' : 'Keep exploring, learning, and following the ideas that matter to you.';
+    if(treeTitle) treeTitle.textContent = individualCanTeach ? 'Continue as a Teacher' : 'Grow into a Teacher';
+    if(treeSub) treeSub.textContent = individualCanTeach ? 'Share what you know while staying part of the wider learning community.' : 'Teaching opens after you have grown through the E-Leaf community.';
+    if(treeAction) treeAction.textContent = individualCanTeach ? 'Enter as Teacher' : 'Path to Teacher';
+    if(lock) lock.style.display = individualCanTeach ? 'none' : '';
+    if(treeCard){ treeCard.classList.toggle('locked', !individualCanTeach); treeCard.disabled = !individualCanTeach; }
+    if(philosophy) philosophy.textContent = individualCanTeach
+      ? 'Learn from the community. Become part of the community. Guide the community.'
+      : individualIsFirstVisit
+        ? 'Learn from the community. Become part of the community. Grow toward guiding it.'
+        : 'Keep learning. Keep participating. Keep growing toward guiding others.';
+  }
+  function renderIndividualGrowth(){
+    const done=Object.values(individualGrowthProgress).filter(Boolean).length;
+    const pct=Math.round(done/3*100);
+    const fill=$('individualGrowthFill'), count=$('individualGrowthCount');
+    if(fill) fill.style.width=pct+'%';
+    if(count) count.textContent=`${done} of 3 complete`;
+    [['learn','indStepLearn'],['share','indStepShare'],['help','indStepHelp']].forEach(([key,id])=>{
+      const el=$(id); if(!el) return; el.classList.toggle('done', !!individualGrowthProgress[key]); el.textContent=individualGrowthProgress[key] ? '✓' : el.textContent;
+    });
+    document.querySelectorAll('[data-individual-growth]').forEach(btn=>{
+      const key=btn.dataset.individualGrowth;
+      btn.disabled=!!individualGrowthProgress[key] || individualCanTeach;
+      btn.textContent=individualGrowthProgress[key] ? 'Done' : 'Try';
+    });
+    const cta=$('individualGrowBtn');
+    if(cta){ const ready=done===3; cta.disabled=!ready; cta.textContent=individualCanTeach?'Teacher access unlocked':ready?'Become a Teacher':'Keep growing'; }
+    const summary=$('individualGrowthSummary');
+    if(summary) summary.textContent=individualCanTeach ? 'You have grown into a Teacher. You can still return to learning anytime.' : done===3 ? 'Your demo path is complete. You can now try the Teacher world.' : 'Grow through the community before you teach it.';
+  }
+  async function completeIndividualGrowthStep(key){
+    if(!['learned','shared','helped'].includes(key) || individualGrowthProgress[key]) return;
+    individualGrowthProgress[key]=true;
+    await saveIndividualState();
+    renderIndividualGrowth();
+    showToast(key==='learned' ? 'Demo session attended.' : key==='shared' ? 'Your contribution was added to My Library.' : 'You joined a useful community conversation.');
+  }
+  async function individualGrowToTree(){
+    if(!currentUser.id) return;
+    const done=Object.values(individualGrowthProgress).filter(Boolean).length;
+    if(done<3){ showToast('Complete the three Individual growth steps first.'); return; }
+    if(individualCanTeach){ currentRole='tree'; showScreen('individualTree'); return; }
+    const overlay=$('growth-overlay');
+    if(!overlay){ individualCanTeach=true; currentRole='tree'; await saveIndividualState(); showScreen('individualTree'); return; }
+    const reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const line=overlay.querySelector('.grow-line'); if(line) line.textContent='You’ve grown into a Teacher. Keep learning, keep guiding.';
+    overlay.classList.remove('idle','quick','morph','reveal-text','complete','forward-mirror','reverse','fadeout','show'); overlay.classList.add('show','forward-mirror');
+    if(reduce){ overlay.classList.add('morph','reveal-text'); await new Promise(r=>setTimeout(r,900)); }
+    else { overlay.classList.add('quick'); await new Promise(r=>setTimeout(r,380)); overlay.classList.add('morph'); await new Promise(r=>setTimeout(r,760)); overlay.classList.add('reveal-text'); await new Promise(r=>setTimeout(r,520)); }
+    overlay.classList.add('fadeout');
+    individualCanTeach=true; currentRole='tree'; completeIndividualFirstVisit();
+    const savePromise=saveIndividualState();
+    showScreen('individualTree'); overlay.classList.remove('show');
+    await new Promise(r=>setTimeout(r,580)); await savePromise;
+    overlay.classList.remove('morph','reveal-text','quick','forward-mirror','fadeout');
+    renderIndividualProfile(); renderIndividualGrowth();
+  }
+  async function individualSwitchToLeaf(){
+    if(currentRole!=='tree'){ currentRole='leaf'; showScreen('individualLeaf'); return; }
+    const overlay=$('growth-overlay');
+    if(!overlay){ currentRole='leaf'; showScreen('individualLeaf'); return; }
+    const reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const line=overlay.querySelector('.grow-line'); if(line) line.textContent='Time to learn, Learner.';
+    overlay.classList.remove('quick','morph','reveal-text','reverse','fadeout','show'); overlay.classList.add('reverse','show');
+    if(reduce){ overlay.classList.add('morph','reveal-text'); await new Promise(r=>setTimeout(r,900)); }
+    else { overlay.classList.add('quick'); await new Promise(r=>setTimeout(r,380)); overlay.classList.add('morph'); await new Promise(r=>setTimeout(r,760)); overlay.classList.add('reveal-text'); await new Promise(r=>setTimeout(r,520)); }
+    currentRole='leaf'; showScreen('individualLeaf'); overlay.classList.remove('show','morph','reveal-text','quick','reverse');
+  }
+
+  // ---- growth / role state ----
   async function markProgress(key){
-    if(!growthProgress[key]){ growthProgress[key] = true; await saveUserState(); }
+    const wasComplete = growthProgress[key] === true;
+    if(!wasComplete){
+      growthProgress[key] = true;
+      await saveUserState();
+      const done = Object.values(growthProgress).filter(Boolean).length;
+      const remaining = 3 - done;
+      if(remaining > 0){
+        showToast(`You completed this step. ${remaining} more step${remaining === 1 ? '' : 's'} to go.`);
+      }else{
+        showToast('Your Tree is fully grown. You can now become a Tree.');
+      }
+    }
     renderGrowthState();
   }
   function growthSteps(){
@@ -803,6 +1001,45 @@ async function loadUserState(){
       { key:'helped', title:'Help another learner', sub:growthProgress.helped ? 'Completed  -  you answered a question.' : 'Answer at least one question from a Tree.' }
     ];
   }
+  function renderSidebarTree(done){
+    document.querySelectorAll('.sidebar-tree-growth').forEach(widget => {
+      const isTreeMode = widget.classList.contains('tree-mode');
+      const pct = isTreeMode ? 100 : Math.round((done / 3) * 100);
+      const fill = widget.querySelector('.sidebar-tree-fill');
+      if(fill) fill.style.clipPath = `inset(${100 - pct}% 0 0 0)`;
+      widget.classList.toggle('fully-grown', !isTreeMode && done === 3);
+
+      const next = widget.querySelector('.sidebar-tree-next');
+      const status = widget.querySelector('.sidebar-tree-status');
+      if(isTreeMode){
+        if(next) next.textContent = 'Keep learning as a Leaf';
+        if(status) status.textContent = 'A Tree still grows';
+      }else{
+        const steps = [
+          'Next: take a class',
+          'Next: share something useful',
+          'Next: help someone learn'
+        ];
+        if(next) next.textContent = done === 3 ? 'Your Tree is fully grown' : steps[done];
+        if(status) status.textContent = done === 3 ? 'You can now become a Tree' : `${done} of 3 steps complete`;
+      }
+
+      const details = widget.querySelector('.sidebar-tree-details');
+      if(details){
+        const items = [
+          { key:'learned', label:'Take a class', action:'takeClass' },
+          { key:'shared', label:'Share something useful', action:'plantLeafNote' },
+          { key:'helped', label:'Help someone learn', action:'helpSomeone' }
+        ];
+        details.innerHTML = `<div class="sidebar-tree-detail-title">Your path</div>` + items.map(item => `
+          <button type="button" class="sidebar-tree-step ${growthProgress[item.key] ? 'complete' : ''}" data-sidebar-tree-action="${item.action}">
+            <span class="sidebar-tree-step-mark">${growthProgress[item.key] ? '<svg><use href="#ic-check" xlink:href="#ic-check"/></svg>' : ''}</span>
+            <span>${item.label}</span>
+          </button>`).join('') + (done === 3 && !isTreeMode ? `<button type="button" class="sidebar-tree-become" data-sidebar-tree-action="becomeTree"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Become a Tree</button>` : '');
+      }
+    });
+  }
+
   function renderGrowthState(){
     const done = Object.values(growthProgress).filter(Boolean).length;
     const pct = Math.round(done/3*100);
@@ -825,6 +1062,7 @@ async function loadUserState(){
     if(btList) btList.innerHTML = html;
     ['leafProgressFill','btProgressFill'].forEach(id => { const el=$(id); if(el) el.style.width=pct+'%'; });
     ['leafProgressLabel','btProgressLabel'].forEach(id => { const el=$(id); if(el) el.textContent=`${done} of 3 complete`; });
+    renderSidebarTree(done);
     const ready = done === 3;
     ['miniGrowBtn','mainGrowBtn'].forEach(id => {
       const el=$(id);
@@ -838,18 +1076,6 @@ async function loadUserState(){
           ? '<svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>I’m ready to teach'
           : '<svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Keep growing';
     });
-    const sideBtn = $('sideBecomeTree');
-    if(sideBtn){
-      sideBtn.classList.toggle('tree-dashboard-link', canTeach);
-      sideBtn.classList.toggle('highlight', !canTeach);
-      sideBtn.classList.remove('active');
-      if(canTeach && screens.leaf && screens.leaf.classList.contains('active')) sideBtn.classList.add('active');
-      sideBtn.innerHTML = canTeach
-        ? '<svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg><span>Tree Dashboard</span>'
-        : '<svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg><span>Become a Tree</span>';
-      if(canTeach){ sideBtn.dataset.roleAction='treeMode'; delete sideBtn.dataset.roleNav; }
-      else { sideBtn.dataset.roleNav='becomeTree'; delete sideBtn.dataset.roleAction; }
-    }
     const summary=$('growthSummary');
     if(summary){
       summary.innerHTML = canTeach
@@ -2094,7 +2320,8 @@ async function loadUserState(){
   function beginWelcome(role){
     if(!currentUser.id) return;
     clearTimeout(welcomeTimer);
-    currentRole = role === 'tree' && canTeach ? 'tree' : 'leaf';
+    const treeAllowed = currentWorld === 'individual' ? individualCanTeach : canTeach;
+    currentRole = role === 'tree' && treeAllowed ? 'tree' : 'leaf';
     welcomeDestination = currentRole;
     const screen = screens.welcome;
     const title = $('welcomeTitle');
@@ -2102,19 +2329,24 @@ async function loadUserState(){
     const name = $('welcomeUserName');
     const eyebrow = $('welcomeEyebrow');
     const mark = $('welcomeRoleMark');
+    const individualWelcome = currentWorld === 'individual';
     if(name) name.textContent = currentUser.name || 'there';
-    if(eyebrow) eyebrow.textContent = currentRole === 'tree' ? 'WELCOME, TREE' : 'WELCOME, LEAF';
-    if(title) title.textContent = currentRole === 'tree' ? 'Welcome to your Tree Dashboard.' : 'Welcome to your Leaf Dashboard.';
-    if(subtext) subtext.textContent = currentRole === 'tree'
-      ? `${currentUser.name || 'Your'} teaching space is ready.`
-      : `${currentUser.name || 'Your'} learning space is ready.`;
+    if(eyebrow) eyebrow.textContent = individualWelcome ? (currentRole === 'tree' ? 'WELCOME, TEACHER' : 'WELCOME, LEARNER') : (currentRole === 'tree' ? 'WELCOME, TREE' : 'WELCOME, LEAF');
+    if(title) title.textContent = individualWelcome
+      ? (currentRole === 'tree' ? 'Welcome to your Individual teaching space.' : 'Welcome to your Individual learning space.')
+      : (currentRole === 'tree' ? 'Welcome to your Tree Dashboard.' : 'Welcome to your Leaf Dashboard.');
+    if(subtext) subtext.textContent = individualWelcome
+      ? (currentRole === 'tree' ? 'Share what you know while staying part of the wider community.' : 'Learn from the community, follow your curiosity, and keep discovering.')
+      : (currentRole === 'tree' ? `${currentUser.name || 'Your'} teaching space is ready.` : `${currentUser.name || 'Your'} learning space is ready.`);
     if(mark){
       mark.classList.toggle('tree', currentRole === 'tree');
       mark.innerHTML = `<svg><use href="${currentRole === 'tree' ? '#ic-tree' : '#ic-leaf'}" xlink:href="${currentRole === 'tree' ? '#ic-tree' : '#ic-leaf'}"/></svg>`;
     }
     // Render the destination first so the welcome moment reveals the actual
     // dashboard beneath it rather than loading the dashboard after the message.
-    const destination = welcomeDestination === 'tree' ? 'tree' : 'leaf';
+    const destination = currentWorld === 'individual'
+      ? (welcomeDestination === 'tree' ? 'individualTree' : 'individualLeaf')
+      : (welcomeDestination === 'tree' ? 'tree' : 'leaf');
     showScreen(destination);
     screen.classList.remove('welcome-exit');
     screen.classList.add('active', 'welcome-overlay-active');
@@ -2173,7 +2405,8 @@ async function loadUserState(){
           authGateActive = false;
           updateHomePath();
           await reconcileGrowthStateAndRender();
-          showScreen('home');
+          currentWorld = 'institutional';
+          showScreen('worldSelector');
           await saveUserState();
           return;
         }
@@ -2210,7 +2443,8 @@ async function loadUserState(){
       authGateActive = false;
       updateHomePath();
       await reconcileGrowthStateAndRender();
-      showScreen('home');
+      currentWorld = 'institutional';
+      showScreen('worldSelector');
       await saveUserState();
     } catch(err) {
       console.error('E-Leaf: failed to authenticate with Supabase', err);
@@ -2233,6 +2467,38 @@ async function loadUserState(){
 
   // ---- become a tree navigation ----
 
+
+  // ---- world selection / Individual entry ----
+  function enterWorld(world){
+    if(!currentUser?.id) return;
+    currentWorld = world === 'individual' ? 'individual' : 'institutional';
+    if(currentWorld === 'individual'){
+      currentRole='leaf';
+      renderIndividualProfile();
+      showScreen('individualProfile');
+    }else{
+      currentRole='leaf';
+      updateHomePath();
+      showScreen('home');
+    }
+  }
+  on('enterIndividualWorld','click',()=>enterWorld('individual'));
+  on('enterInstitutionalWorld','click',()=>enterWorld('institutional'));
+  on('individualBackToWorld','click',()=>showScreen('worldSelector'));
+  on('individualLeafChoice','click',()=>{ completeIndividualFirstVisit(); currentRole='leaf'; beginWelcome('leaf'); });
+  on('individualTreeChoice','click',()=>{ if(individualCanTeach){ completeIndividualFirstVisit(); currentRole='tree'; beginWelcome('tree'); } else { showToast('Grow through the Individual community before becoming a Teacher.'); } });
+  on('individualGrowBtn','click',individualGrowToTree);
+  on('individualLeafModeSwitch','click',()=>individualGrowToTree());
+  on('individualTreeModeSwitch','click',individualSwitchToLeaf);
+  document.addEventListener('click',(e)=>{
+    const b=e.target.closest('[data-individual-world-switch]'); if(b){ showScreen('worldSelector'); return; }
+    const p=e.target.closest('[data-individual-profile]'); if(p){ showScreen('individualProfile'); return; }
+    const nav=e.target.closest('[data-individual-nav]'); if(nav){ const target=nav.dataset.individualNav; if(target==='home') showScreen('individualLeaf'); else showToast(`${target.charAt(0).toUpperCase()+target.slice(1)} is part of the Individual World demo.`); return; }
+    const tnav=e.target.closest('[data-individual-tree-nav]'); if(tnav){ const target=tnav.dataset.individualTreeNav; if(target==='home') showScreen('individualTree'); else showToast(`${target.charAt(0).toUpperCase()+target.slice(1)} is part of the Individual World demo.`); return; }
+    const demo=e.target.closest('[data-individual-demo]'); if(demo){ showToast(demo.dataset.individualDemo==='explore'?'Explore more subjects and ideas in the Individual World.':'This Individual World demo keeps the focus on learning and community.'); return; }
+    const demoTree=e.target.closest('[data-individual-tree-action]'); if(demoTree){ showToast('This teaching action is available in the Individual World demo.'); return; }
+    const growth=e.target.closest('[data-individual-growth]'); if(growth){ const map={learn:'learned',share:'shared',help:'helped'}; completeIndividualGrowthStep(map[growth.dataset.individualGrowth]); return; }
+  });
 
   // ---- logout ----
   async function logout(){
@@ -2264,6 +2530,8 @@ async function loadUserState(){
   on('logoutBtnLeaf', 'click', openExitModal);
   on('logoutBtnBT', 'click', openExitModal);
   on('logoutBtnTree', 'click', openExitModal);
+  on('individualLeafLogout', 'click', openExitModal);
+  on('individualTreeLogout', 'click', openExitModal);
 
   // ---- growth transition ----
   async function growToTree(){

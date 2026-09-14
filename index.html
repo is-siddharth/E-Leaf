@@ -26,6 +26,16 @@
     <circle cx="43" cy="23" r="2" fill="#a9c9a0"/>
     <path d="M31 38v12M35 42l-3 3M29 46l3 3" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
   </symbol>
+  <symbol id="ic-tree-growth" viewBox="0 0 64 72">
+    <circle cx="24" cy="26" r="12" fill="currentColor"/>
+    <circle cx="40" cy="26" r="12" fill="currentColor"/>
+    <circle cx="32" cy="18" r="13" fill="currentColor"/>
+    <rect x="28" y="34" width="8" height="28" rx="2" fill="currentColor"/>
+    <circle cx="22" cy="20" r="2.3" fill="#a9c9a0"/>
+    <circle cx="34" cy="13" r="2.1" fill="#a9c9a0"/>
+    <circle cx="43" cy="23" r="2" fill="#a9c9a0"/>
+    <path d="M31 38v22M35 44l-3 3M29 50l3 3" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  </symbol>
   <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
   <symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   <symbol id="ic-note" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
@@ -169,6 +179,177 @@
   </div>
 </div>
 
+<!-- ===================== WORLD SELECTOR ===================== -->
+<div class="screen" id="screen-world-selector">
+  <div class="world-shell">
+    <div class="world-brand"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></div>
+    <div class="world-intro">
+      <div class="eyebrow">YOUR E-LEAF WORLD</div>
+      <h1>Where would you like to learn?</h1>
+      <p>Your account can be part of the wider E-Leaf community and of an institution. Choose where you want to go today.</p>
+    </div>
+    <div class="world-grid">
+      <button type="button" class="world-card world-card-individual" id="enterIndividualWorld">
+        <span class="world-card-mark"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span>
+        <span class="world-card-kicker">INDIVIDUAL</span>
+        <strong>Learn with the world.</strong>
+        <span>Explore what interests you, learn from Trees everywhere, build your own library, and grow with the community.</span>
+        <span class="world-card-action">Enter Individual</span>
+      </button>
+      <button type="button" class="world-card world-card-institutional" id="enterInstitutionalWorld">
+        <span class="world-card-mark"><svg><use href="#ic-class" xlink:href="#ic-class"/></svg></span>
+        <span class="world-card-kicker">INSTITUTIONAL</span>
+        <strong>Learn with your institution.</strong>
+        <span>Follow your college or institution's curriculum, classes, subjects, Trees, and learning activities.</span>
+        <span class="world-card-action">Enter Institution</span>
+      </button>
+    </div>
+    <p class="world-footnote">Your E-Leaf identity stays the same across both worlds.</p>
+  </div>
+</div>
+
+<!-- ===================== INDIVIDUAL PROFILE / ROLE ===================== -->
+<div class="screen" id="screen-individual-profile">
+  <div class="individual-profile-shell">
+    <div class="individual-brand"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span><span class="world-badge">INDIVIDUAL</span></div>
+    <div class="individual-profile-intro">
+      <div class="eyebrow">YOUR INDIVIDUAL SPACE</div>
+      <h1>Choose how you want to enter.</h1>
+      <p id="individualProfileCopy">Begin as a Learner. Learn from the community, discover what interests you, and grow from there.</p>
+    </div>
+    <div class="individual-role-grid">
+      <button type="button" class="individual-role-card leaf-role" id="individualLeafChoice">
+        <span class="individual-role-icon"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span>
+        <span class="world-card-kicker">LEARNER</span>
+        <strong id="individualLeafChoiceTitle">Start as a Learner</strong>
+        <span id="individualLeafChoiceSub">Begin with curiosity. Learn from the community and build your own path.</span>
+        <span class="world-card-action">Enter as Learner</span>
+      </button>
+      <button type="button" class="individual-role-card tree-role" id="individualTreeChoice">
+        <span class="individual-role-icon"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg><span class="role-lock" id="individualTreeLock"><svg><use href="#ic-lock" xlink:href="#ic-lock"/></svg></span></span>
+        <span class="world-card-kicker">TEACHER</span>
+        <strong id="individualTreeChoiceTitle">Grow into a Teacher</strong>
+        <span id="individualTreeChoiceSub">Teaching opens after you have grown through the E-Leaf community.</span>
+        <span class="world-card-action" id="individualTreeChoiceAction">Path to Teacher</span>
+      </button>
+    </div>
+    <p class="individual-profile-philosophy" id="individualProfilePhilosophy">Learn from the community. Become part of the community. Guide the community.</p>
+    <button type="button" class="world-back-btn" id="individualBackToWorld">Choose another world</button>
+  </div>
+</div>
+
+<!-- ===================== INDIVIDUAL LEAF ===================== -->
+<div class="screen individual-world-screen" id="screen-individual-leaf">
+  <div class="individual-app">
+    <header class="individual-topbar">
+      <button class="individual-logo" id="individualLeafLogo"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg><span>E-Leaf</span></button>
+      <nav class="individual-main-nav" aria-label="Individual navigation">
+        <button class="individual-nav-link active" data-individual-nav="home">Home</button>
+        <button class="individual-nav-link" data-individual-nav="explore">Explore</button>
+        <button class="individual-nav-link" data-individual-nav="learn">Learn</button>
+        <button class="individual-nav-link" data-individual-nav="library">Library</button>
+        <button class="individual-nav-link" data-individual-nav="community">Community</button>
+        <button class="individual-nav-link" data-individual-nav="trees">Trees</button>
+        <button class="individual-nav-link" data-individual-nav="journey">Journey</button>
+      </nav>
+      <div class="individual-top-actions">
+        <button type="button" class="individual-world-switch" data-individual-world-switch>Individual</button>
+        <button type="button" class="individual-profile-chip" data-individual-profile><span class="avatar" id="individualLeafAvatar">AF</span><span class="individual-profile-name" id="individualLeafName">Almost Fake</span></button>
+        <button type="button" class="individual-logout" id="individualLeafLogout" title="Log out" aria-label="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </header>
+    <main class="individual-main">
+      <div class="individual-watermark"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></div>
+      <section class="individual-hero">
+        <div class="eyebrow">INDIVIDUAL · LEARNER</div>
+        <h1 id="individualLeafGreeting">What are you curious about?</h1>
+        <p id="individualLeafHeroCopy">Learn from the community, follow what interests you, and keep discovering.</p>
+        <div class="individual-search" role="search"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg><input id="individualSearchInput" placeholder="Search subjects, ideas, Trees, or learning..." aria-label="Search the Individual world"></div>
+      </section>
+      <section class="individual-content-grid">
+        <div class="individual-primary-column">
+          <div class="individual-section-heading"><div><span class="eyebrow">KEEP GOING</span><h2>Continue your learning.</h2></div><button type="button" class="individual-text-action" data-individual-nav="learn">See all</button></div>
+          <div class="individual-learning-card">
+            <div><span class="individual-card-kicker">CURRENTLY EXPLORING</span><h3>Introduction to Astronomy</h3><p>Stars, galaxies, and the questions that keep looking back at us.</p><div class="individual-progress-line"><span style="width:42%"></span></div><small>42% explored</small></div>
+            <button type="button" class="individual-primary-action" data-individual-demo="continue">Continue</button>
+          </div>
+          <div class="individual-section-heading"><div><span class="eyebrow">DISCOVER</span><h2>Something new.</h2></div></div>
+          <div class="individual-discovery-grid">
+            <button class="individual-discovery-card" data-individual-demo="explore"><strong>Philosophy</strong><span>Ideas worth sitting with.</span></button>
+            <button class="individual-discovery-card" data-individual-demo="explore"><strong>Biology</strong><span>Life, systems, and change.</span></button>
+            <button class="individual-discovery-card" data-individual-demo="explore"><strong>Artificial Intelligence</strong><span>Build, question, understand.</span></button>
+            <button class="individual-discovery-card" data-individual-demo="explore"><strong>Psychology</strong><span>How people think and learn.</span></button>
+          </div>
+          <div class="individual-section-heading"><div><span class="eyebrow">FROM PEOPLE ACROSS E-LEAF</span><h2>What the community is exploring.</h2></div><button type="button" class="individual-text-action" data-individual-nav="community">Open community</button></div>
+          <div class="individual-community-grid">
+            <article><span class="individual-card-kicker">SHARED DISCOVERY</span><h3>Why do leaves change color?</h3><p>A Tree opened a conversation around pigments, seasons, and adaptation.</p><button data-individual-demo="community">Explore conversation</button></article>
+            <article><span class="individual-card-kicker">LEARNING SESSION</span><h3>Thinking clearly about probability</h3><p>A small live session for anyone curious about uncertainty and evidence.</p><button data-individual-demo="community">See session</button></article>
+          </div>
+        </div>
+        <aside class="individual-side-column">
+          <div class="individual-side-card individual-growth-card">
+            <span class="individual-card-kicker">YOUR PATH TO TEACHER</span><h3>Learn. Participate. Guide.</h3><p id="individualGrowthSummary">Grow through the community before you teach it.</p>
+            <div class="individual-progress-track"><span id="individualGrowthFill"></span></div><div class="individual-growth-count" id="individualGrowthCount">0 of 3 complete</div>
+            <div class="individual-growth-step"><span id="indStepLearn">1</span><div><strong>Learn from a Tree</strong><small>Attend a demo learning session.</small></div><button data-individual-growth="learn">Try</button></div>
+            <div class="individual-growth-step"><span id="indStepShare">2</span><div><strong>Share something useful</strong><small>Contribute an idea to your library.</small></div><button data-individual-growth="share">Try</button></div>
+            <div class="individual-growth-step"><span id="indStepHelp">3</span><div><strong>Help the community</strong><small>Take part in a useful conversation.</small></div><button data-individual-growth="help">Try</button></div>
+            <button class="individual-tree-cta" id="individualGrowBtn" disabled>Keep growing</button>
+          </div>
+          <div class="individual-side-card"><span class="individual-card-kicker">YOUR SPACE</span><h3>My Library</h3><p>Keep the ideas, resources, and discoveries you want close.</p><button class="individual-secondary-action" data-individual-nav="library">Open Library</button></div>
+          <div class="individual-side-card"><span class="individual-card-kicker">A LITTLE FURTHER</span><h3>Meet a Tree.</h3><p>Find someone whose experience can take your curiosity somewhere new.</p><button class="individual-secondary-action" data-individual-nav="trees">Meet Trees</button></div>
+        </aside>
+      </section>
+    </main>
+    <button type="button" class="individual-mode-switch" id="individualLeafModeSwitch" aria-label="Switch to Teacher mode"><span class="mode-switch-icon"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></span><span>Teacher</span></button>
+  </div>
+</div>
+
+<!-- ===================== INDIVIDUAL TREE ===================== -->
+<div class="screen individual-world-screen" id="screen-individual-tree">
+  <div class="individual-app individual-tree-app">
+    <header class="individual-topbar">
+      <button class="individual-logo" id="individualTreeLogo"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg><span>E-Leaf</span></button>
+      <nav class="individual-main-nav" aria-label="Individual Teacher navigation">
+        <button class="individual-nav-link active" data-individual-tree-nav="home">Home</button>
+        <button class="individual-nav-link" data-individual-tree-nav="explore">Explore</button>
+        <button class="individual-nav-link" data-individual-tree-nav="learn">Learn</button>
+        <button class="individual-nav-link" data-individual-tree-nav="teach">Teach</button>
+        <button class="individual-nav-link" data-individual-tree-nav="library">Library</button>
+        <button class="individual-nav-link" data-individual-tree-nav="community">Community</button>
+        <button class="individual-nav-link" data-individual-tree-nav="journey">Journey</button>
+      </nav>
+      <div class="individual-top-actions">
+        <button type="button" class="individual-world-switch" data-individual-world-switch>Individual</button>
+        <button type="button" class="individual-profile-chip"><span class="avatar" id="individualTreeAvatar">AF</span><span class="individual-profile-name" id="individualTreeName">Almost Fake</span></button>
+        <button type="button" class="individual-logout" id="individualTreeLogout" title="Log out" aria-label="Log out"><svg><use href="#ic-logout" xlink:href="#ic-logout"/></svg></button>
+      </div>
+    </header>
+    <main class="individual-main">
+      <div class="individual-watermark tree"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></div>
+      <section class="individual-hero tree-hero">
+        <div class="eyebrow">INDIVIDUAL · TEACHER</div>
+        <h1 id="individualTreeGreeting">Share what you know.</h1>
+        <p>Teach what you know, keep learning what you do not, and stay part of the wider community.</p>
+      </section>
+      <section class="individual-content-grid">
+        <div class="individual-primary-column">
+          <div class="individual-section-heading"><div><span class="eyebrow">YOUR TEACHING</span><h2>Give your next idea a place.</h2></div></div>
+          <div class="individual-teaching-card"><div><span class="individual-card-kicker">NEXT SESSION</span><h3>Thinking clearly about probability</h3><p>Open a small learning session for curious people across E-Leaf.</p></div><div class="individual-action-row"><button class="individual-primary-action" data-individual-tree-action="plan">Plan session</button><button class="individual-secondary-action" data-individual-tree-action="teach">Create learning experience</button></div></div>
+          <div class="individual-section-heading"><div><span class="eyebrow">KEEP LEARNING</span><h2>A Tree is still a Learner.</h2></div><button class="individual-text-action" data-individual-tree-nav="learn">Continue learning</button></div>
+          <div class="individual-learning-row"><article><span class="individual-card-kicker">FROM ANOTHER TREE</span><h3>The mathematics of uncertainty</h3><p>Explore a different way of thinking about evidence.</p><button data-individual-tree-action="learn">Join session</button></article><article><span class="individual-card-kicker">YOUR LIBRARY</span><h3>3 ideas saved</h3><p>Return to the things you wanted to think about later.</p><button data-individual-tree-nav="library">Open Library</button></article></div>
+          <div class="individual-section-heading"><div><span class="eyebrow">FROM THE COMMUNITY</span><h2>Where you can help next.</h2></div><button class="individual-text-action" data-individual-tree-nav="community">See community</button></div>
+          <div class="individual-community-grid"><article><span class="individual-card-kicker">CONVERSATION</span><h3>How do we explain complex ideas simply?</h3><p>A learner is looking for examples from people who teach.</p><button data-individual-tree-action="community">Join conversation</button></article><article><span class="individual-card-kicker">LEARNER INTEREST</span><h3>Three questions about ecosystems</h3><p>Share a perspective if you can move the conversation forward.</p><button data-individual-tree-action="community">Help a learner</button></article></div>
+        </div>
+        <aside class="individual-side-column">
+          <div class="individual-side-card tree-side-card"><span class="individual-card-kicker">YOUR TEACHING</span><h3>Small actions matter.</h3><div class="individual-stat-list"><span><strong>0</strong> sessions</span><span><strong>0</strong> learners</span><span><strong>0</strong> contributions</span></div><p>Your teaching space grows with the quality of what you give back.</p></div>
+          <div class="individual-side-card"><span class="individual-card-kicker">YOUR JOURNEY</span><h3>Keep both sides of the path.</h3><p>You grew by learning from others. Keep doing that while you guide others forward.</p><button class="individual-secondary-action" data-individual-tree-nav="journey">Open Journey</button></div>
+        </aside>
+      </section>
+    </main>
+    <button type="button" class="individual-mode-switch tree-mode" id="individualTreeModeSwitch" aria-label="Switch to Learner mode"><span class="mode-switch-icon"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span><span>Learner</span></button>
+  </div>
+</div>
+
 <!-- ===================== LEAF DASHBOARD ===================== -->
 <div class="screen" id="screen-dashboard-leaf">
   <div class="dash">
@@ -194,8 +375,20 @@
       <button class="side-link" id="navDiscussionLeaf"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Discussion</button>
       <button class="side-link" id="navProgressLeaf"><svg><use href="#ic-chalk" xlink:href="#ic-chalk"/></svg>Progress</button>
       <button class="side-link" id="navLeaderboardLeaf"><svg><use href="#ic-students" xlink:href="#ic-students"/></svg>Recognition</button>
-      
-      <button class="side-link highlight" id="sideBecomeTree"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg><span>Become a Tree</span></button>
+
+      <div class="sidebar-tree-growth" id="sidebarTreeGrowth" tabindex="0" aria-label="Your path to becoming a Tree">
+        <div class="sidebar-tree-art" aria-hidden="true">
+          <svg class="sidebar-tree-outline"><use href="#ic-tree-growth" xlink:href="#ic-tree-growth"/></svg>
+          <svg class="sidebar-tree-fill"><use href="#ic-tree-growth" xlink:href="#ic-tree-growth"/></svg>
+          <span class="sidebar-tree-learner-leaf"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span>
+        </div>
+        <div class="sidebar-tree-copy">
+          <div class="sidebar-tree-kicker">YOUR TREE</div>
+          <strong class="sidebar-tree-next" id="sidebarTreeNext">Next: take a class</strong>
+          <span class="sidebar-tree-status" id="sidebarTreeStatus">0 of 3 steps complete</span>
+        </div>
+        <div class="sidebar-tree-details" id="sidebarTreeDetails" aria-hidden="true"></div>
+      </div>
     </div>
 
     <div class="dash-main">
@@ -255,16 +448,6 @@
               <div class="garden-statline" id="gardenStats" style="margin-top:0;padding-top:0;border-top:0"><span><strong>0</strong> notes planted</span><span><strong>0</strong> questions answered</span><span><strong>0</strong> classes attended</span></div>
             </div>
 
-            <div class="side-card" id="growthCard">
-              <div class="eyebrow"><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>GROW INTO A TREE</div>
-              <h3>Three quiet steps to become a Tree</h3>
-              <div class="desc">Learn, share, and help. Nothing to collect. Nothing to race.</div>
-              <div class="progress-track"><div id="leafProgressFill" style="width:0%"></div></div>
-              <div class="progress-label" id="leafProgressLabel">0 of 3 complete</div>
-              <ul class="checklist" id="leafGrowthChecklist"></ul>
-              <div class="growth-summary" id="growthSummary"><strong>Start with learning.</strong> Attend a class, plant a useful note, or answer a question.</div>
-              <button class="grow-btn" id="miniGrowBtn" disabled><svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>I’m ready to teach</button>
-            </div>
           </div>
         </div>
         </div>

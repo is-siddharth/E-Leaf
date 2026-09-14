@@ -953,3 +953,64 @@ If someone understands only one thing about E-Leaf, it should be this:
 > **E-Leaf can support this journey both individually and inside institutions.**
 
 **E-Leaf: Come as a learner. Grow into a teacher.**
+
+## V2.16 Demo UI: Individual World
+
+The prototype now includes an Individual World without changing the existing Institutional World dashboard structure. Authentication remains the existing Supabase flow. After authentication, the user chooses a world, then chooses their Individual Learner/Teacher path.
+
+### Current demo flow
+
+```text
+Authenticate
+    ↓
+Choose E-Leaf World
+    ├── Individual
+    │      ↓
+    │  Individual profile
+    │      ↓
+    │  Learner / Teacher
+    │      ↓
+    │  Individual dashboard
+    │
+    └── Institutional
+           ↓
+       Existing institutional profile/dashboard
+```
+
+### Individual World
+
+The Individual World has a deliberately different UI language from the Institutional World. It is wider, more open, discovery-oriented, and community-focused rather than curriculum-oriented. Its primary concepts are:
+
+- Home
+- Explore
+- Learn
+- Library
+- Community
+- Trees
+- Journey
+
+The Individual Tree experience adds teaching without turning the user into a separate account or a separate product. A Tree remains a Learner and can switch back at any time.
+
+### Demo Tree progression
+
+The Individual World currently uses a separate demo growth state so it cannot unlock or modify the Institutional Tree state. The three demo actions are:
+
+1. Attend a demo learning session.
+2. Share something useful to My Library.
+3. Help the community through a useful conversation.
+
+After all three are completed, the Individual Teacher path becomes available.
+
+This is a prototype-only representation of the eventual, substantially stricter global Tree qualification and approval process described in the product architecture.
+
+### World isolation
+
+The current demo keeps the following concepts separate in frontend state:
+
+- Individual World vs Institutional World
+- Individual Tree capability vs Institutional Tree capability
+- Individual growth progress vs Institutional growth progress
+- World selection vs Learner/Teacher mode
+
+The Individual World is intentionally implemented as a separate UI shell. The Institutional UI and its existing navigation are not redesigned as part of V2.16.
+
