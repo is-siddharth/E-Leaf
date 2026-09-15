@@ -1,2680 +1,373 @@
-
-(function(){
-  // ---- tiny defensive helpers: optional elements can be absent on some screens ----
-  function $(id){ return document.getElementById(id); }
-  function on(id, evt, handler){
-    const el = $(id);
-    if(!el){ return; }
-    el.addEventListener(evt, function(e){
-      try{ handler(e, el); }catch(err){ console.error('E-Leaf handler error on #' + id, err); }
-    });
-  }
-
-  const screens = {
-    home: $('screen-home'),
-    worldSelector: $('screen-world-selector'),
-    individualProfile: $('screen-individual-profile'),
-    individualLeaf: $('screen-individual-leaf'),
-    individualTree: $('screen-individual-tree'),
-    welcome: $('screen-welcome'),
-    leaf: $('screen-dashboard-leaf'),
-    becomeTree: $('screen-become-tree'),
-    tree: $('screen-dashboard-tree'),
-    classes: $('screen-classes'),
-    students: $('screen-students'),
-    planLesson: $('screen-plan-lesson'),
-    liveClass: $('screen-live-class'),
-    notesFull: $('screen-notes-full'),
-    trees: $('screen-trees'),
-    chat: $('screen-chat'),
-    questions: $('screen-questions'),
-    leaderboard: $('screen-leaderboard'),
-    progress: $('screen-progress'),
-    discussion: $('screen-discussion')
+function icon(name){
+  const icons={
+    home:`<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>`,
+    classes:`<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>`,
+    learn:`<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>`,
+    explore:`<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9M12 3c-3 3-4 6-4 9s1 6 4 9"/>`,
+    community:`<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="10" r="2.6"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M14.5 20c.3-2.4 1.8-4.3 3.9-5"/>`,
+    library:`<path d="M4 4h5v16H4zM11 4h5v16h-5zM18 4h2v16h-2z"/>`,
+    note:`<path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/>`,
+    teach:`<path d="m3 9 9-5 9 5-9 5z"/><path d="M6 12v5M12 14v5M18 12v5M3 21h18"/>`,
+    college:`<path d="m3 9 9-5 9 5-9 5z"/><path d="M5 11v6M9 13v6M15 13v6M19 11v6M3 21h18"/>`,
+    globe:`<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9M12 3c-3 3-4 6-4 9s1 6 4 9"/>`,
+    building:`<path d="M5 21V5l7-2 7 2v16M3 21h18"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h1M14 16h1"/>`,
+    question:`<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.7 1.6c-.8.9-2.2 1.2-2.2 2.8M12 17h.01"/>`,
+    logout:`<path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 16l4-4-4-4M20 12H9"/>`
   };
-  const pageHierarchy = {
-    notesFull: {
-      leaf: ['YOUR NOTES', 'Notes.', 'Keep useful ideas close, whether you planted them or saved them.'],
-      tree: ['YOUR NOTES', 'Notes.', 'Review what you have planted, saved, and learned from other Trees.']
-    },
-    classes: {
-      leaf: ['YOUR LEARNING SPACE', 'Classes.', 'Learn from Trees, attend what matters, and keep your learning moving.'],
-      tree: ['YOUR TEACHING SPACE', 'Classes.', 'Learn from other Trees, or step in and teach when you are ready.']
-    },
-    trees: {
-      leaf: ['YOUR LEARNING COMMUNITY', 'Meet the Trees.', 'Find people whose experience can help you move forward.']
-    },
-    students: {
-      tree: ['YOUR TEACHING COMMUNITY', 'Your students.', 'See who is learning from what you teach and where they may need help.']
-    },
-    questions: {
-      leaf: ['LEARNING COMMUNITY', 'Questions from Trees.', 'Help where your knowledge can move another learner forward.'],
-      tree: ['YOUR QUESTIONS', 'Questions you posted.', 'See what Leaves have answered and where your questions still need help.']
-    },
-    leaderboard: {
-      leaf: ['QUIET RECOGNITION', 'Recognition.', 'A record of useful contributions, without points, positions, or a race.'],
-      tree: ['QUIET RECOGNITION', 'Recognition.', 'Notice the people helping others learn, without turning help into a competition.']
-    },
-    chat: {
-      leaf: ['ASK A TREE', 'Ask a doubt.', 'Talk through a question with someone who has experience in the subject.']
-    },
-    liveClass: {
-      leaf: ['LIVE CLASS', 'Class in progress.', 'Stay present, learn together, and make the most of the session.'],
-      tree: ['LIVE CLASS', 'Class in progress.', 'Teach clearly, stay present, and help the room move together.']
-    },
-    becomeTree: {
-      leaf: ['YOUR NEXT STEP', 'Become a Tree.', 'Learn, share, and help. When all three are complete, you can teach.']
-    }
-  };
-
-  function syncPageHierarchy(screenName){
-    const screen = screens[screenName];
-    if(!screen) return;
-    const config = pageHierarchy[screenName]?.[currentRole] || pageHierarchy[screenName]?.leaf;
-    if(!config) return;
-    const main = screen.querySelector('.dash-main');
-    if(!main) return;
-    let hero = main.querySelector('.section-page-hero');
-    if(!hero){
-      hero = document.createElement('div');
-      hero.className = 'personal-hero section-page-hero';
-      main.insertBefore(hero, main.firstElementChild);
-    }
-    hero.innerHTML = `<div class="eyebrow">${escapeHtml(config[0])}</div><h1>${escapeHtml(config[1])}</h1><p>${escapeHtml(config[2])}</p>`;
-    const listHead = main.querySelector('.list-head');
-    if(listHead){
-      const h1 = listHead.querySelector('h1');
-      if(h1) h1.style.display = 'none';
-    }
-    if(screenName==='notesFull'){
-      const notesTitle = main.querySelector('.notes-toolbar h1');
-      if(notesTitle) notesTitle.style.display = 'none';
-    }
-  }
-
-  function showScreen(name){
-    Object.keys(screens).forEach(k => { if(screens[k]) screens[k].classList.remove('active'); });
-    if(screens[name]) screens[name].classList.add('active');
-    applyIdentityUI();
-    if(name === 'worldSelector') return;
-    if(name === 'individualProfile'){ renderIndividualProfile(); return; }
-    if(name === 'individualLeaf'){ renderIndividualGrowth(); updateIndividualIdentity(); return; }
-    if(name === 'individualTree'){ updateIndividualIdentity(); return; }
-    const appScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
-    if(appScreens.includes(name)) closePanel();
-    // Keep role styling consistent across every Leaf/Tree section, including new screens.
-    Object.values(screens).forEach(el => { if(el) el.classList.remove('role-tree'); });
-    if(screens[name]) screens[name].classList.toggle('role-tree', currentRole === 'tree' && !['becomeTree','progress','discussion'].includes(name));
-    syncDesktopSidebars(name);
-    syncTopNavbars();
-    syncPageHierarchy(name);
-    updateGlobalModeSwitch(name);
-    syncRoleLogo(name);
-    syncQuickNotesAssistant(name);
-    window.scrollTo(0,0);
-    if(name === 'leaf'){ renderNotes(); renderLeafPreviews(); renderPersonalHome(); }
-    if(name === 'tree'){ renderTreeHome(); }
-    if(name === 'classes') renderClasses();
-    if(name === 'students') renderStudents();
-    if(name === 'planLesson') renderPlanLesson();
-    if(name === 'notesFull') renderNotesFull();
-    if(name === 'trees') renderTreesDirectory();
-    if(name === 'chat') renderChatMessages();
-    if(name === 'questions') renderQuestions();
-    if(name === 'leaderboard') renderLeaderboard();
-    if(name === 'progress') renderProgressTracker();
-    if(name === 'discussion') renderDiscussionPage();
-    updateMobileNav(name);
-    if(name === 'leaf' || name === 'becomeTree') renderGrowthState();
-    if(name === 'home') updateHomePath();
-  }
-  window.showScreen = showScreen;
-
-
-  // Keep the top application bar structurally identical on every dashboard screen.
-  // The bar owns its identity controls; page-specific body rendering cannot remove them.
-  function syncTopNavbars(){
-    const appScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
-    appScreens.forEach(name=>{
-      const nav=screens[name]?.querySelector('.dash-nav');
-      if(!nav) return;
-
-      let logo=nav.querySelector('.dash-logo');
-      if(!logo){
-        logo=document.createElement('div'); logo.className='dash-logo';
-        logo.innerHTML='<svg><use href="#ic-leaf" xlink:href="#ic-leaf"></use></svg><span>E-Leaf</span>';
-        nav.prepend(logo);
-      }
-
-      // Every dashboard screen gets the same role/path marker. This is
-      // application chrome, not page content, so Discussion/Progress/etc.
-      // cannot accidentally lose it.
-      let pill=nav.querySelector('.path-pill');
-      if(!pill){
-        pill=document.createElement('div');
-        pill.className='path-pill persistent-path-pill';
-        nav.insertBefore(pill, nav.querySelector('.nav-right') || null);
-      }
-      // Home is the only Leaf screen that carries the growth path.
-      // Once a Leaf has become eligible to teach, all other section screens
-      // use their page title here instead of showing a stale/incomplete path.
-      const sectionTitles = {
-        classes:'CLASSES',
-        students:'STUDENTS',
-        planLesson:'PLAN LESSON',
-        notesFull:'NOTES',
-        trees:'TREES',
-        chat:'ASK A DOUBT',
-        questions:'QUESTIONS',
-        leaderboard:'RECOGNITION',
-        progress:'PROGRESS',
-        discussion:'DISCUSSION',
-        liveClass:'LIVE CLASS',
-        becomeTree:'BECOME A TREE'
-      };
-
-      if(currentRole==='tree' && name==='tree'){
-        pill.classList.remove('growth-path-pill');
-        pill.innerHTML='GROWN INTO A TREE';
-        pill.style.background='var(--bark-pale)';
-        pill.style.color='var(--bark-deep)';
-      }else if(currentRole==='tree'){
-        pill.classList.remove('growth-path-pill');
-        pill.innerHTML=sectionTitles[name] || 'E-LEAF';
-        pill.style.background='var(--bark-pale)';
-        pill.style.color='var(--bark-deep)';
-      }else if(name==='leaf'){
-        pill.classList.add('growth-path-pill');
-        pill.innerHTML='PATH TO TREE<div class="path-track"><div class="growth-path-fill"></div></div><span class="growth-path-count">0/3</span>';
-        pill.style.background='var(--cream-2)';
-        pill.style.color='var(--ink-soft)';
-      }else{
-        pill.classList.remove('growth-path-pill');
-        pill.innerHTML=sectionTitles[name] || 'E-LEAF';
-        pill.style.background='var(--cream-2)';
-        pill.style.color='var(--ink-soft)';
-      }
-
-      let right=nav.querySelector('.nav-right');
-      if(!right){
-        right=document.createElement('div');
-        right.className='nav-right';
-        nav.appendChild(right);
-      }
-      if(!right.querySelector('.logout-btn')){
-        const btn=document.createElement('button');
-        btn.type='button';
-        btn.className='logout-btn';
-        btn.title='Log out';
-        btn.setAttribute('aria-label','Log out');
-        btn.innerHTML='<svg><use href="#ic-logout" xlink:href="#ic-logout"></use></svg>';
-        right.appendChild(btn);
-      }
-    });
-    // Keep Leaf growth progress in every persistent PATH TO TREE pill.
-    renderGrowthState();
-  }
-
-  function sidebarTreeMarkup(role){
-    const learner = role === 'tree';
-    return `<div class="sidebar-tree-growth ${learner ? 'tree-mode' : ''}" id="sidebarTreeGrowth" tabindex="0" aria-label="${learner ? 'Keep learning as a Leaf' : 'Your path to becoming a Tree'}">
-      <div class="sidebar-tree-art" aria-hidden="true">
-        <svg class="sidebar-tree-outline"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
-        <svg class="sidebar-tree-fill"><use href="#ic-tree" xlink:href="#ic-tree"/></svg>
-        <span class="sidebar-tree-learner-leaf"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span>
-      </div>
-      <div class="sidebar-tree-copy">
-        <div class="sidebar-tree-kicker">${learner ? 'A TREE STILL GROWS' : 'YOUR TREE'}</div>
-        <strong class="sidebar-tree-next" id="sidebarTreeNext">${learner ? 'Keep learning as a Leaf' : 'Next: take a class'}</strong>
-        <span class="sidebar-tree-status" id="sidebarTreeStatus">${learner ? 'Your learner side is always here' : '0 of 3 steps complete'}</span>
-      </div>
-      <div class="sidebar-tree-details" id="sidebarTreeDetails" aria-hidden="true"></div>
-    </div>`;
-  }
-
-  // Keep each role's desktop navigation stable on every section screen.
-  // Navigating changes only the main page; the sidebar itself does not change shape.
-  function syncDesktopSidebars(screenName){
-    const dashboardScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
-    if(!dashboardScreens.includes(screenName)) return;
-    const screen=screens[screenName];
-    const side=screen?.querySelector('.dash-side');
-    if(!side) return;
-
-    const navItem=(target,icon,label,active=false,extra='') =>
-      `<button type="button" class="side-link${active?' active':''}${extra?' '+extra:''}" data-role-nav="${target}"><svg><use href="#${icon}" xlink:href="#${icon}"/></svg>${label}</button>`;
-    const actionItem=(action,icon,label,extra='') =>
-      `<button type="button" class="side-link${extra?' '+extra:''}" data-role-action="${action}"><svg><use href="#${icon}" xlink:href="#${icon}"/></svg>${label}</button>`;
-
-    if(currentRole==='tree'){
-      // Tree mode keeps its existing teaching navigation, with the same persistent
-      // visual tree now occupying the unused lower sidebar space.
-      side.innerHTML =
-        navItem('tree','ic-home','Home',screenName==='tree')+
-        actionItem('leafMode','ic-leaf','Leaf Dashboard',`leaf-dashboard-link${screenName==='tree'?' active':''}`)+
-        navItem('notesFull','ic-note','Notes',screenName==='notesFull')+
-        navItem('classes','ic-class','Classes',screenName==='classes')+
-        actionItem('takeClass','ic-chalk','Take Class')+
-        actionItem('uploadNotes','ic-upload','Upload Notes')+
-        navItem('planLesson','ic-cal','Plan Lesson',screenName==='planLesson')+
-        navItem('students','ic-students','Students',screenName==='students')+
-        actionItem('postQuestion','ic-sparkle','Post a Question')+
-        navItem('questions','ic-sparkle','Questions',screenName==='questions')+
-        navItem('leaderboard','ic-students','Recognition',screenName==='leaderboard')+
-        sidebarTreeMarkup('tree');
-    }else{
-      // Leaf mode keeps the existing navigation. The Tree growth card is replaced
-      // by a persistent visual guide in the lower sidebar.
-      side.innerHTML =
-        navItem('leaf','ic-home','Home',screenName==='leaf')+
-        (canTeach
-          ? actionItem('treeMode','ic-tree','Tree Dashboard',`tree-dashboard-link${screenName==='leaf'?' active':''}`)
-          : '')+
-        navItem('notesFull','ic-note','Notes',screenName==='notesFull')+
-        navItem('classes','ic-class','Classes',screenName==='classes')+
-        navItem('trees','ic-tree','Trees',screenName==='trees')+
-        navItem('questions','ic-sparkle','Questions',screenName==='questions')+
-        navItem('discussion','ic-students','Discussion',screenName==='discussion')+
-        navItem('progress','ic-chalk','Progress',screenName==='progress')+
-        navItem('leaderboard','ic-students','Recognition',screenName==='leaderboard')+
-        sidebarTreeMarkup('leaf');
-    }
-  }
-
-  document.addEventListener('click',(e)=>{
-    const sidebarAction=e.target.closest('[data-sidebar-tree-action]');
-    if(sidebarAction){
-      e.preventDefault();
-      const action=sidebarAction.dataset.sidebarTreeAction;
-      if(action==='takeClass'){ showScreen('classes'); return; }
-      if(action==='plantLeafNote'){ openAddNoteModal(); return; }
-      if(action==='helpSomeone'){ showScreen('questions'); return; }
-      if(action==='becomeTree'){ growToTree(); return; }
-    }
-    const sidebarTree=e.target.closest('.sidebar-tree-growth');
-    if(sidebarTree && !sidebarAction && currentRole==='tree'){
-      switchToLeafMode();
-      return;
-    }
-    const exitChoice=e.target.closest('[data-exit-choice]');
-    if(exitChoice){
-      e.preventDefault();
-      handleExitActionChoice(exitChoice.dataset.exitChoice);
-      return;
-    }
-    const logout=e.target.closest('.logout-btn');
-    if(logout){ e.preventDefault(); openExitModal(); return; }
-    const navBtn=e.target.closest('[data-role-nav]');
-    if(navBtn){ showScreen(navBtn.dataset.roleNav); return; }
-    const actionBtn=e.target.closest('[data-role-action]');
-    if(!actionBtn) return;
-    const action=actionBtn.dataset.roleAction;
-    if(action==='leafMode'){ switchToLeafMode(); return; }
-    if(action==='treeMode'){ growToTree(); return; }
-    if(action==='takeClass'){ openQuickStartModal(); return; }
-    if(action==='uploadNotes'){ openAddNoteModal('tree'); return; }
-    if(action==='scheduleClass'){ openScheduleClassModal(); return; }
-    if(action==='postQuestion'){ openPostQuestionModal(); return; }
-  });
-
-  // ---- persistent desktop mode switch ----
-  function updateGlobalModeSwitch(screenName){
-    const wrap=$('globalModeSwitch'), btn=$('globalModeButton');
-    if(!wrap || !btn) return;
-    const appScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
-    const visible=appScreens.includes(screenName) && (currentRole==='tree' || canTeach);
-    wrap.classList.toggle('visible',visible);
-    if(!visible) return;
-    btn.classList.remove('role-switch-leaf','role-switch-tree');
-    if(currentRole==='tree'){
-      btn.classList.add('role-switch-tree');
-      btn.setAttribute('aria-label','Current mode: Tree. Switch to Leaf mode');
-      btn.title='Switch to Leaf mode';
-    }else{
-      btn.classList.add('role-switch-leaf');
-      btn.setAttribute('aria-label','Current mode: Leaf. Switch to Tree mode');
-      btn.title='Switch to Tree mode';
-    }
-  }
-
-  // ---- mobile navigation ----
-  function updateMobileNav(screenName){
-    const nav=$('mobileNav');
-    if(!nav) return;
-    const dashboardScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
-    nav.classList.toggle('app-mobile-nav-visible', dashboardScreens.includes(screenName));
-    nav.removeAttribute('style');
-    const completedSteps = Object.values(growthProgress).filter(Boolean).length;
-    const readyToTeach = completedSteps === 3;
-    const fifthIsGrowth = currentRole === 'leaf' && !canTeach && !readyToTeach;
-    const active = screenName === 'leaf' || screenName === 'tree' ? 'home'
-      : ['notesFull','classes','progress','liveClass'].includes(screenName) ? 'learn'
-      : ['trees','students','discussion'].includes(screenName) ? 'people'
-      : ['questions','leaderboard'].includes(screenName) ? 'questions'
-      : screenName === 'becomeTree' && fifthIsGrowth ? 'mode'
-      : '';
-    ['mobileHome','mobileLearn','mobilePeople','mobileQuestions','mobileMode'].forEach(id => $(id)?.classList.remove('active'));
-    const activeId={home:'mobileHome',learn:'mobileLearn',people:'mobilePeople',questions:'mobileQuestions',mode:'mobileMode'}[active];
-    if(activeId) safeSetActiveMobileButton(activeId);
-    const indicator=$('mobileNavIndicator');
-    const indexMap={home:0,learn:1,people:2,questions:3,mode:4};
-    if(indicator){ const idx=indexMap[active]; indicator.style.transform = idx == null ? 'translateX(0)' : `translateX(calc(${idx} * (100% + 2px)))`; }
-    const modeText=$('mobileModeText'), modeIcon=$('mobileModeIcon'), modeBtn=$('mobileMode');
-    modeBtn?.classList.remove('locked','growth-ready','tree-mode','role-switch-mobile');
-    if(currentRole === 'tree'){
-      if(modeText) modeText.textContent='';
-      if(modeIcon) modeIcon.innerHTML='<use href="#ic-leaf" xlink:href="#ic-leaf"/>';
-      modeBtn?.classList.add('tree-mode','role-switch-mobile');
-      modeBtn?.setAttribute('aria-label','Current mode: Tree. Switch to Leaf mode');
-      if(modeBtn) modeBtn.innerHTML='<span class="mobile-role-track"><span class="mobile-role-icon leaf"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span><span class="mobile-role-icon tree"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></span><span class="mobile-role-knob" aria-hidden="true"></span></span><span class="sr-only">Switch to Leaf mode</span>';
-    }else if(canTeach){
-      if(modeText) modeText.textContent='';
-      modeBtn?.classList.add('role-switch-mobile');
-      modeBtn?.setAttribute('aria-label','Current mode: Leaf. Switch to Tree mode');
-      if(modeBtn) modeBtn.innerHTML='<span class="mobile-role-track"><span class="mobile-role-icon leaf"><svg><use href="#ic-leaf" xlink:href="#ic-leaf"/></svg></span><span class="mobile-role-icon tree"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg></span><span class="mobile-role-knob" aria-hidden="true"></span></span><span class="sr-only">Switch to Tree mode</span>';
-    }else if(readyToTeach){
-      if(modeText) modeText.textContent='Switch';
-      if(modeIcon) modeIcon.innerHTML='<use href="#ic-tree" xlink:href="#ic-tree"/>';
-      modeBtn?.classList.add('growth-ready');
-      modeBtn?.setAttribute('aria-label','Growth complete. Switch to Tree mode');
-    }else{
-      if(modeText) modeText.textContent='Growth';
-      if(modeIcon) modeIcon.innerHTML='<use href="#ic-sparkle" xlink:href="#ic-sparkle"/>';
-      modeBtn?.setAttribute('aria-label','View your growth progress');
-    }
-
-    // The Learn popup is the overflow navigation for pages that do not fit
-    // in the five-button mobile shell. Keep it role-aware and uncluttered.
-    document.querySelectorAll('#mobileLearnMenu [data-mobile-role]').forEach(btn=>{
-      const role=btn.dataset.mobileRole;
-      btn.style.display=(role==='both' || role===currentRole) ? '' : 'none';
-    });
-  }
-  function closeMobileLearnMenu(){ $('mobileLearnMenu')?.classList.remove('show'); }
-
-  function safeSetActiveMobileButton(id){
-    if(!id) return;
-    const el = $(id);
-    if(!el) return;
-    ['mobileHome','mobileLearn','mobilePeople','mobileQuestions','mobileMode'].forEach(candidate => {
-      const item = $(candidate);
-      if(item) item.classList.toggle('active', candidate === id);
-    });
-  }
-
-  on('mobileHome','click',()=>{ closeMobileLearnMenu(); showScreen(currentRole==='tree'?'tree':'leaf'); });
-  on('mobileLearn','click',()=>{ const menu=$('mobileLearnMenu'); if(menu) menu.classList.toggle('show'); });
-  on('mobileLearnNotes','click',()=>{ closeMobileLearnMenu(); showScreen('notesFull'); });
-  on('mobileLearnClasses','click',()=>{ closeMobileLearnMenu(); showScreen('classes'); });
-  on('mobileLearnQuestions','click',()=>{ closeMobileLearnMenu(); showScreen('questions'); });
-  on('mobileLearnDiscussion','click',()=>{ closeMobileLearnMenu(); showScreen('discussion'); });
-  on('mobileLearnProgress','click',()=>{ closeMobileLearnMenu(); showScreen('progress'); });
-  on('mobileLearnRecognition','click',()=>{ closeMobileLearnMenu(); showScreen('leaderboard'); });
-  on('mobileLearnPlan','click',()=>{ closeMobileLearnMenu(); showScreen('planLesson'); });
-  on('mobileLearnStudents','click',()=>{ closeMobileLearnMenu(); showScreen('students'); });
-  on('mobilePeople','click',()=>{ closeMobileLearnMenu(); showScreen(currentRole==='tree'?'students':'trees'); });
-  on('mobileQuestions','click',()=>{ closeMobileLearnMenu(); showScreen('questions'); });
-  // Light horizontal swipe support on the glass nav: move between primary sections without turning the bar into a carousel.
-  let navTouchX = null;
-  on('mobileNav','touchstart',(e)=>{ navTouchX = e.touches && e.touches[0] ? e.touches[0].clientX : null; }, {passive:true});
-  on('mobileNav','touchend',(e)=>{
-    if(navTouchX == null) return;
-    const x=e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : navTouchX;
-    const dx=x-navTouchX; navTouchX=null;
-    if(Math.abs(dx)<45) return;
-    const order=currentRole==='tree' ? ['home','learn','people','questions'] : ['home','learn','people','questions'];
-    const current = document.querySelector('#mobileNav button.active');
-    const activeId=current ? current.id : 'mobileHome';
-    const ids=['mobileHome','mobileLearn','mobilePeople','mobileQuestions'];
-    let i=Math.max(0,ids.indexOf(activeId));
-    i += dx<0 ? 1 : -1;
-    i=Math.max(0,Math.min(ids.length-1,i));
-    $(ids[i])?.click();
-  }, {passive:true});
-  let mobileLockTimer;
-  on('mobileMode','click',()=>{
-    closeMobileLearnMenu();
-    if(currentRole==='tree'){ switchToLeafMode(); }
-    else if(canTeach || Object.values(growthProgress).filter(Boolean).length === 3){ growToTree(); }
-    else { showScreen('becomeTree'); }
-  });
-
-  on('globalModeButton','click',()=>{ if(currentRole==='tree') switchToLeafMode(); else if(canTeach) growToTree(); });
-
-  // ---- toast ----
-  let toastTimer;
-  function showToast(msg){
-    const toast = $('toast');
-    if(!toast) return;
-    const t = $('toastText');
-    if(t) t.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(()=> toast.classList.remove('show'), 2400);
-  }
-  window.showToast = showToast;
-
-  // ---- home interactions ----
-  let authPath = 'leaf'; // selected destination for the current authentication flow
-
-  function updateHomePath(){
-    const tree = $('treeOrb');
-    const treePill = $('treePill');
-    const leafPill = $('leafPill');
-    const homeSubText = $('homeSubText');
-    const homePhilosophyText = $('homePhilosophyText');
-    const homeHintText = $('homeHintText');
-    const homeScreen = $('screen-home');
-    if(!tree) return;
-    const authenticated = !!currentUser.id;
-    const unlocked = !!canTeach;
-    const unauthenticatedView = !authenticated;
-    if(homeScreen) homeScreen.classList.toggle('home-authenticated', authenticated);
-
-    if(homeSubText){
-      if(unauthenticatedView){
-        homeSubText.textContent = 'Welcome to E-Leaf. Log in to continue, or create an account to begin.';
-      } else if(unlocked){
-        homeSubText.textContent = 'Learn, share, and discuss with others. Grow into a Teacher by helping others learn.';
-      } else {
-        homeSubText.textContent = 'Learn, share, and discuss with others. Grow into a Teacher by helping others learn.';
-      }
-    }
-    if(homePhilosophyText){
-      if(unauthenticatedView){
-        homePhilosophyText.textContent = 'Every Tree begins as a Leaf. Learn first. Teach later.';
-      } else if(unlocked){
-        homePhilosophyText.textContent = 'Keep learning. Keep teaching. Keep growing.';
-      } else if(isFirstVisit){
-        homePhilosophyText.textContent = 'Your journey starts with learning, sharing, and helping others grow.';
-      } else {
-        homePhilosophyText.textContent = 'Keep learning, sharing, and helping others grow.';
-      }
-    }
-
-    if(homeHintText){
-      if(unauthenticatedView){
-        homeHintText.textContent = 'Start with login or create an account. Your Tree path unlocks after you begin learning.';
-      } else if(unlocked){
-        homeHintText.textContent = 'You can learn anytime and teach anytime. You have grown into both.';
-      } else if(isFirstVisit){
-        homeHintText.textContent = 'Choose Learner to begin learning. Teacher access unlocks after you complete your growth steps.';
-      } else {
-        homeHintText.textContent = 'Keep learning and growing. Teacher access unlocks after you complete your growth steps.';
-      }
-    }
-
-    tree.classList.toggle('locked', !unlocked);
-    tree.classList.toggle('unlocked', unlocked);
-    tree.setAttribute('aria-label', unauthenticatedView ? 'E-Leaf philosophy visual' : (unlocked ? 'Continue as a Teacher' : 'Tree path locked'));
-
-    const caption = tree.parentElement && tree.parentElement.querySelector('.orb-caption');
-    if(caption) caption.textContent = unauthenticatedView ? 'Every Tree begins as a Leaf.' : (unlocked ? 'Keep teaching to learn.' : 'The tree opens after you have grown.');
-
-    if(leafPill){
-      leafPill.textContent = unauthenticatedView ? 'Come as a Learner' : (isFirstVisit ? 'Start as a Learner' : 'Continue as a Learner');
-      leafPill.setAttribute('aria-label', unauthenticatedView ? 'Come as a Learner' : (isFirstVisit ? 'Start as a Learner' : 'Continue as a Learner'));
-    }
-
-    if(treePill){
-      treePill.textContent = unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as a Teacher' : 'Grow into a Teacher');
-      treePill.classList.toggle('is-locked', !unlocked && !unauthenticatedView);
-      treePill.disabled = !unauthenticatedView && !unlocked;
-      treePill.setAttribute('aria-label', unauthenticatedView ? 'Create account' : (unlocked ? 'Continue as a Teacher' : 'Tree path locked'));
-    }
-
-    const lock = tree.querySelector('.lock-badge');
-    if(lock) lock.style.display = unauthenticatedView ? '' : (unlocked ? 'none' : '');
-
-    const leafOrb = $('leafOrb');
-    const treeOrb = $('treeOrb');
-    [leafOrb, treeOrb].forEach((orb) => {
-      if(!orb) return;
-      orb.style.pointerEvents = unauthenticatedView ? 'none' : '';
-      orb.setAttribute('tabindex', unauthenticatedView ? '-1' : '0');
-      orb.setAttribute('aria-hidden', unauthenticatedView ? 'true' : 'false');
-    });
-  }
-
-  function completeFirstVisit(){
-    if(!currentUser?.id || !isFirstVisit) return;
-    try{ localStorage.setItem(`e_leaf_onboarding_v1:${currentUser.id}`, 'complete'); }catch(error){}
-    isFirstVisit = false;
-  }
-
-  function handleLeafSelection(){
-    if(!currentUser.id){
-      openPanel('leaf', false);
-      return;
-    }
-
-    completeFirstVisit();
-    updateHomePath();
-    beginWelcome('leaf');
-  }
-
-  function handleTreeOrb(){
-    if(!currentUser.id){
-      openPanel('leaf', false);
-      return;
-    }
-
-    if(canTeach){
-      completeFirstVisit();
-      updateHomePath();
-      beginWelcome('tree');
-      return;
-    }
-
-    showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
-  }
-  on('treeOrb', 'click', handleTreeOrb);
-  on('treeOrb', 'keydown', (e) => {
-    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handleTreeOrb(); }
-  });
-  on('treePill', 'click', () => {
-    if(!currentUser.id){
-      openPanel('leaf', false);
-      return;
-    }
-    if(canTeach){ completeFirstVisit(); updateHomePath(); beginWelcome('tree'); }
-    else showToast('Every Tree begins as a Leaf. Learn, share, and help first.');
-  });
-
-  function openPanel(path='leaf', forceLogin=false){
-    authPath = path === 'tree' ? 'tree' : 'leaf';
-    const authenticated = !!currentUser.id;
-    setMode(false);
-    const toggle = $('authModeToggle');
-    if(toggle) toggle.style.display = '';
-    const panelTitle = $('panelTitle');
-    const panelSub = $('panelSub');
-    const finePrint = $('finePrint');
-
-    if(panelTitle) panelTitle.textContent = 'Welcome to E-Leaf';
-    if(panelSub) panelSub.textContent = 'Log in to continue, or create an account to begin your E-Leaf journey.';
-    if(finePrint) finePrint.innerHTML = 'New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button>';
-
-    $('scrim') && $('scrim').classList.add('show');
-    $('panel') && $('panel').classList.add('show');
-    setTimeout(() => { const first = $('emailOrPhone'); if(first) first.focus(); }, 120);
-  }
-  function closePanel(){
-    const panel = $('panel');
-    const scrim = $('scrim');
-    if(panel) panel.classList.remove('show', 'mode-signup');
-    if(scrim) scrim.classList.remove('show');
-  }
-
-  on('leafOrb', 'click', handleLeafSelection);
-  on('leafOrb', 'keydown', (e) => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handleLeafSelection(); } });
-  on('leafPill', 'click', handleLeafSelection);
-  on('backBtn', 'click', closePanel);
-  on('scrim', 'click', closePanel);
-
-
-  // ---- auth mode toggle ----
-  function setMode(signup){
-    const panel = $('panel');
-    const effectiveSignup = !!signup;
-    if(panel) panel.classList.toggle('mode-signup', effectiveSignup);
-    $('modeLogin') && $('modeLogin').classList.toggle('active', !effectiveSignup);
-    $('modeSignup') && $('modeSignup').classList.toggle('active', effectiveSignup);
-    const panelTitle = $('panelTitle'), panelSub = $('panelSub'), submitBtn = $('submitBtn'),
-          passwordLabel = $('passwordLabel'), finePrint = $('finePrint'), toggle = $('authModeToggle');
-    if(toggle) toggle.style.display = '';
-
-    if(effectiveSignup){
-      if(panelTitle) panelTitle.textContent = 'Create your E-Leaf account';
-      if(panelSub) panelSub.textContent = 'Create a new account to begin your E-Leaf journey.';
-      if(submitBtn) submitBtn.textContent = 'Create account';
-      if(passwordLabel) passwordLabel.textContent = 'Choose a password';
-      if(finePrint) finePrint.innerHTML = 'Already a member? <button type="button" id="switchToLogin" class="auth-switch-link">Log in</button>';
-    }else{
-      if(panelTitle) panelTitle.textContent = 'Welcome back';
-      if(panelSub) panelSub.textContent = 'Log in to keep learning where you left off.';
-      if(submitBtn) submitBtn.textContent = 'Log in';
-      if(passwordLabel) passwordLabel.textContent = 'Password';
-      if(finePrint) finePrint.innerHTML = 'New here? <button type="button" id="switchToSignup" class="auth-switch-link">Create a new account</button>';
-    }
-  }
-  window.setMode = setMode;
-
-  on('modeLogin', 'click', () => setMode(false));
-  on('modeSignup', 'click', () => setMode(true));
-  on('switchToSignup', 'click', () => setMode(true));
-  document.addEventListener('click', (e) => {
-    const link = e.target.closest('.auth-switch-link');
-    if(!link) return;
-    if(link.id === 'switchToSignup') setMode(true);
-    else if(link.id === 'switchToLogin') setMode(false);
-  });
-
-  // ---- app state ----
-  let currentRole = 'leaf'; // active mode, not permission
-  let currentWorld = 'institutional'; // active product context
-  let canTeach = false; // institutional Tree capability
-  let individualCanTeach = false; // individual/global Tree capability
-  let individualIsFirstVisit = false;
-  let individualGrowthProgress = { learned:false, shared:false, helped:false };
-  let isFirstVisit = false;
-  let authGateActive = true; // Every application entry begins at authentication.
-  let welcomeTimer = null;
-  let welcomeDestination = 'leaf';
-  let currentUser = { name: 'Almost Fake', id: null, email: '' };
-  let liveContext = null; // { classId, isTeacher }
-  let supabaseAuthUnsubscribe = null;
-  const progressKey = 'e_leaf_progress_v2';
-  function userProgressKey(){ return currentUser.id ? `${progressKey}:${currentUser.id}` : progressKey; }
-  let growthProgress = { learned:false, shared:false, helped:false };
-
-  function normalizeDisplayName(user){
-    const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
-    if(fullName && String(fullName).trim()) return String(fullName).trim();
-    if(user?.email) return String(user.email).split('@')[0];
-    return 'Almost Fake';
-  }
-
-  function initialsForName(name){
-    const text = (name || '').trim() || 'Almost Fake';
-    const parts = text.split(/\s+/).filter(Boolean);
-    if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-
-  function applyIdentityUI(){
-    const name = (currentUser.name || '').trim() || 'Almost Fake';
-    const role = currentRole === 'tree' ? 'Tree' : 'Leaf';
-    const avatarColor = currentRole === 'tree' ? 'var(--bark-deep)' : 'var(--moss-deep)';
-
-    document.querySelectorAll('.who').forEach((who) => {
-      const avatar = who.querySelector('.avatar');
-      const nameEl = who.querySelector('.name');
-      const roleEl = who.querySelector('.role');
-      if(nameEl) nameEl.textContent = name;
-      if(roleEl) roleEl.textContent = role;
-      if(avatar){
-        avatar.textContent = initialsForName(name);
-        avatar.style.background = avatarColor;
-      }
-    });
-
-    ['classesAvatar', 'notesFullAvatar', 'questionsAvatar', 'leaderboardAvatar'].forEach((id) => {
-      const el = $(id);
-      if(el){
-        el.textContent = initialsForName(name);
-        el.style.background = avatarColor;
-      }
-    });
-
-    const welcomeName = $('welcomeUserName');
-    if(welcomeName) welcomeName.textContent = name;
-  }
-
-  function mapSupabaseAuthError(error){
-    const msg = (error && (error.message || error.error_description)) || 'Authentication failed.';
-    if(/invalid login credentials|Invalid login credentials|invalid credentials/i.test(msg)) return 'Invalid email or password.';
-    if(/weak password|Password should be|at least 8 characters/i.test(msg)) return 'Password must be at least 8 characters.';
-    if(/already registered|User already registered|already exists/i.test(msg)) return 'This email is already registered. Try logging in instead.';
-    if(/email not confirmed|confirm your email|confirmation/i.test(msg)) return 'Please confirm your email before logging in.';
-    if(/network|Failed to fetch|api/i.test(msg)) return 'Network error while contacting Supabase. Please try again.';
-    return msg;
-  }
-
-  function resetUserScopedState(){
-  currentUser = {id:null, name:"Leaf", email:""};
-  canTeach = false;
-  individualCanTeach = false;
-  individualIsFirstVisit = false;
-  individualGrowthProgress = { learned:false, shared:false, helped:false };
-  currentWorld = 'institutional';
-  isFirstVisit = false;
-  growthProgress = {
-    learned: false,
-    shared: false,
-    helped: false
-  };
-  currentRole = "leaf";
-  if(typeof updateHomePath === "function"){
-    updateHomePath();
-  }
+  if(name==='leaf') return `<svg viewBox="0 0 64 64" aria-hidden="true" class="icon-leaf icon-organic"><path d="M32 6C46 11 54 22 54 34C54 48 44 58 32 58C20 58 10 48 10 34C10 22 18 11 32 6Z"/><path d="M32 10v44M32 24c-4 2-8 5-8 5M32 34c-5 2-9 6-9 6M32 44c-5 2-8 5-8 5" class="leaf-vein"/></svg>`;
+  if(name==='tree') return `<svg viewBox="0 0 64 64" aria-hidden="true" class="icon-tree icon-organic"><circle cx="24" cy="26" r="12"/><circle cx="40" cy="26" r="12"/><circle cx="32" cy="18" r="13"/><rect x="28" y="34" width="8" height="18" rx="2"/><circle cx="22" cy="20" r="2.3" class="tree-highlight"/><circle cx="34" cy="13" r="2.1" class="tree-highlight"/><circle cx="43" cy="23" r="2" class="tree-highlight"/><path d="M31 38v12M35 42l-3 3M29 46l3 3" class="tree-vein"/></svg>`;
+  const paths=icons[name]||icons.home;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" class="icon-${name}">${paths}</svg>`;
 }
-
-async function loadUserState(){
-    resetUserScopedState();
-
-    let session = null;
-    let profile = null;
-    const sb = window.ELeafSupabase;
-
-    try{
-      session = sb?.ready ? await sb.getSession() : null;
-    }catch(error){
-      console.warn('Unable to restore Supabase session.', error);
-    }
-
-    if(!session?.user){
-      return currentUser;
-    }
-
-    const user = session.user;
-    currentUser = {
-      id: user.id,
-      name: normalizeDisplayName(user),
-      email: user.email || ''
-    };
-
-    // The auth client already resolves the profile. Read it through the same
-    // adapter so the UI never depends on an undefined global Supabase client.
-    try{
-      profile = sb?.getProfile ? await sb.getProfile(user.id) : null;
-      if(profile){
-        currentUser.name = profile.full_name || currentUser.name;
-        currentUser.email = profile.email || currentUser.email;
-        if(typeof profile.tree_unlocked === 'boolean') canTeach = profile.tree_unlocked;
-      }
-    }catch(error){
-      console.warn('Unable to load profile.', error);
-    }
-
-    const savedKey = `e_leaf_progress_v2:${user.id}`;
-    try{
-      const raw = localStorage.getItem(savedKey);
-      if(raw){
-        const saved = JSON.parse(raw);
-        if(saved && typeof saved === 'object'){
-          growthProgress = {
-            learned: saved.learned === true,
-            shared: saved.shared === true,
-            helped: saved.helped === true
-          };
-          if(typeof profile?.tree_unlocked !== 'boolean') canTeach = saved.canTeach === true && saved.learned === true && saved.shared === true && saved.helped === true;
-        }
-      }
-    }catch(error){
-      console.warn('Unable to load user progress.', error);
-    }
-
-    // Reconcile from the actual user-owned activity records. This makes the
-    // Tree path recover correctly even when progress was saved before a reload.
-    try{
-      await syncGrowthProgressFromActivity();
-    }catch(error){
-      console.warn('Unable to reconcile growth progress.', error);
-    }
-
-    // First-visit wording is intentionally separate from Tree capability.
-    // The marker is completed only after the user actually chooses a path, so
-    // a brand-new account remains a first-time user until they begin.
-    const onboardingKey = `e_leaf_onboarding_v1:${user.id}`;
-    let onboardingComplete = false;
-    try{ onboardingComplete = localStorage.getItem(onboardingKey) === 'complete'; }catch(error){}
-    if(!onboardingComplete){
-      const hasActivity = growthProgress.learned || growthProgress.shared || growthProgress.helped || canTeach;
-      if(hasActivity){
-        onboardingComplete = true;
-        try{ localStorage.setItem(onboardingKey, 'complete'); }catch(error){}
-      }
-    }
-    isFirstVisit = !onboardingComplete;
-
-    // Individual World state is intentionally separate from the institutional
-    // learning state. The demo persists it per authenticated user, but it does
-    // not grant or remove institutional Tree capability.
-    const individualProgressKey = `e_leaf_individual_progress_v1:${user.id}`;
-    try{
-      const raw = localStorage.getItem(individualProgressKey);
-      if(raw){
-        const saved = JSON.parse(raw);
-        if(saved && typeof saved === 'object'){
-          individualGrowthProgress = {
-            learned: saved.learned === true,
-            shared: saved.shared === true,
-            helped: saved.helped === true
-          };
-          individualCanTeach = saved.canTeach === true && Object.values(individualGrowthProgress).every(Boolean);
-        }
-      }
-    }catch(error){ console.warn('Unable to load Individual World progress.', error); }
-    const individualOnboardingKey = `e_leaf_individual_onboarding_v1:${user.id}`;
-    let individualOnboardingComplete = false;
-    try{ individualOnboardingComplete = localStorage.getItem(individualOnboardingKey) === 'complete'; }catch(error){}
-    if(!individualOnboardingComplete){
-      const hasIndividualActivity = Object.values(individualGrowthProgress).some(Boolean) || individualCanTeach;
-      if(hasIndividualActivity){
-        individualOnboardingComplete = true;
-        try{ localStorage.setItem(individualOnboardingKey, 'complete'); }catch(error){}
-      }
-    }
-    individualIsFirstVisit = !individualOnboardingComplete;
-
-    return currentUser;
+function navIcon(name){return `<span class="nav-icon nav-icon-${name}">${icon(name)}</span>`}
+function hydrateChoiceIcons(){
+  const globalMark=$('#globalChoiceIcon');
+  const institutionMark=$('#institutionChoiceIcon');
+  const leafMark=$('#enterLeafIcon');
+  const treeMark=$('#enterTreeIcon');
+  if(globalMark)globalMark.innerHTML=icon('globe');
+  if(institutionMark)institutionMark.innerHTML=icon('building');
+  if(leafMark)leafMark.innerHTML=icon('leaf');
+  if(treeMark)treeMark.innerHTML=icon('tree');
+}
+function navItems(){
+  if(context.world==='institution') return context.role==='tree'
+    ? [['home','Home'],['classes','Classes'],['teach','Teach'],['community','Community'],['college','College']]
+    : [['home','Home'],['classes','Classes'],['learn','Learn'],['note','Notes'],['community','Community'],['college','College']];
+  return context.role==='tree'
+    ? [['home','Home'],['explore','Explore'],['teach','Teach'],['community','Community'],['library','Library']]
+    : [['home','Home'],['explore','Explore'],['learn','Learn'],['community','Community'],['library','Library']];
+}
+function setNav(active){
+  const nav=$('#appNav');
+  if(!nav)return;
+  nav.innerHTML=navItems().map(([key,label])=>`<button class="${active===key?'active':''}" data-nav="${key}">${navIcon(key)}<span>${label}</span></button>`).join('');
+  nav.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>routeApp(button.dataset.nav)));
+}
+function roleKey(world){
+  return session ? `e_leaf_last_role:${session.user.id}:${world}` : null;
+}
+function rememberedRole(world){
+  if(!session)return 'leaf';
+  const saved=store.get(roleKey(world),null);
+  return saved==='tree' && treeUnlockedForWorld(world) ? 'tree' : 'leaf';
+}
+function treeUnlockedForWorld(world){
+  if(!session)return false;
+  const institution=userProfile?.institution||'Your institution';
+  const key=world==='global' ? `e_leaf_global_growth:${session.user.id}` : `e_leaf_institution_growth:${session.user.id}:${institution}`;
+  return !!store.get(key,{unlocked:false}).unlocked;
+}
+function setRememberedRole(role){
+  if(session&&context.world)store.set(roleKey(context.world),role);
+}
+function transitionSpace(targetWorld){
+  if(!session)return;
+  if(!context.world){
+    context.world=targetWorld;
+    context.institution=targetWorld==='institution'?(userProfile?.institution||'Your institution'):null;
+    openRole(targetWorld,context.institution);
+    return;
   }
-  async function saveUserState(){
-  const userId = currentUser?.id;
-  if(!userId) return;
-
-  const progressKey = `e_leaf_progress_v2:${userId}`;
-  const payload = {
-    learned: growthProgress.learned === true,
-    shared: growthProgress.shared === true,
-    helped: growthProgress.helped === true,
-    canTeach: canTeach === true,
-    updatedAt: new Date().toISOString()
-  };
-
+  if(context.world===targetWorld){renderApp();return;}
+  const overlay=$('#spaceTransition');
+  $('#spaceTransitionMark').innerHTML=icon(targetWorld==='global'?'globe':'building');
+  $('#spaceTransitionEyebrow').textContent=targetWorld==='global'?'GLOBAL SPACE':'INSTITUTIONAL SPACE';
+  $('#spaceTransitionTitle').textContent=targetWorld==='global'?'Stepping into the wider world.':'Coming back to your college space.';
+  $('#spaceTransitionCopy').textContent=targetWorld==='global'?'There is more to explore beyond one curriculum.':'Your learning returns to the people, classes, and resources of your institution.';
+  hideAllOverlays(); overlay.classList.remove('hidden','out');
+  setTimeout(()=>{
+    context.world=targetWorld;
+    context.institution=targetWorld==='institution'?(userProfile?.institution||'Your institution'):null;
+    context.role=rememberedRole(targetWorld);
+    store.set(`e_leaf_last_context:${session.user.id}`,context);
+    renderApp();
+    overlay.classList.add('out');
+    setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out')},430);
+  },900);
+}
+function transitionRole(targetRole){
+  if(context.role===targetRole){renderApp();return;}
+  if(targetRole==='tree'&&!treeUnlockedForContext()){
+    toast('Your Tree is not ready yet. Keep learning, sharing, and helping.');
+    return;
+  }
+  const overlay=$('#roleTransition');
+  const toTree=targetRole==='tree';
+  const mark=$('#roleTransitionMark');
+  mark.innerHTML=icon(toTree?'tree':'leaf');
+  mark.classList.toggle('transition-to-tree',toTree);
+  mark.classList.toggle('transition-to-leaf',!toTree);
+  $('#roleTransitionEyebrow').textContent=toTree?'TREE SPACE':'LEAF SPACE';
+  $('#roleTransitionTitle').textContent=toTree?'Your Tree space is ready.':'Back to your learning space.';
+  $('#roleTransitionCopy').textContent=toTree?'You chose to step into teaching. You can still learn here, whenever you want.':'Teaching stays available to you. For now, you are here to learn.';
+  hideAllOverlays(); overlay.classList.remove('hidden','out');
+  setTimeout(()=>{
+    context.role=targetRole; setRememberedRole(targetRole); store.set('e_leaf_last_context:'+session.user.id,context); renderApp(); overlay.classList.add('out');
+    setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out')},430);
+  },850);
+}
+function openAuth(mode='signup',action=null){
+  pendingAction=action;
+  show($('#authOverlay'));
+  setAuthMode(mode);
+  setTimeout(()=>$(mode==='signup'?'#authName':'#authEmail')?.focus(),50);
+}
+function closeAuth(){hide($('#authOverlay'));$('#authMessage').textContent='';}
+function setAuthMode(mode){
+  const signup=mode==='signup';
+  $('#signupTab').classList.toggle('active',signup);
+  $('#loginTab').classList.toggle('active',!signup);
+  $('#nameField').classList.toggle('hidden',!signup);
+  $('#authTitle').textContent=signup?'Join E-Leaf':'Log in';
+  $('#authCopy').textContent=signup?'Create an account when you are ready to become part of the learning community.':'Log in to continue into your E-Leaf space.';
+  $('#authSubmit').textContent=signup?'Create account':'Log in';
+}
+async function submitAuth(e){
+  e.preventDefault();
+  $('#authMessage').textContent='';
+  const email=$('#authEmail').value.trim(),password=$('#authPassword').value;
+  const signup=$('#signupTab').classList.contains('active');
   try{
-    localStorage.setItem(progressKey, JSON.stringify(payload));
-  }catch(error){
-    console.warn("Unable to save user progress.", error);
+    let result;
+    if(signup){
+      const name=$('#authName').value.trim();
+      if(!name) throw Error('Please enter your name.');
+      result=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+      if(result.error) throw result.error;
+      if(!result.data.session){
+        $('#authMessage').style.color='var(--leaf-dark)';
+        $('#authMessage').textContent='Account created. Check your email if confirmation is required, then log in.';
+        return;
+      }
+    }else{
+      result=await supabaseClient.auth.signInWithPassword({email,password});
+      if(result.error) throw result.error;
+    }
+    session=result.data.session;
+    userProfile=loadProfile(session.user);
+    closeAuth();
+    showContext();
+  }catch(err){
+    $('#authMessage').style.color='var(--danger)';
+    $('#authMessage').textContent=err.message||'Something went wrong. Please try again.';
   }
 }
-  async function saveIndividualState(){
-    const userId = currentUser?.id;
-    if(!userId) return;
-    const key = `e_leaf_individual_progress_v1:${userId}`;
-    const payload = {
-      learned: individualGrowthProgress.learned === true,
-      shared: individualGrowthProgress.shared === true,
-      helped: individualGrowthProgress.helped === true,
-      canTeach: individualCanTeach === true,
-      updatedAt: new Date().toISOString()
-    };
-    try{ localStorage.setItem(key, JSON.stringify(payload)); }catch(error){ console.warn('Unable to save Individual World progress.', error); }
-  }
-  function updateIndividualIdentity(){
-    const name=(currentUser.name||'Almost Fake').trim() || 'Almost Fake';
-    const initials=initialsForName(name);
-    ['individualLeafAvatar','individualTreeAvatar'].forEach(id=>{ const el=$(id); if(el){ el.textContent=initials; el.style.background=currentRole==='tree'?'var(--bark-deep)':'var(--moss-deep)'; } });
-    ['individualLeafName','individualTreeName'].forEach(id=>{ const el=$(id); if(el) el.textContent=name; });
-    const leafSwitch=$('individualLeafModeSwitch'), treeSwitch=$('individualTreeModeSwitch');
-    if(leafSwitch) leafSwitch.style.display=individualCanTeach?'flex':'none';
-    if(treeSwitch) treeSwitch.style.display=individualCanTeach?'flex':'none';
-  }
-
-  function completeIndividualFirstVisit(){
-    if(!currentUser?.id || !individualIsFirstVisit) return;
-    try{ localStorage.setItem(`e_leaf_individual_onboarding_v1:${currentUser.id}`, 'complete'); }catch(error){}
-    individualIsFirstVisit = false;
-  }
-  function renderIndividualProfile(){
-    const copy=$('individualProfileCopy'), philosophy=$('individualProfilePhilosophy');
-    const leafTitle=$('individualLeafChoiceTitle'), leafSub=$('individualLeafChoiceSub');
-    const treeTitle=$('individualTreeChoiceTitle'), treeSub=$('individualTreeChoiceSub'), treeAction=$('individualTreeChoiceAction');
-    const lock=$('individualTreeLock'), treeCard=$('individualTreeChoice');
-    if(copy) copy.textContent = individualCanTeach
-      ? 'You can learn as a Learner or guide others as a Teacher. Choose where you want to begin today.'
-      : individualIsFirstVisit
-        ? 'Begin as a Learner. Learn from the community, discover what interests you, and grow from there.'
-        : 'Keep learning from the community. Your path toward becoming a Teacher continues whenever you are ready.';
-    if(leafTitle) leafTitle.textContent = individualIsFirstVisit ? 'Start as a Learner' : 'Continue as a Learner';
-    if(leafSub) leafSub.textContent = individualIsFirstVisit ? 'Begin with curiosity. Learn from the community and build your own path.' : 'Keep exploring, learning, and following the ideas that matter to you.';
-    if(treeTitle) treeTitle.textContent = individualCanTeach ? 'Continue as a Teacher' : 'Grow into a Teacher';
-    if(treeSub) treeSub.textContent = individualCanTeach ? 'Share what you know while staying part of the wider learning community.' : 'Teaching opens after you have grown through the E-Leaf community.';
-    if(treeAction) treeAction.textContent = individualCanTeach ? 'Enter as Teacher' : 'Path to Teacher';
-    if(lock) lock.style.display = individualCanTeach ? 'none' : '';
-    if(treeCard){ treeCard.classList.toggle('locked', !individualCanTeach); treeCard.disabled = !individualCanTeach; }
-    if(philosophy) philosophy.textContent = individualCanTeach
-      ? 'Learn from the community. Become part of the community. Guide the community.'
-      : individualIsFirstVisit
-        ? 'Learn from the community. Become part of the community. Grow toward guiding it.'
-        : 'Keep learning. Keep participating. Keep growing toward guiding others.';
-  }
-  function renderIndividualGrowth(){
-    const done=Object.values(individualGrowthProgress).filter(Boolean).length;
-    const pct=Math.round(done/3*100);
-    const fill=$('individualGrowthFill'), count=$('individualGrowthCount');
-    if(fill) fill.style.width=pct+'%';
-    if(count) count.textContent=`${done} of 3 complete`;
-    [['learn','indStepLearn'],['share','indStepShare'],['help','indStepHelp']].forEach(([key,id])=>{
-      const el=$(id); if(!el) return; el.classList.toggle('done', !!individualGrowthProgress[key]); el.textContent=individualGrowthProgress[key] ? '✓' : el.textContent;
-    });
-    document.querySelectorAll('[data-individual-growth]').forEach(btn=>{
-      const key=btn.dataset.individualGrowth;
-      btn.disabled=!!individualGrowthProgress[key] || individualCanTeach;
-      btn.textContent=individualGrowthProgress[key] ? 'Done' : 'Try';
-    });
-    const cta=$('individualGrowBtn');
-    if(cta){ const ready=done===3; cta.disabled=!ready; cta.textContent=individualCanTeach?'Teacher access unlocked':ready?'Become a Teacher':'Keep growing'; }
-    const summary=$('individualGrowthSummary');
-    if(summary) summary.textContent=individualCanTeach ? 'You have grown into a Teacher. You can still return to learning anytime.' : done===3 ? 'Your demo path is complete. You can now try the Teacher world.' : 'Grow through the community before you teach it.';
-  }
-  async function completeIndividualGrowthStep(key){
-    if(!['learned','shared','helped'].includes(key) || individualGrowthProgress[key]) return;
-    individualGrowthProgress[key]=true;
-    await saveIndividualState();
-    renderIndividualGrowth();
-    showToast(key==='learned' ? 'Demo session attended.' : key==='shared' ? 'Your contribution was added to My Library.' : 'You joined a useful community conversation.');
-  }
-  async function individualGrowToTree(){
-    if(!currentUser.id) return;
-    const done=Object.values(individualGrowthProgress).filter(Boolean).length;
-    if(done<3){ showToast('Complete the three Individual growth steps first.'); return; }
-    if(individualCanTeach){ currentRole='tree'; showScreen('individualTree'); return; }
-    const overlay=$('growth-overlay');
-    if(!overlay){ individualCanTeach=true; currentRole='tree'; await saveIndividualState(); showScreen('individualTree'); return; }
-    const reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const line=overlay.querySelector('.grow-line'); if(line) line.textContent='You’ve grown into a Teacher. Keep learning, keep guiding.';
-    overlay.classList.remove('idle','quick','morph','reveal-text','complete','forward-mirror','reverse','fadeout','show'); overlay.classList.add('show','forward-mirror');
-    if(reduce){ overlay.classList.add('morph','reveal-text'); await new Promise(r=>setTimeout(r,900)); }
-    else { overlay.classList.add('quick'); await new Promise(r=>setTimeout(r,380)); overlay.classList.add('morph'); await new Promise(r=>setTimeout(r,760)); overlay.classList.add('reveal-text'); await new Promise(r=>setTimeout(r,520)); }
-    overlay.classList.add('fadeout');
-    individualCanTeach=true; currentRole='tree'; completeIndividualFirstVisit();
-    const savePromise=saveIndividualState();
-    showScreen('individualTree'); overlay.classList.remove('show');
-    await new Promise(r=>setTimeout(r,580)); await savePromise;
-    overlay.classList.remove('morph','reveal-text','quick','forward-mirror','fadeout');
-    renderIndividualProfile(); renderIndividualGrowth();
-  }
-  async function individualSwitchToLeaf(){
-    if(currentRole!=='tree'){ currentRole='leaf'; showScreen('individualLeaf'); return; }
-    const overlay=$('growth-overlay');
-    if(!overlay){ currentRole='leaf'; showScreen('individualLeaf'); return; }
-    const reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const line=overlay.querySelector('.grow-line'); if(line) line.textContent='Time to learn, Learner.';
-    overlay.classList.remove('quick','morph','reveal-text','reverse','fadeout','show'); overlay.classList.add('reverse','show');
-    if(reduce){ overlay.classList.add('morph','reveal-text'); await new Promise(r=>setTimeout(r,900)); }
-    else { overlay.classList.add('quick'); await new Promise(r=>setTimeout(r,380)); overlay.classList.add('morph'); await new Promise(r=>setTimeout(r,760)); overlay.classList.add('reveal-text'); await new Promise(r=>setTimeout(r,520)); }
-    currentRole='leaf'; showScreen('individualLeaf'); overlay.classList.remove('show','morph','reveal-text','quick','reverse');
-  }
-
-  // ---- growth / role state ----
-  async function markProgress(key){
-    const wasComplete = growthProgress[key] === true;
-    if(!wasComplete){
-      growthProgress[key] = true;
-      await saveUserState();
-      const done = Object.values(growthProgress).filter(Boolean).length;
-      const remaining = 3 - done;
-      if(remaining > 0){
-        showToast(`You completed this step. ${remaining} more step${remaining === 1 ? '' : 's'} to go.`);
-      }else{
-        showToast('Your Tree is fully grown. You can now become a Tree.');
-      }
-    }
-    renderGrowthState();
-  }
-  function growthSteps(){
-    return [
-      { key:'learned', title:'Learn from another Tree', sub:growthProgress.learned ? 'Completed  -  you attended a class.' : 'Attend at least one class as a Leaf.' },
-      { key:'shared', title:'Share something useful', sub:growthProgress.shared ? 'Completed  -  you planted a note.' : 'Plant at least one useful note for others.' },
-      { key:'helped', title:'Help another learner', sub:growthProgress.helped ? 'Completed  -  you answered a question.' : 'Answer at least one question from a Tree.' }
-    ];
-  }
-  function renderSidebarTree(done){
-    document.querySelectorAll('.sidebar-tree-growth').forEach(widget => {
-      const isTreeMode = widget.classList.contains('tree-mode');
-      const pct = isTreeMode ? 100 : Math.round((done / 3) * 100);
-      const fill = widget.querySelector('.sidebar-tree-fill');
-      if(fill) fill.style.clipPath = `inset(${100 - pct}% 0 0 0)`;
-      widget.classList.toggle('fully-grown', !isTreeMode && done === 3);
-
-      const next = widget.querySelector('.sidebar-tree-next');
-      const status = widget.querySelector('.sidebar-tree-status');
-      if(isTreeMode){
-        if(next) next.textContent = 'Keep learning as a Leaf';
-        if(status) status.textContent = 'A Tree still grows';
-      }else{
-        const steps = [
-          'Next: take a class',
-          'Next: share something useful',
-          'Next: help someone learn'
-        ];
-        if(next) next.textContent = done === 3 ? 'Your Tree is fully grown' : steps[done];
-        if(status) status.textContent = done === 3 ? 'You can now become a Tree' : `${done} of 3 steps complete`;
-      }
-
-      const details = widget.querySelector('.sidebar-tree-details');
-      if(details){
-        const items = [
-          { key:'learned', label:'Take a class', action:'takeClass' },
-          { key:'shared', label:'Share something useful', action:'plantLeafNote' },
-          { key:'helped', label:'Help someone learn', action:'helpSomeone' }
-        ];
-        details.innerHTML = `<div class="sidebar-tree-detail-title">Your path</div>` + items.map(item => `
-          <button type="button" class="sidebar-tree-step ${growthProgress[item.key] ? 'complete' : ''}" data-sidebar-tree-action="${item.action}">
-            <span class="sidebar-tree-step-mark">${growthProgress[item.key] ? '<svg><use href="#ic-check" xlink:href="#ic-check"/></svg>' : ''}</span>
-            <span>${item.label}</span>
-          </button>`).join('') + (done === 3 && !isTreeMode ? `<button type="button" class="sidebar-tree-become" data-sidebar-tree-action="becomeTree"><svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Become a Tree</button>` : '');
-      }
-    });
-  }
-
-  function renderGrowthState(){
-    const done = Object.values(growthProgress).filter(Boolean).length;
-    const pct = Math.round(done/3*100);
-    document.querySelectorAll('.growth-path-pill').forEach(pill => {
-      const fill = pill.querySelector('.growth-path-fill');
-      const count = pill.querySelector('.growth-path-count');
-      if(fill) fill.style.width = pct + '%';
-      if(count) count.textContent = `${done}/3`;
-    });
-    const list = $('leafGrowthChecklist');
-    const btList = $('btGrowthChecklist');
-    const html = growthSteps().map(step => `
-      <li>
-        <div class="check-dot ${growthProgress[step.key] ? 'done' : ''}">
-          ${growthProgress[step.key] ? '<svg><use href="#ic-check" xlink:href="#ic-check"/></svg>' : ''}
-        </div>
-        <div><div class="item-title">${escapeHtml(step.title)}</div><div class="item-sub">${escapeHtml(step.sub)}</div></div>
-      </li>`).join('');
-    if(list) list.innerHTML = html;
-    if(btList) btList.innerHTML = html;
-    ['leafProgressFill','btProgressFill'].forEach(id => { const el=$(id); if(el) el.style.width=pct+'%'; });
-    ['leafProgressLabel','btProgressLabel'].forEach(id => { const el=$(id); if(el) el.textContent=`${done} of 3 complete`; });
-    renderSidebarTree(done);
-    const ready = done === 3;
-    ['miniGrowBtn','mainGrowBtn'].forEach(id => {
-      const el=$(id);
-      if(!el) return;
-      const enabled = ready;
-      el.disabled = !enabled;
-      el.classList.toggle('ready', enabled);
-      el.innerHTML = canTeach
-        ? '<svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>Become a Tree'
-        : ready
-          ? '<svg><use href="#ic-tree" xlink:href="#ic-tree"/></svg>I’m ready to teach'
-          : '<svg><use href="#ic-sparkle" xlink:href="#ic-sparkle"/></svg>Keep growing';
-    });
-    const summary=$('growthSummary');
-    if(summary){
-      summary.innerHTML = canTeach
-        ? '<strong>You are a Tree.</strong> You can still return to Leaf mode whenever you want to learn.'
-        : ready
-          ? '<strong>You are ready.</strong> When you choose to teach, the Tree path will unlock permanently.'
-          : `<strong>${done}/3 complete.</strong> ${3-done} step${3-done===1?'':'s'} left before your Tree path opens.`;
-    }
-    const welcome=$('leafWelcomeText');
-    if(welcome){
-      welcome.textContent = canTeach
-        ? 'You are a Tree now  -  and you never stop being a Leaf. Learn whenever you need to.'
-        : `You have completed ${done} of 3 steps toward becoming a Tree.`;
-    }
-    const activeEntry = Object.entries(screens).find(([,el]) => el && el.classList.contains('active'));
-    if(activeEntry) updateMobileNav(activeEntry[0]);
-  }
-
-
-  // Initialize persistent application chrome only after role/growth state exists.
-  // Keeping this after the state declarations prevents a temporal-dead-zone crash
-  // during first page load.
-  syncTopNavbars();
-  applyIdentityUI();
-
-
-  // ---- tiny escaping helper (safe to render user-entered text) ----
-  function escapeHtml(str){
-    return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  // ---- client data access seam ----
-  // UI code only talks to this adapter for persisted records. It deliberately
-  // retains the prototype's storage behavior, but a future Supabase adapter can
-  // replace `records` without changing screen renderers or event handlers.
-  // Authentication, authorization, and ownership remain demo-only until they
-  // are enforced by that backend adapter and its server-side policies.
-  const persistentStorage = (() => {
-    try {
-      return typeof window !== 'undefined' && window.localStorage ? window.localStorage : null;
-    } catch (error) {
-      return null;
-    }
-  })();
-  const hasRealStorage = !!persistentStorage;
-  const memoryStore = {};
-  // Demo fixtures require an explicit document flag. Production must omit it;
-  // this makes automatic seeding opt-in rather than a backend deployment default.
-  const clientData = { isDemoMode: document.documentElement.dataset.demoMode === 'true', records: {
-    async get(key){
-      if(hasRealStorage){
-        try {
-          const stored = persistentStorage.getItem(key);
-          return stored == null ? null : { key, value: stored };
-        } catch (e) {
-          return null;
-        }
-      }
-      return Object.prototype.hasOwnProperty.call(memoryStore, key) ? { key, value: memoryStore[key] } : null;
-    },
-    async set(key, value){
-      if(hasRealStorage){
-        try {
-          persistentStorage.setItem(key, value);
-          return { key, value };
-        } catch (e) {
-          return null;
-        }
-      }
-      memoryStore[key] = value; return { key, value };
-    },
-    async list(prefix){
-      if(hasRealStorage){
-        try {
-          const keys = [];
-          for (let index = 0; index < persistentStorage.length; index += 1) {
-            const key = persistentStorage.key(index);
-            if (key && key.startsWith(prefix)) keys.push(key);
-          }
-          return { keys };
-        } catch (e) {
-          return { keys: [] };
-        }
-      }
-      return { keys: Object.keys(memoryStore).filter(k => k.startsWith(prefix)) };
-    }
-  }};
-  const store = clientData.records;
-
-  async function getAllByPrefix(prefix){
-    let listRes;
-    try{ listRes = await store.list(prefix); }catch(e){ listRes = null; }
-    const keys = (listRes && listRes.keys) || [];
-    const items = [];
-    for(const k of keys){
-      try{
-        const r = await store.get(k);
-        if(r && r.value) items.push(JSON.parse(r.value));
-      }catch(e){ /* skip unreadable entry */ }
-    }
-    return items;
-  }
-
-  function attendanceKey(classId){
-    return currentUser.id ? `attendance:${currentUser.id}:${classId}` : null;
-  }
-
-  async function getUserAttendedClassIds(){
-    if(!currentUser.id) return new Set();
-    const ids = new Set();
-    try{
-      const records = await getAllByPrefix(`attendance:${currentUser.id}:`);
-      records.forEach(r => { if(r && r.classId) ids.add(r.classId); });
-    }catch(e){}
-    return ids;
-  }
-
-  async function hydrateClassAttendance(classList){
-    if(!currentUser?.id || !Array.isArray(classList)) return Array.isArray(classList) ? classList : [];
-    let attendedIds = new Set();
-    try{ attendedIds = await getUserAttendedClassIds(); }catch(e){}
-    return classList.map(c => ({ ...c, attended: attendedIds.has(c.id) }));
-  }
-
-  let growthSyncInFlight = null;
-  async function syncGrowthProgressFromActivity(){
-    if(!currentUser?.id) return growthProgress;
-    if(growthSyncInFlight) return growthSyncInFlight;
-
-    growthSyncInFlight = (async () => {
-      let notes = [];
-      let questions = [];
-      let attendedIds = new Set();
-      try{ notes = await getAllByPrefix('note:'); }catch(e){}
-      try{ questions = await getAllByPrefix('question:'); }catch(e){}
-      try{ attendedIds = await getUserAttendedClassIds(); }catch(e){}
-
-      const userId = currentUser.id;
-      const mine = (record) => record && record.authorId === userId;
-      const myNotes = notes.filter(mine);
-      const myAnswers = questions.reduce((count, q) => {
-        // Help is earned by answering another Tree's question, not your own.
-        if(q?.teacherId === userId) return count;
-        return count + (Array.isArray(q?.answers) ? q.answers.filter(a => mine(a)).length : 0);
-      }, 0);
-
-      const next = {
-        learned: growthProgress.learned === true || attendedIds.size > 0,
-        shared: growthProgress.shared === true || myNotes.length > 0,
-        helped: growthProgress.helped === true || myAnswers > 0
-      };
-      const changed = next.learned !== growthProgress.learned || next.shared !== growthProgress.shared || next.helped !== growthProgress.helped;
-      growthProgress = next;
-
-      const allThree = next.learned && next.shared && next.helped;
-      // In the prototype, Tree capability is permanently retained once earned.
-      // A profile-level tree_unlocked value remains authoritative when present.
-      if(allThree) canTeach = true;
-
-      if(changed) await saveUserState();
-      return growthProgress;
-    })();
-
-    try{ return await growthSyncInFlight; }
-    finally{ growthSyncInFlight = null; }
-  }
-
-  async function reconcileGrowthStateAndRender(){
-    if(currentUser?.id){
-      try{ await syncGrowthProgressFromActivity(); }catch(e){}
-    }
-    renderGrowthState();
-  }
-
-  async function ensureDemoClass(){
-    const demoId = 'c-demo-growth';
-    try{
-      const existing = await store.get('class:' + demoId);
-      if(!existing || !existing.value){
-        const demo = { id:demoId, title:'E-Leaf Demo Class', subject:'Environmental Science', date:'2026-09-06', time:'18:00', teacher:'Willow Peer', status:'scheduled', demo:true, attended:false };
-        await store.set('class:' + demoId, JSON.stringify(demo));
-      }
-    }catch(e){}
-  }
-
-  async function seedIfNeeded(){
-    if(!clientData.isDemoMode) return;
-    await ensureDemoClass();
-    let seeded = null;
-    try{ seeded = await store.get('seeded_v1'); }catch(e){ seeded = null; }
-    if(seeded) return;
-    const notes = [
-      { id:'n1', subject:'Biology', title:'Photosynthesis  -  First Principles', description:'How leaves turn sunlight into sugar; a gentle walkthrough with diagrams.', author:'Willow Peer', rating:4.0, createdAt: Date.now() - 90000000 },
-      { id:'n2', subject:'Mathematics', title:'Linear Algebra in 20 Minutes', description:'Vectors, spans, and the geometry of transformation.', author:'Willow Peer', rating:2.0, createdAt: Date.now() - 70000000 },
-      { id:'n3', subject:'Environmental Science', title:'Reading the Forest  -  Ecosystem Notes', description:'Field notes on canopy layers, understory life, and forest floor decay.', author:'Willow Peer', rating:3.0, createdAt: Date.now() - 50000000 },
-      { id:'n4', subject:'Biology', title:'Cell Membranes, Explained With Traffic', description:'Using a city-traffic analogy to make transport proteins click.', author:'Maya Chen', rating:4.5, createdAt: Date.now() - 30000000 },
-      { id:'n5', subject:'Mathematics', title:'Why Determinants Are Areas', description:'A visual note on why the determinant formula is really about area and volume.', author:'Sara Malik', rating:5.0, createdAt: Date.now() - 15000000 }
-    ];
-    for(const n of notes){ await store.set('note:' + n.id, JSON.stringify(n)); }
-    const classes = [
-      { id:'c1', title:'Intro to Ecosystems', subject:'Environmental Science', date:'2026-09-10', time:'16:00', teacher:'Willow Peer', status:'scheduled' },
-      { id:'c2', title:'Vectors & Spans Recap', subject:'Mathematics', date:'2026-09-05', time:'11:00', teacher:'Willow Peer', status:'ended' }
-    ];
-    for(const c of classes){ await store.set('class:' + c.id, JSON.stringify(c)); }
-
-    const questions = [
-      { id:'q1', title:'What actually limits photosynthesis rate indoors?', body:'My classroom plants seem to stall even with grow lights on. What variable should I check first?', subject:'Biology', teacher:'Willow Peer', createdAt: Date.now() - 40000000,
-        answers:[ { id:'a1', author:'Maya Chen', text:'Usually CO₂ concentration  -  grow lights fix the light limit but indoor air runs low on CO₂ fast.', createdAt: Date.now() - 30000000 } ] },
-      { id:'q2', title:'Best way to explain eigenvectors intuitively?', body:'Looking for an analogy that clicks for students seeing linear algebra for the first time.', subject:'Mathematics', teacher:'Willow Peer', createdAt: Date.now() - 20000000, answers:[] }
-    ];
-    for(const q of questions){ await store.set('question:' + q.id, JSON.stringify(q)); }
-
-    await store.set('seeded_v1', 'true');
-  }
-
-  const demoTrees = [
-    { id:'t1', name:'Willow Peer', initials:'WP', color:'#6b4a34', expertise:['Biology','Environmental Science'], email:'willow.peer@e-leaf.demo', phone:'+91 90000 11111', availability:'Mon-Fri, 4-6pm', bio:'Field biologist turned teacher; loves ecosystem walks and slow, visual explanations.' },
-    { id:'t2', name:'Elias Grove', initials:'EG', color:'#4a3324', expertise:['Mathematics'], email:'elias.grove@e-leaf.demo', phone:'+91 90000 22222', availability:'Tue & Thu, 6-8pm', bio:'Makes linear algebra feel like geometry, not memorization.' },
-    { id:'t3', name:'Nadia Fern', initials:'NF', color:'#8a6b4f', expertise:['Environmental Science','Biology'], email:'nadia.fern@e-leaf.demo', phone:'+91 90000 33333', availability:'Weekends, 10am-1pm', bio:'Runs the "Reading the Forest" note series; big on real-world field notes.' }
-  ];
-  const currentTreeExpertise = ['Biology', 'Environmental Science'];
-
-  const demoLeaderboardPool = [
-    { name:'Maya Chen', initials:'MC', color:'#5f8c5a', score:130, answers:13 },
-    { name:'Sara Malik', initials:'SM', color:'#d9a441', score:90, answers:9 },
-    { name:'Rohan Iyer', initials:'RI', color:'#6b4a34', score:60, answers:6 },
-    { name:'Priya Nair', initials:'PN', color:'#6b4a34', score:40, answers:4 },
-    { name:'Leo Fischer', initials:'LF', color:'#5f8c5a', score:20, answers:2 }
-  ];
-
-  const demoStudents = [
-    { name:'Maya Chen', subject:'Biology', classes:8, answered:5, doubts:2, initials:'MC', color:'#5f8c5a' },
-    { name:'Rohan Iyer', subject:'Environmental Science', classes:5, answered:3, doubts:4, initials:'RI', color:'#6b4a34' },
-    { name:'Sara Malik', subject:'Mathematics', classes:11, answered:7, doubts:1, initials:'SM', color:'#d9a441' },
-    { name:'Leo Fischer', subject:'Biology', classes:4, answered:2, doubts:3, initials:'LF', color:'#5f8c5a' },
-    { name:'Priya Nair', subject:'Environmental Science', classes:7, answered:4, doubts:2, initials:'PN', color:'#6b4a34' }
-  ];
-
-  function starsHtml(rating){
-    const r = Number(rating) || 0;
-    const full = Math.round(r);
-    let s = '';
-    for(let i=0;i<5;i++){ s += i < full ? '★' : '<span class="off">☆</span>'; }
-    return s + ' ' + r.toFixed(1) + ' avg';
-  }
-
-  function fmtDate(dateStr, timeStr){
-    if(!dateStr) return 'Date TBD';
-    try{
-      const d = new Date(dateStr + 'T' + (timeStr || '00:00'));
-      if(isNaN(d.getTime())) return dateStr + ' ' + (timeStr || '');
-      return d.toLocaleDateString(undefined, { month:'short', day:'numeric' }) + ' · ' + d.toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' });
-    }catch(e){ return dateStr + ' ' + (timeStr || ''); }
-  }
-
-  let activeNotesView = 'mine';
-  function savedNoteIds(){ try{return JSON.parse(localStorage.getItem('eleaf_saved_notes')||'[]')}catch(e){return []} }
-  function isNoteSaved(id){ return savedNoteIds().includes(id); }
-  function toggleSavedNote(id){
-    const ids=savedNoteIds(); const at=ids.indexOf(id); if(at>=0) ids.splice(at,1); else ids.unshift(id);
-    localStorage.setItem('eleaf_saved_notes',JSON.stringify(ids));
-  }
-
-  // ---- notes ----
-  function buildNoteCardHtml(n){
-    return `
-      <div class="note-card">
-        <div class="note-eyebrow">${escapeHtml((n.subject||'General').toUpperCase())}</div>
-        <h3>${escapeHtml(n.title)}</h3>
-        <p>${escapeHtml(n.description || '')}</p>
-        <div class="note-meta">by ${escapeHtml(n.author || 'You')}</div>
-        <div class="stars">${starsHtml(n.rating)}</div>
-        ${n.authorId !== currentUser.id ? `<button class="note-save-btn ${isNoteSaved(n.id)?'saved':''}" data-save-note="${escapeHtml(n.id)}">${isNoteSaved(n.id)?'Saved ✓':'Save for later'}</button>` : ''}
-      </div>
-    `;
-  }
-
-  async function renderNotes(){
-    const grid = $('notesGrid');
-    if(!grid) return;
-    let notes = [];
-    try{ notes = await getAllByPrefix('note:'); }catch(e){ notes = []; }
-    notes.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-    if(notes.length === 0){
-      grid.innerHTML = '<div class="empty-state">No notes planted yet. Be the first to plant one.</div>';
-      return;
-    }
-    grid.innerHTML = notes.slice(0,2).map(buildNoteCardHtml).join('');
-  }
-
-  async function renderNotesFull(){
-    const host = $('notesFullList');
-    if(!host) return;
-    const screenEl = $('screen-notes-full');
-    if(screenEl) screenEl.classList.toggle('role-tree', currentRole === 'tree');
-    $('notesFullRoleText') && ($('notesFullRoleText').textContent = currentRole === 'tree' ? 'Tree' : 'Leaf');
-    $('notesFullAvatar') && ($('notesFullAvatar').style.background = currentRole === 'tree' ? 'var(--bark-deep)' : 'var(--moss-deep)');
-
-    let notes = [];
-    try{ notes = await getAllByPrefix('note:'); }catch(e){ notes = []; }
-    const allNotes = notes.slice();
-    if(activeNotesView === 'mine') notes = notes.filter(n => n.authorId === currentUser.id);
-    if(activeNotesView === 'explore') notes = notes.filter(n => n.authorId !== currentUser.id);
-    if(activeNotesView === 'saved'){ const saved = new Set(savedNoteIds()); notes = notes.filter(n => saved.has(n.id)); }
-    if(notes.length === 0){
-      const emptyCopy = activeNotesView === 'mine' ? 'Your planted notes will live here.' : activeNotesView === 'saved' ? 'Nothing saved yet. Save a useful note from Explore Notes.' : 'No shared notes to explore yet.';
-      host.innerHTML = '<div class="empty-state">'+emptyCopy+'</div>';
-      return;
-    }
-    const sortMode = ($('notesSortSelect') && $('notesSortSelect').value) || 'recent';
-    const sorter = sortMode === 'rating'
-      ? (a,b) => (b.rating||0) - (a.rating||0)
-      : (a,b) => (b.createdAt||0) - (a.createdAt||0);
-
-    const bySubject = {};
-    notes.forEach(n => {
-      const subj = n.subject || 'General';
-      if(!bySubject[subj]) bySubject[subj] = [];
-      bySubject[subj].push(n);
-    });
-    const subjects = Object.keys(bySubject).sort();
-    host.innerHTML = subjects.map(subj => `
-      <div class="subject-group">
-        <div class="subject-group-title">${escapeHtml(subj)}</div>
-        <div class="notes-grid">${bySubject[subj].sort(sorter).map(buildNoteCardHtml).join('')}</div>
-      </div>
-    `).join('');
-  }
-  on('notesSortSelect', 'change', renderNotesFull);
-
-  // ---- dashboard preview widgets (Leaf home + Tree home) ----
-  let previewTreeBound=false;
-  function onPreviewTreeCards(){
-    const host=$('treesPreviewLeaf');
-    if(!host || previewTreeBound) return;
-    previewTreeBound=true;
-    host.addEventListener('click',(e)=>{ if(e.target.closest('[data-tree-preview]')) showScreen('trees'); });
-  }
-
-  async function renderLeafPreviews(){
-    const classesHost = $('classesPreviewLeaf');
-    if(classesHost){
-      let classes = [];
-      try{ classes = await getAllByPrefix('class:'); }catch(e){ classes = []; }
-      const upcoming = classes.filter(c => c.status === 'scheduled' || c.status === 'live')
-        .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time)).slice(0,3);
-      classesHost.innerHTML = upcoming.length
-        ? upcoming.map(c => `
-            <div class="mini-class-card">
-              <div class="cc-title">${escapeHtml(c.title)}</div>
-              <div class="cc-meta">${escapeHtml(c.subject)} · ${fmtDate(c.date,c.time)}</div>
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="status-badge ${escapeHtml(c.status)}">${escapeHtml(c.status)}</span><span style="font-size:.7rem;color:var(--ink-soft);">by ${escapeHtml(c.teacher)}</span></div>
-            </div>
-          `).join('')
-        : '<div class="empty-state">No classes scheduled yet.</div>';
-    }
-
-    const treesHost = $('treesPreviewLeaf');
-    if(treesHost){
-      treesHost.innerHTML = demoTrees.slice(0,3).map(t => `
-        <button type="button" class="profile-preview-card" data-tree-preview="${escapeHtml(t.id)}">
-          <div class="profile-preview-photo tree-tone" style="color:${t.color}"><svg><use href="#ic-person" xlink:href="#ic-person"/></svg></div>
-          <div class="profile-preview-body">
-            <h4>${escapeHtml(t.name)}</h4>
-            <div class="profile-preview-meta">${escapeHtml(t.expertise.slice(0,2).join(' · '))}</div>
-            <div class="profile-preview-link">Know more</div>
-          </div>
-        </button>
-      `).join('');
-    }
-
-    onPreviewTreeCards();
-
-    const subjHost = $('subjectsPreviewLeaf');
-    if(subjHost){
-      let notes = [];
-      try{ notes = await getAllByPrefix('note:'); }catch(e){ notes = []; }
-      const counts = {};
-      notes.forEach(n => { const s = n.subject || 'General'; counts[s] = (counts[s]||0) + 1; });
-      const subjects = Object.keys(counts).length ? Object.keys(counts) : ['Biology','Mathematics','Environmental Science'];
-      subjHost.innerHTML = subjects.map(s => `
-        <div class="subject-chip-card" data-subject-chip="${escapeHtml(s)}" style="cursor:pointer;">
-          ${escapeHtml(s)} <span class="count">${counts[s] || 0} notes</span>
-        </div>
-      `).join('');
-    }
-  }
-  on('subjectsPreviewLeaf', 'click', (e) => {
-    const chip = e.target.closest('[data-subject-chip]');
-    if(!chip) return;
-    const subject = chip.dataset.subjectChip;
-    showScreen('notesFull');
-    setTimeout(() => {
-      const groups = document.querySelectorAll('.subject-group-title');
-      for(const g of groups){ if(g.textContent === subject){ g.scrollIntoView({ behavior:'smooth', block:'start' }); break; } }
-    }, 80);
-  });
-
-  function timeGreeting(){ const h=new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':'Good evening'; }
-  function journalEntries(){ try{return JSON.parse(localStorage.getItem('eleaf_journal')||'[]')}catch(e){return []} }
-  function saveJournalEntry(text){ const items=journalEntries(); items.unshift({id:Date.now(),text,createdAt:Date.now()}); localStorage.setItem('eleaf_journal',JSON.stringify(items.slice(0,100))); }
-  function renderLatestJournal(){
-    const host=$('journalLatest'); if(!host) return; const items=journalEntries();
-    host.innerHTML=items.length?`<div class="journal-date">${new Date(items[0].createdAt).toLocaleDateString(undefined,{month:'long',day:'numeric'})}</div>${escapeHtml(items[0].text)}`:'<div class="journal-empty">No reflection yet. Add one when something clicks - or doesn’t.</div>';
-  }
-  function openReflectionModal(){
-    openModal('Add a reflection',`<form data-modal-form><div class="field"><label>What changed in your understanding?</label><textarea name="reflection" required maxlength="500" placeholder="I finally understood… / I’m still confused about…"></textarea></div><button type="submit" class="submit-btn">Keep reflection</button></form>`,fd=>{ const t=(fd.get('reflection')||'').trim(); if(!t)return; saveJournalEntry(t); closeModal(); renderLatestJournal(); showToast('Reflection added to My Learning'); });
-  }
-  function openJournalModal(){
-    const items=journalEntries();
-    openModal('My learning journal',items.length?`<div style="display:grid;gap:12px;max-height:55vh;overflow:auto">${items.map(i=>`<div class="journal-entry"><div class="journal-date">${new Date(i.createdAt).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}</div>${escapeHtml(i.text)}</div>`).join('')}</div>`:'<div class="empty-state">No reflections yet.</div>',null);
-  }
-  const leafSubjectProgress = [
-    {subject:'Biology', completed:3, total:5, current:'Unit 4 · Genetics', units:['Cells & structure','Photosynthesis','Cell membranes','Genetics','Evolution']},
-    {subject:'Mathematics', completed:2, total:5, current:'Unit 3 · Determinants', units:['Functions','Matrices','Determinants','Vectors','Probability']},
-    {subject:'Environmental Science', completed:1, total:4, current:'Unit 2 · Ecosystems', units:['Foundations','Ecosystems','Climate systems','Conservation']},
-    {subject:'Physics', completed:2, total:6, current:'Unit 3 · Motion', units:['Measurement','Vectors','Motion','Forces','Energy','Waves']},
-    {subject:'Programming', completed:1, total:5, current:'Unit 2 · Loops', units:['Variables','Loops','Functions','Data structures','Projects']}
-  ];
-  const leafDiscussions = [
-    {title:'Best way to remember the stages of mitosis?', subject:'Biology', author:'Maya Leaf', replies:8, body:'I understand each stage separately, but I keep mixing up the order during revision.'},
-    {title:'Study group for determinants this week?', subject:'Mathematics', author:'Arjun Leaf', replies:5, body:'Looking for 2-3 people to work through determinant problems together.'},
-    {title:'Does anyone have a simple ecosystem case study?', subject:'Environmental Science', author:'Nina Leaf', replies:3, body:'Something small enough to understand before the next class would help.'}
-  ];
-  function quickLeafNotes(){ try{return JSON.parse(localStorage.getItem('eleaf_quick_notes')||'[]')}catch(e){return []} }
-  function saveQuickLeafNoteText(text){ const items=quickLeafNotes(); items.unshift({id:Date.now(),text,createdAt:Date.now()}); localStorage.setItem('eleaf_quick_notes',JSON.stringify(items.slice(0,100))); }
-  function renderSubjectProgressPreview(){ const host=$('learningGarden'); if(!host)return; host.innerHTML=leafSubjectProgress.slice(0,3).map(s=>`<div class="subject-progress-item"><div class="subject-progress-head"><div class="subject-progress-name">${escapeHtml(s.subject)}</div><div class="subject-progress-units">${s.completed} of ${s.total} units</div></div><div class="subject-current-unit">${escapeHtml(s.current)} in progress</div><div class="unit-dots">${s.units.map((_,i)=>`<span class="unit-dot ${i<s.completed?'done':i===s.completed?'current':''}"></span>`).join('')}</div></div>`).join(''); }
-  function renderProgressTracker(){ const host=$('progressTrackerGrid'); if(!host)return; host.innerHTML=leafSubjectProgress.map(s=>`<div class="tracker-card"><h3>${escapeHtml(s.subject)}</h3><div class="tracker-units">${s.completed} of ${s.total} units complete · ${escapeHtml(s.current)} in progress</div><div class="unit-list">${s.units.map((u,i)=>`<div class="unit-row ${i<s.completed?'done':i===s.completed?'current':''}"><span class="unit-marker"></span><span>${i<s.completed?'<strong>Completed</strong> · ':i===s.completed?'<strong>In progress</strong> · ':'Next · '}${escapeHtml(u)}</span></div>`).join('')}</div></div>`).join(''); }
-  function renderDiscussionPreview(){ const host=$('homeDiscussionPreview'); if(!host)return; host.innerHTML=leafDiscussions.slice(0,2).map(d=>`<div class="discussion-item"><div class="discussion-topic">${escapeHtml(d.title)}</div><div class="discussion-meta">${escapeHtml(d.subject)} · ${escapeHtml(d.author)} · ${d.replies} replies</div></div>`).join(''); }
-  function renderDiscussionPage(){ const host=$('discussionPageList'); if(!host)return; host.innerHTML=leafDiscussions.map(d=>`<div class="discussion-page-item"><h3>${escapeHtml(d.title)}</h3><p>${escapeHtml(d.body)}</p><div class="discussion-page-meta"><span>${escapeHtml(d.subject)} · started by ${escapeHtml(d.author)}</span><span>${d.replies} replies · Report</span></div></div>`).join(''); }
-  async function renderPersonalHome(){
-    if(!$('personalGreeting')) return;
-    $('personalGreeting').textContent=`${timeGreeting()}, ${(currentUser.name||'Almost').split(' ')[0]}.`;
-    let notes=[], classes=[], questions=[]; try{notes=await getAllByPrefix('note:')}catch(e){} try{classes=await getAllByPrefix('class:')}catch(e){} try{questions=await getAllByPrefix('question:')}catch(e){}
-    classes = await hydrateClassAttendance(classes);
-    const upcoming=classes.filter(c=>c.status==='scheduled'||c.status==='live').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-    const next=upcoming[0]||classes[0];
-    if(next){
-      $('homeClassTitle').textContent=next.title||'Upcoming class'; $('homeClassSubject').textContent=next.subject||'General'; $('homeClassWhen').textContent=fmtDate(next.date,next.time); $('homeClassTeacher').textContent=`with ${next.teacher||next.author||'a Tree'}`;
-      const live=next.status==='live'; $('homeClassStatus').classList.toggle('live',live); $('homeClassStatus').innerHTML=`<span class="class-status-dot"></span>${live?'Live now':'Upcoming'}`; $('homeClassPrimaryBtn').textContent=live?'Join now':'Explore class'; $('homeClassPrimaryBtn').dataset.classId=next.id||'';
-      $('currentLearningSubject').textContent=`Learning ${next.subject||'something new'}`; $('currentLearningDetail').textContent=next.title||'One idea at a time.';
-    }
-    const recentQuestion=[...questions].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0]||questions[0];
-    if(recentQuestion){ $('helpQuestion').textContent=`“${recentQuestion.title}”`; $('helpQuestionSubject').textContent=recentQuestion.subject||'Community'; $('helpQuestionMeta').textContent=`Most recent community question${recentQuestion.author?' · '+recentQuestion.author:''}`; }
-    const myNotes=notes.filter(n=>n.authorId===currentUser.id).length;
-    const myAnswers=questions.reduce((n,q)=>n+(q.answers||[]).filter(a=>a.authorId===currentUser.id).length,0);
-    const attended=classes.filter(c=>c.attended && c.teacher!==currentUser.name).length;
-    $('gardenStats').innerHTML=`<span><strong>${myNotes}</strong> notes planted</span><span><strong>${myAnswers}</strong> questions answered</span><span><strong>${attended}</strong> classes attended</span>`;
-    renderSubjectProgressPreview(); renderDiscussionPreview();
-    $('waitingCount').textContent=`${[next,recentQuestion,leafDiscussions[0]].filter(Boolean).length} things waiting for you`;
-  }
-
-  async function computeTopLeafByNotes(){
-    let notes = [];
-    try{ notes = await getAllByPrefix('note:'); }catch(e){ notes = []; }
-    const excluded = new Set(demoTrees.map(t => t.name));
-    if(currentRole === 'tree') excluded.add(currentUser.name);
-    const byAuthor = {};
-    notes.forEach(n => {
-      if(!n.author || excluded.has(n.author)) return;
-      if(!byAuthor[n.author]) byAuthor[n.author] = { name:n.author, total:0, count:0 };
-      byAuthor[n.author].total += Number(n.rating) || 0;
-      byAuthor[n.author].count += 1;
-    });
-    const ranked = Object.values(byAuthor).map(x => ({ name:x.name, avg: x.total / x.count, count:x.count }));
-    ranked.sort((a,b) => b.avg - a.avg);
-    return ranked;
-  }
-
-  function avatarColorFor(name){
-    const found = demoLeaderboardPool.find(p => p.name === name);
-    if(found) return found.color;
-    if(name === currentUser.name) return 'var(--gold)';
-    return 'var(--moss)';
-  }
-  function initialsFor(name){
-    const found = demoLeaderboardPool.find(p => p.name === name);
-    if(found) return found.initials;
-    return String(name || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  }
-
-  function treeTeachingNotes(){ try{return JSON.parse(localStorage.getItem('eleaf_tree_notes')||'[]')}catch(e){return []} }
-  function saveTreeTeachingNote(text){ const items=treeTeachingNotes(); items.unshift({id:Date.now(),text,createdAt:Date.now()}); localStorage.setItem('eleaf_tree_notes',JSON.stringify(items.slice(0,100))); }
-  function openTreeTeachingNoteModal(){
-    openModal('Add a teaching note',`<form data-modal-form><div class="field"><label>What do you want to remember?</label><textarea name="treeNote" required maxlength="500" placeholder="A tip to teach next, an explanation that worked, or an idea for a class…"></textarea></div><button type="submit" class="submit-btn">Plant teaching note</button></form>`,fd=>{const t=(fd.get('treeNote')||'').trim();if(!t)return;saveTreeTeachingNote(t);closeModal();renderTreeHome();showToast('Teaching note planted');});
-  }
-  function openTreeTeachingNotes(){ const items=treeTeachingNotes(); openModal('My teaching notes',items.length?`<div style="display:grid;gap:12px;max-height:55vh;overflow:auto">${items.map(i=>`<div class="journal-entry"><div class="journal-date">${new Date(i.createdAt).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}</div>${escapeHtml(i.text)}</div>`).join('')}</div>`:'<div class="empty-state">No teaching notes yet. Keep the first one small.</div>',null); }
-
-  function renderTreeTeachingProgress(myClasses){
-    const host=$('treeTeachingProgress'); if(!host) return;
-    const units={Biology:['Photosynthesis','Cell membranes','Ecosystems','Genetics','Evolution'],'Environmental Science':['Ecosystems','Climate systems','Biodiversity','Conservation','Field methods']};
-    const counts={}; myClasses.forEach(c=>counts[c.subject]=(counts[c.subject]||0)+1);
-    host.innerHTML=currentTreeExpertise.map(subject=>{ const taught=Math.min(units[subject]?.length||5, counts[subject]||0); const list=(units[subject]||['Unit 1','Unit 2','Unit 3','Unit 4','Unit 5']); const nextUnit=list[taught]||'All planned units taught'; return `<div class="tree-subject-progress"><div class="tree-subject-progress-head"><strong>${escapeHtml(subject)}</strong><span>${taught} of ${list.length} units taught</span></div><div class="tree-unit-track"><span style="width:${Math.round(taught/list.length*100)}%"></span></div><div class="tree-unit-next">${taught<list.length?'Next: '+escapeHtml(nextUnit):'Your teaching path is complete for now.'}</div></div>`; }).join('');
-  }
-
-  async function renderTreeHome(){
-    const greet=$('treePersonalGreeting'); if(greet) greet.textContent=`${timeGreeting()}, ${(currentUser.name||'Almost').split(' ')[0]}.`;
-    let notes=[], classes=[], questions=[]; try{notes=await getAllByPrefix('note:')}catch(e){} try{classes=await getAllByPrefix('class:')}catch(e){} try{questions=await getAllByPrefix('question:')}catch(e){}
-    classes = await hydrateClassAttendance(classes);
-    const myNotes=notes.filter(n=>n.authorId===currentUser.id);
-    const myClasses=classes.filter(c=>c.teacherId===currentUser.id || (!c.teacherId && c.teacher===currentUser.name));
-    const taught=myClasses.length;
-    const attended=classes.filter(c=>c.attended && c.teacher!==currentUser.name).length;
-    const scheduled=myClasses.filter(c=>c.status==='scheduled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-    const next=scheduled[0];
-    const q=questions.find(x=>!(x.answers||[]).some(a=>a.authorId===currentUser.id))||questions[0];
-    if(next){ $('treeNextClassTitle').textContent=next.title; $('treeNextClassMeta').textContent=`${next.subject} · ${fmtDate(next.date,next.time)} · your class`; $('treeFocusTitle').textContent=`Preparing ${next.title}`; $('treeFocusDetail').textContent='Your next class is already on the calendar.'; }
-    else { $('treeNextClassTitle').textContent='What would you like to teach next?'; $('treeNextClassMeta').textContent='Start with a class you already know well, or make space for a new idea.'; $('treeFocusTitle').textContent='Your next teaching step'; $('treeFocusDetail').textContent='Plant an idea, prepare a class, or help a Leaf.'; }
-    const qn=treeQuickNote(); if($('treeQuickNote')) $('treeQuickNote').value=qn; if($('treeQuickNoteStatus')) $('treeQuickNoteStatus').textContent=qn?'Saved privately':'Private to you'; const tn=treeTeachingNotes(); const latest=tn[0];
-    $('treeStats').innerHTML=`<div class="tree-stat"><strong>${taught}</strong><span>classes taught</span></div><div class="tree-stat"><strong>${attended}</strong><span>classes attended</span></div><div class="tree-stat"><strong>${myNotes.length}</strong><span>notes planted</span></div>`;
-    renderTreeTeachingProgress(myClasses);
-    const recent=classes.filter(c=>c.attended && c.teacher!==currentUser.name).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,3); $('treeTakenClasses').innerHTML=recent.length?recent.map(c=>`<div class="tree-class-row"><strong>${escapeHtml(c.title)}</strong><span>${escapeHtml(c.subject||'Class')} · ${fmtDate(c.date,c.time)}</span></div>`).join(''):'<div class="tree-workspace-meta">No attended classes recorded yet. Keep learning from other Trees.</div>';
-    const others=classes.filter(c=>c.teacher!==currentUser.name && c.status!=='ended').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,2);
-    $('treeOtherClasses').innerHTML=others.length?others.map(c=>`<div class="tree-other-class-row"><div><strong>${escapeHtml(c.title)}</strong><span>${escapeHtml(c.subject||'Class')} · ${fmtDate(c.date,c.time)} · by ${escapeHtml(c.teacher||'a Tree')}</span></div><button class="tree-mini-action" data-tree-leaf-class="${escapeHtml(c.id)}">${c.status==='live'?'Join now':'View class'}</button></div>`).join(''):'<div class="tree-workspace-meta">No other Tree classes are coming up yet.</div>';
-    $('treeOwnNotesTitle').textContent=`${myNotes.length} note${myNotes.length===1?'':'s'} planted`; $('treeOwnNotesMeta').textContent=myNotes.length?'Your notes are part of the knowledge you leave behind. Review them and let the best ones grow.':'Your first note can be a simple explanation, tip, or idea for a future class.'; $('treeWaitingCount').textContent=`${[next,q,latest].filter(Boolean).length || 1} ${[next,q,latest].filter(Boolean).length===1?'thing':'things'} to tend to`;
-  }
-
-  on('leaderboardPreviewTree','click',(e)=>{ if(e.target.closest('[data-leaf-preview]')) showScreen('leaderboard'); });
-
-  // ---- trees directory ----
-  async function renderTreesDirectory(){
-    const grid = $('treesGrid');
-    if(!grid) return;
-    const screenEl = $('screen-trees');
-    if(screenEl){
-      screenEl.classList.toggle('role-tree', currentRole === 'tree');
-      const roleEl = screenEl.querySelector('.who .role');
-      const avatarEl = screenEl.querySelector('.who .avatar');
-      const titleEl = screenEl.querySelector('.list-head h1');
-      const pillEl = screenEl.querySelector('.path-pill');
-      if(roleEl) roleEl.textContent = currentRole === 'tree' ? 'Tree' : 'Leaf';
-      if(avatarEl) avatarEl.style.background = currentRole === 'tree' ? 'var(--bark-deep)' : 'var(--moss-deep)';
-      if(titleEl) titleEl.textContent = currentRole === 'tree' ? 'Meet other Trees' : 'Meet the Trees';
-      if(pillEl) pillEl.textContent = currentRole === 'tree' ? 'MEET OTHER TREES' : 'MEET THE TREES';
-    }
-    const cards = demoTrees.map(t => `
-      <div class="tree-card">
-        <div class="tree-card-head">
-          <div class="tavatar-lg" style="background:${t.color}">${escapeHtml(t.initials)}</div>
-          <div><h3>${escapeHtml(t.name)}</h3></div>
-        </div>
-        <div class="expertise-row">${t.expertise.map(x => `<span class="exp-chip">${escapeHtml(x)}</span>`).join('')}</div>
-        <div class="avail-line">Available: ${escapeHtml(t.availability)}</div>
-        <div class="contact-line">Message through E-Leaf · No public contact details</div>
-        <p style="font-size:0.82rem;color:var(--ink-soft);margin:0 0 16px;">${escapeHtml(t.bio)}</p>
-        <button class="pill-btn" style="margin-top:0;" data-ask-tree="${escapeHtml(t.id)}">Ask a doubt</button>
-      </div>
-    `);
-    if(currentRole === 'tree'){
-      cards.push(`
-        <div class="tree-card" style="outline:2px solid var(--gold);">
-          <div class="tree-card-head">
-            <div class="tavatar-lg" style="background:var(--bark-deep)">AF</div>
-            <div><h3>${escapeHtml(currentUser.name)} <span style="font-size:0.72rem;color:var(--ink-soft);font-weight:500;">(You)</span></h3></div>
-          </div>
-          <div class="expertise-row">${currentTreeExpertise.map(x => `<span class="exp-chip">${escapeHtml(x)}</span>`).join('')}</div>
-          <p style="font-size:0.82rem;color:var(--ink-soft);margin:0;">This is how learners see your profile.</p>
-        </div>
-      `);
-    }
-    grid.innerHTML = cards.join('');
-  }
-  on('treesGrid', 'click', (e) => {
-    const btn = e.target.closest('[data-ask-tree]');
-    if(!btn) return;
-    const tree = demoTrees.find(t => t.id === btn.dataset.askTree);
-    if(tree) openChat(tree);
-  });
-
-  // ---- chat (Ask a doubt) ----
-  let currentChatTree = null;
-  function openChat(tree){
-    currentChatTree = tree;
-    const av = $('chatAvatar');
-    if(av){ av.style.background = tree.color; av.textContent = tree.initials; }
-    $('chatTreeName') && ($('chatTreeName').textContent = tree.name);
-    showScreen('chat');
-  }
-  async function renderChatMessages(){
-    const host = $('chatMessages');
-    if(!host || !currentChatTree) return;
-    const key = 'chat:' + currentChatTree.id;
-    let thread = [];
-    try{ const r = await store.get(key); if(r && r.value) thread = JSON.parse(r.value); }catch(e){}
-    if(thread.length === 0){
-      thread = [{ from:'them', text:`Hi! Ask me anything about ${currentChatTree.expertise[0] || 'the subject'}.`, ts:Date.now() }];
-    }
-    host.innerHTML = thread.map(m => `<div class="chat-bubble ${m.from === 'me' ? 'me' : 'them'}">${escapeHtml(m.text)}</div>`).join('');
-    host.scrollTop = host.scrollHeight;
-  }
-  async function sendChatMessage(){
-    const input = $('chatInput');
-    if(!input || !currentChatTree) return;
-    const text = input.value.trim();
-    if(!text) return;
-    const key = 'chat:' + currentChatTree.id;
-    let thread = [];
-    try{ const r = await store.get(key); if(r && r.value) thread = JSON.parse(r.value); }catch(e){}
-    if(thread.length === 0) thread = [{ from:'them', text:`Hi! Ask me anything about ${currentChatTree.expertise[0] || 'the subject'}.`, ts:Date.now() }];
-    thread.push({ from:'me', text, ts:Date.now() });
-    await store.set(key, JSON.stringify(thread));
-    input.value = '';
-    renderChatMessages();
-    const treeForReply = currentChatTree;
-    setTimeout(async () => {
-      let t2 = [];
-      try{ const r2 = await store.get(key); if(r2 && r2.value) t2 = JSON.parse(r2.value); }catch(e){}
-      t2.push({ from:'them', text: "Thanks for asking  -  I'll walk through it in our next class, or reply here shortly!", ts:Date.now() });
-      await store.set(key, JSON.stringify(t2));
-      if(currentChatTree && currentChatTree.id === treeForReply.id) renderChatMessages();
-    }, 1000);
-  }
-  on('chatSendBtn', 'click', sendChatMessage);
-  on('chatInput', 'keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); sendChatMessage(); } });
-
-  // ---- questions & answers ----
-  async function renderQuestions(){
-    const host = $('questionsList');
-    if(!host) return;
-    const screenEl = $('screen-questions');
-    if(screenEl) screenEl.classList.toggle('role-tree', currentRole === 'tree');
-    $('questionsRoleText') && ($('questionsRoleText').textContent = currentRole === 'tree' ? 'Tree' : 'Leaf');
-    $('questionsAvatar') && ($('questionsAvatar').style.background = currentRole === 'tree' ? 'var(--bark-deep)' : 'var(--moss-deep)');
-    $('questionsTitle') && ($('questionsTitle').textContent = currentRole === 'tree' ? 'Questions You Posted' : 'Questions from Trees');
-    const postBtn = $('postQuestionBtn');
-    if(postBtn) postBtn.style.display = currentRole === 'tree' ? 'inline-block' : 'none';
-
-    let questions = [];
-    try{ questions = await getAllByPrefix('question:'); }catch(e){ questions = []; }
-    questions.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-    if(currentRole === 'tree'){ questions = questions.filter(q => q.teacherId === currentUser.id || (!q.teacherId && q.teacher === currentUser.name)); }
-
-    if(questions.length === 0){
-      host.innerHTML = currentRole === 'tree'
-        ? "<div class=\"empty-state\">You haven't posted a question yet.</div>"
-        : '<div class="empty-state">No open questions right now  -  check back soon.</div>';
-      return;
-    }
-    host.innerHTML = questions.map(q => {
-      const answers = q.answers || [];
-      const answersHtml = answers.length
-        ? `<div class="answers-list">${answers.map(a => `<div class="answer-row"><span class="a-author">${escapeHtml(a.author)}:</span>${escapeHtml(a.text)}</div>`).join('')}</div>`
-        : `<div style="font-size:0.82rem;color:var(--ink-soft);margin-bottom:12px;">No answers yet.</div>`;
-      const answerForm = currentRole === 'leaf'
-        ? `<form class="answer-form" data-answer-form="${escapeHtml(q.id)}">
-             <label class="answer-label">Your answer</label>
-             <textarea name="answer" rows="3" placeholder="Explain what you know in a few clear sentences..." required></textarea>
-             <div class="answer-form-footer"><span>Helping here counts toward your Tree path.</span><button type="submit">Share answer</button></div>
-           </form>`
-        : '';
-      return `
-        <div class="question-card">
-          <div class="q-eyebrow">${escapeHtml((q.subject||'General').toUpperCase())}</div>
-          <h3>${escapeHtml(q.title)}</h3>
-          <div class="q-body">${escapeHtml(q.body || '')}</div>
-          <div class="q-meta">Asked by ${escapeHtml(q.teacher)} · ${answers.length} answer${answers.length === 1 ? '' : 's'}</div>
-          ${answersHtml}
-          ${answerForm}
-        </div>
-      `;
-    }).join('');
-  }
-  on('questionsList', 'submit', async (e) => {
-    const form = e.target.closest('[data-answer-form]');
-    if(!form) return;
-    e.preventDefault();
-    const qId = form.dataset.answerForm;
-    if(!currentUser?.id){ showToast('Please log in before answering.'); return; }
-    const input = form.querySelector('textarea[name="answer"], input[name="answer"]');
-    const text = ((input && input.value) || '').trim();
-    if(!text) return;
-    const r = await store.get('question:' + qId);
-    if(!r || !r.value) return;
-    const q = JSON.parse(r.value);
-    if(q.teacherId === currentUser.id){ showToast('You cannot answer your own question.'); return; }
-    q.answers = Array.isArray(q.answers) ? q.answers : [];
-    if(q.answers.some(a => a.authorId === currentUser.id)){ showToast('You have already answered this question.'); return; }
-    q.answers.push({ id:'a' + Date.now(), author: currentUser.name, authorId: currentUser.id, text, createdAt: Date.now() });
-    await store.set('question:' + qId, JSON.stringify(q));
-    await markProgress('helped');
-    showToast('Answer submitted. You helped another learner grow.');
-    await renderQuestions();
-  });
-
-  function openPostQuestionModal(){
-    openModal('Post a question', `
-      <form data-modal-form>
-        <div class="field"><label>Subject</label>
-          <select name="subject" required>${currentTreeExpertise.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}</select>
-        </div>
-        <div class="field"><label>Question title</label><input name="title" required placeholder="Keep it short and specific"></div>
-        <div class="field"><label>Details</label><textarea name="body" placeholder="Add any context that helps Leaves answer well"></textarea></div>
-        <button type="submit" class="submit-btn">Post question</button>
-      </form>
-    `, async (fd) => {
-      const q = {
-        id: 'q' + Date.now(),
-        subject: (fd.get('subject') || 'General').trim(),
-        title: (fd.get('title') || 'Untitled question').trim(),
-        body: (fd.get('body') || '').trim(),
-        teacher: currentUser.name,
-        teacherId: currentUser.id,
-        createdAt: Date.now(),
-        answers: []
-      };
-      await store.set('question:' + q.id, JSON.stringify(q));
-      closeModal();
-      showToast('Question posted  -  Leaves can answer it now');
-      showScreen('questions');
-    });
-  }
-
-  // ---- leaderboard ----
-  async function renderLeaderboard(){
-    const host = $('leaderboardList');
-    if(!host) return;
-    const screenEl = $('screen-leaderboard');
-    if(screenEl) screenEl.classList.toggle('role-tree', currentRole === 'tree');
-    $('leaderboardRoleText') && ($('leaderboardRoleText').textContent = currentRole === 'tree' ? 'Tree' : 'Leaf');
-    $('leaderboardAvatar') && ($('leaderboardAvatar').style.background = currentRole === 'tree' ? 'var(--bark-deep)' : 'var(--moss-deep)');
-
-    let questions = [];
-    try{ questions = await getAllByPrefix('question:'); }catch(e){ questions = []; }
-    const counts = {};
-    questions.forEach(q => (q.answers || []).forEach(a => {
-      counts[a.author] = (counts[a.author] || 0) + 1;
-    }));
-    if(currentUser.name && !counts[currentUser.name]) counts[currentUser.name] = 0;
-    const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-
-    host.innerHTML = `
-      <div class="side-card" style="max-width:640px;">
-        <div class="eyebrow">RECOGNITION, NOT RANKING</div>
-        <h3 style="font-family:'Fraunces',serif;font-weight:500;font-size:1.25rem;margin:0 0 8px;">People who helped others recently</h3>
-        <p style="font-size:.84rem;color:var(--ink-soft);line-height:1.55;margin:0 0 18px;">A quiet record of useful contributions: answering, explaining, and helping someone move forward.</p>
-        ${entries.length ? entries.slice(0,8).map(([name,count]) => `
-          <div class="mini-leaf-card" style="margin-top:10px;">
-            <div class="lavatar" style="background:${avatarColorFor(name)}">${escapeHtml(initialsFor(name))}</div>
-            <div><div class="lname">${escapeHtml(name)}${name===currentUser.name?' (You)':''}</div><div class="lb-sub">${count} helpful answer${count===1?'':'s'}</div></div>
-          </div>`).join('') : '<div class="empty-state">No answers yet. Help is the first contribution.</div>'}
-      </div>`;
-  }
-
-  function openAddNoteModal(){
-    if(!currentUser?.id){ showToast('Please log in before planting a note.'); return; }
-    openModal('Plant a note', `
-      <form data-modal-form>
-        <div class="field"><label>Subject</label><input name="subject" required placeholder="e.g. Biology"></div>
-        <div class="field"><label>Title</label><input name="title" required placeholder="Note title"></div>
-        <div class="field"><label>Description</label><textarea name="description" placeholder="What's this note about?"></textarea></div>
-        <button type="submit" class="submit-btn">Plant note</button>
-      </form>
-    `, async (fd) => {
-      const note = {
-        id: 'n' + Date.now(),
-        subject: (fd.get('subject') || 'General').trim(),
-        title: (fd.get('title') || 'Untitled note').trim(),
-        description: (fd.get('description') || '').trim(),
-        author: currentUser.name,
-        authorId: currentUser.id,
-        rating: 0,
-        createdAt: Date.now()
-      };
-      await store.set('note:' + note.id, JSON.stringify(note));
-      await markProgress('shared');
-      closeModal();
-      showToast('Note planted 🌱');
-      renderNotes();
-      renderNotesFull();
-      renderTreeHome();
-    });
-  }
-
-  function treeQuickNote(){ try{return localStorage.getItem('eleaf_tree_quick_note')||''}catch(e){return ''} }
-  function saveTreeQuickNoteValue(text){ try{localStorage.setItem('eleaf_tree_quick_note',text)}catch(e){} }
-
-  async function renderPlanLesson(){
-    const grid=$('planCalendarGrid'); if(!grid) return;
-    const now=new Date(); if(!window._treePlanMonth) window._treePlanMonth=new Date(now.getFullYear(),now.getMonth(),1);
-    const month=window._treePlanMonth; const y=month.getFullYear(), m=month.getMonth(); $('planMonthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
-    let classes=[]; try{classes=await getAllByPrefix('class:')}catch(e){}
-    const own=classes.filter(c=>c.teacherId===currentUser.id || (!c.teacherId && c.teacher===currentUser.name));
-    const first=new Date(y,m,1); const start=(first.getDay()+6)%7; const days=new Date(y,m+1,0).getDate(); let html='';
-    for(let i=0;i<start;i++) html+='<span class="tree-calendar-day empty"></span>';
-    for(let d=1;d<=days;d++){ const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const count=own.filter(c=>c.date===ds).length; html+=`<button class="tree-calendar-day${count?' has-class':''}" data-plan-date="${ds}"><span>${d}</span>${count?`<i>${count}</i>`:''}</button>`; }
-    grid.innerHTML=html;
-    const list=$('treeLessonPlanList'); list.innerHTML=currentTreeExpertise.map(subject=>`<div class="tree-lesson-row"><strong>${escapeHtml(subject)}</strong><span>5-unit teaching path</span></div>`).join('');
-    const upcoming=own.filter(c=>c.status!=='ended').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,3); $('treePlanUpcoming').innerHTML=upcoming.length?upcoming.map(c=>`<div class="tree-plan-upcoming-row"><strong>${escapeHtml(c.title)}</strong><span>${fmtDate(c.date,c.time)}</span></div>`).join(''):'<div class="tree-workspace-meta">Nothing planned yet.</div>';
-  }
-
-  // ---- classes ----
-  function normalizeClassStatus(c){
-    if(c?.demo) return 'scheduled';
-    if(!c || !c.date || !c.time) return c?.status || 'scheduled';
-    const start = new Date(c.date + 'T' + c.time);
-    if(isNaN(start.getTime())) return c.status || 'scheduled';
-    const now = Date.now();
-    const end = start.getTime() + 60*60*1000;
-    if(now >= start.getTime() && now < end) return 'live';
-    if(now >= end) return 'ended';
-    return 'scheduled';
-  }
-  async function renderClasses(){
-    const list = $('classList');
-    if(!list) return;
-    const screenEl = $('screen-classes');
-    if(screenEl) screenEl.classList.toggle('role-tree', currentRole === 'tree');
-
-    const pill = $('classesRolePill');
-    if(pill){
-      pill.textContent = currentRole === 'tree' ? 'ALL CLASSES' : 'ALL CLASSES';
-      pill.style.background = currentRole === 'tree' ? 'var(--bark-pale)' : '';
-      pill.style.color = currentRole === 'tree' ? 'var(--bark-deep)' : '';
-    }
-    const roleText = $('classesRoleText');
-    if(roleText) roleText.textContent = currentRole === 'tree' ? 'Tree' : 'Leaf';
-    const avatar = $('classesAvatar');
-    if(avatar) avatar.style.background = currentRole === 'tree' ? 'var(--bark-deep)' : 'var(--moss-deep)';
-    const scheduleBtn = $('scheduleClassBtn');
-    if(scheduleBtn) scheduleBtn.style.display = currentRole === 'tree' ? 'inline-block' : 'none';
-    const classGrowth=$('classesNavGrowth');
-    if(classGrowth) classGrowth.style.display = currentRole === 'tree' ? 'none' : '';
-    const classTrees=$('classesNavTrees');
-    if(classTrees) classTrees.style.display = currentRole === 'tree' ? 'none' : '';
-    const treeLinks=$('classesTreeLinks');
-    if(treeLinks) treeLinks.classList.toggle('show', currentRole === 'tree');
-
-    let classes = [];
-    try{ classes = await getAllByPrefix('class:'); }catch(e){ classes = []; }
-    classes = await hydrateClassAttendance(classes);
-    classes = classes.map(c => ({...c, status: normalizeClassStatus(c)}));
-    classes.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
-
-    if(classes.length === 0){
-      list.innerHTML = '<div class="empty-state">No classes yet.</div>';
-      return;
-    }
-
-    function actionsFor(c){
-      const isOwnClass = c.teacherId === currentUser.id || (!c.teacherId && c.teacher === currentUser.name);
-      if(currentRole === 'tree'){
-        if(isOwnClass){
-          if(c.status === 'scheduled') return `<button class="pill-btn" style="margin-top:0;background:var(--bark-deep);" data-start-class="${escapeHtml(c.id)}">Start class</button>`;
-          if(c.status === 'live') return `<button class="pill-btn" style="margin-top:0;background:var(--bark-deep);" data-rejoin-class="${escapeHtml(c.id)}">Rejoin</button>`;
-          return `<span style="font-size:0.8rem;color:var(--ink-soft);">Completed</span>`;
-        }
-        if(c.status === 'ended') return `<span style="font-size:0.8rem;color:var(--ink-soft);">Completed</span>`;
-        return `<button class="pill-btn" style="margin-top:0;background:var(--ink-soft);" data-learn-class="${escapeHtml(c.id)}">${c.status === 'live' ? 'Join as Leaf' : 'Learn as Leaf'}</button>`;
-      }
-      if(c.demo) return c.attended
-        ? `<button class="pill-btn demo-attend-btn attended" style="margin-top:0;" disabled>✓ Attended</button>`
-        : `<button class="pill-btn demo-attend-btn" style="margin-top:0;" data-demo-attend="${escapeHtml(c.id)}">✓ Attend demo</button>`;
-      if(c.status === 'live') return `<button class="pill-btn" style="margin-top:0;" data-join-class="${escapeHtml(c.id)}">Join now</button>`;
-      if(c.status === 'scheduled') return `<span style="font-size:0.8rem;color:var(--ink-soft);">Reminders unavailable in demo</span>`;
-      return `<span style="font-size:0.8rem;color:var(--ink-soft);">Completed</span>`;
-    }
-
-    function cardHtml(c){
-      const badge = `<span class="status-badge ${escapeHtml(c.status)}">${escapeHtml(c.status)}</span>`;
-      return `
-        <div class="class-card">
-          <div>
-            <div class="cc-title">${escapeHtml(c.title)}</div>
-            <div class="cc-meta">${escapeHtml(c.subject)} · ${fmtDate(c.date, c.time)} · by ${escapeHtml(c.teacher)}</div>
-          </div>
-          <div class="class-actions">${badge}${actionsFor(c)}</div>
-        </div>
-      `;
-    }
-
-    const live = classes.filter(c => c.status === 'live');
-    const upcoming = classes.filter(c => c.status === 'scheduled');
-    const ended = classes.filter(c => c.status === 'ended');
-
-    const sections = [];
-    if(live.length) sections.push(`<div class="class-section"><div class="class-section-title"><span class="dot live"></span>Live Now</div><div class="class-list">${live.map(cardHtml).join('')}</div></div>`);
-    sections.push(`<div class="class-section"><div class="class-section-title"><span class="dot upcoming"></span>Upcoming</div><div class="class-list">${upcoming.length ? upcoming.map(cardHtml).join('') : '<div class="empty-state">Nothing scheduled yet.</div>'}</div></div>`);
-    if(ended.length) sections.push(`<div class="class-section"><div class="class-section-title"><span class="dot ended"></span>Completed</div><div class="class-list">${ended.map(cardHtml).join('')}</div></div>`);
-
-    list.innerHTML = sections.join('');
-  }
-
-  on('classList', 'click', async (e) => {
-    const t = e.target.closest('button');
-    if(!t) return;
-    if(t.dataset.demoAttend){
-      const classId = t.dataset.demoAttend;
-      const key = attendanceKey(classId);
-      if(!key){ showToast('Please log in before attending a class.'); return; }
-      await store.set(key, JSON.stringify({ classId, attendedAt: Date.now() }));
-      await markProgress('learned');
-      showToast('Demo class attended. Learn step complete.');
-      renderClasses();
-      return;
-    }
-    if(t.dataset.startClass) startClass(t.dataset.startClass);
-    else if(t.dataset.joinClass) joinClass(t.dataset.joinClass);
-    else if(t.dataset.rejoinClass) joinClass(t.dataset.rejoinClass);
-    else if(t.dataset.blockedJoin) showToast('You must join classes as a Leaf');
-    else if(t.dataset.learnClass){ currentRole='leaf'; joinClass(t.dataset.learnClass); }
-  });
-
-  async function startClass(id){
-    const r = await store.get('class:' + id);
-    if(!r || !r.value) return;
-    const c = JSON.parse(r.value);
-    c.status = 'live';
-    await store.set('class:' + id, JSON.stringify(c));
-    openLiveClass(c, true);
-  }
-  async function joinClass(id){
-    const r = await store.get('class:' + id);
-    if(!r || !r.value) return;
-    const c = JSON.parse(r.value);
-    if(c.status !== 'live'){ showToast("This class hasn't started yet"); return; }
-    if(!currentUser?.id){ showToast('Please log in before joining a class.'); return; }
-    const key = attendanceKey(c.id);
-    if(key) await store.set(key, JSON.stringify({ classId:c.id, attendedAt:Date.now() }));
-    await markProgress('learned');
-    openLiveClass(c, false);
-  }
-
-  function openScheduleClassModal(){
-    openModal('Plan a lesson', `
-      <form data-modal-form>
-        <div class="field"><label>Class title</label><input name="title" required placeholder="e.g. Intro to Ecosystems"></div>
-        <div class="field"><label>Subject</label>
-          <select name="subject" required>${currentTreeExpertise.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}</select>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Date</label><input name="date" type="date" min="${new Date().toISOString().slice(0,10)}" required></div>
-          <div class="field"><label>Time</label><input name="time" type="time" required></div>
-        </div>
-        <button type="submit" class="submit-btn">Add to teaching calendar</button>
-      </form>
-    `, async (fd) => {
-      const c = {
-        id: 'c' + Date.now(),
-        title: (fd.get('title') || 'Untitled class').trim(),
-        subject: (fd.get('subject') || 'General').trim(),
-        date: fd.get('date') || '',
-        time: fd.get('time') || '',
-        teacher: currentUser.name,
-        teacherId: currentUser.id,
-        status: 'scheduled'
-      };
-      await store.set('class:' + c.id, JSON.stringify(c));
-      closeModal();
-      showToast('Lesson added to your teaching calendar');
-      showScreen('classes');
-    });
-  }
-
-  function openQuickStartModal(){
-    openModal('Start a class now', `
-      <form data-modal-form>
-        <div class="field"><label>Class title</label><input name="title" required placeholder="e.g. Quick Q&amp;A: Photosynthesis"></div>
-        <div class="field"><label>Subject</label>
-          <select name="subject" required>${currentTreeExpertise.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}</select>
-        </div>
-        <button type="submit" class="submit-btn">Go live</button>
-      </form>
-    `, async (fd) => {
-      const today = new Date();
-      const c = {
-        id: 'c' + Date.now(),
-        title: (fd.get('title') || 'Live class').trim(),
-        subject: (fd.get('subject') || 'General').trim(),
-        date: today.toISOString().slice(0,10),
-        time: today.toTimeString().slice(0,5),
-        teacher: currentUser.name,
-        teacherId: currentUser.id,
-        status: 'live'
-      };
-      await store.set('class:' + c.id, JSON.stringify(c));
-      closeModal();
-      openLiveClass(c, true);
-    });
-  }
-
-  function openLiveClass(c, isTeacher){
-    liveContext = { classId: c.id, isTeacher };
-    const titleEl = $('liveClassTitle'); if(titleEl) titleEl.textContent = c.title;
-    const actionTitle = $('liveActionTitle'); if(actionTitle) actionTitle.textContent = isTeacher ? 'You are teaching' : 'You are attending';
-    const actionDesc = $('liveActionDesc');
-    if(actionDesc) actionDesc.textContent = isTeacher
-      ? 'End the demo class when you are done. No attendee notifications are sent.'
-      : 'This is a demo session  -  no real video or audio is connected yet.';
-    const endBtn = $('liveEndBtn'); if(endBtn) endBtn.textContent = isTeacher ? 'End class' : 'Leave class';
-    const liveScreenEl = $('screen-live-class');
-    if(liveScreenEl) liveScreenEl.classList.toggle('role-tree', isTeacher);
-    const attendeesHost = $('liveAttendees');
-    if(attendeesHost){
-      const demoNames = isTeacher ? ['Maya Chen', 'Rohan Iyer', 'Sara Malik'] : [c.teacher, 'Maya Chen'];
-      attendeesHost.innerHTML = demoNames.map(n => `<div class="attendee-row"><span class="adot"></span>${escapeHtml(n)}</div>`).join('');
-    }
-    showScreen('liveClass');
-  }
-
-  on('liveEndBtn', 'click', async () => {
-    if(liveContext && liveContext.isTeacher){
-      const r = await store.get('class:' + liveContext.classId);
-      if(r && r.value){
-        const c = JSON.parse(r.value);
-        c.status = 'ended';
-        await store.set('class:' + c.id, JSON.stringify(c));
-      }
-      showToast('Class ended');
-    } else {
-      showToast('You left the class');
-    }
-    liveContext = null;
-    showScreen(currentRole === 'tree' ? 'tree' : 'leaf');
-  });
-  on('liveBackToClasses', 'click', () => showScreen('classes'));
-
-  // ---- students ----
-  function renderStudents(){
-    const grid = $('studentsGrid');
-    if(!grid) return;
-    grid.innerHTML = demoStudents.map(s => `
-      <div class="student-card">
-        <div class="savatar" style="background:${s.color}">${escapeHtml(s.initials)}</div>
-        <div style="flex:1;">
-          <h4>${escapeHtml(s.name)}</h4>
-          <div class="ssubject">${escapeHtml(s.subject)}</div>
-          <div class="student-activity-grid" aria-label="${escapeHtml(s.name)} learning activity">
-            <div><strong>${s.classes}</strong><span>classes taken</span></div>
-            <div><strong>${s.answered}</strong><span>questions answered</span></div>
-            <div><strong>${s.doubts}</strong><span>doubts asked</span></div>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // ---- generic modal ----
-  let modalSubmitHandler = null;
-  function openModal(title, bodyHtml, onSubmit){
-    const modal=$('modal');
-    if(modal){ modal.setAttribute('role','dialog'); modal.setAttribute('aria-modal','true'); modal.setAttribute('aria-labelledby','modalTitle'); }
-    const t = $('modalTitle'); if(t) t.textContent = title;
-    const body = $('modalBody'); if(body) body.innerHTML = bodyHtml;
-    modalSubmitHandler = onSubmit;
-    $('modalScrim') && $('modalScrim').classList.add('show');
-    $('modal') && $('modal').classList.add('show');
-  }
-  function closeModal(){
-    $('modalScrim') && $('modalScrim').classList.remove('show');
-    $('modal') && $('modal').classList.remove('show');
-    modalSubmitHandler = null;
-  }
-
-  function openExitModal(){
-    openModal('Leaving E-Leaf?', `
-      <div class="modal-option-list">
-        <button type="button" class="modal-option-btn modal-option-logout" data-exit-choice="logout">
-          <strong>Log out</strong>
-          <span>Sign out of your account. Your progress will remain saved.</span>
-        </button>
-        <button type="button" class="modal-option-btn modal-option-cancel" data-exit-choice="cancel">
-          <strong>Cancel</strong>
-        </button>
-      </div>
-    `);
-  }
-
-  async function handleExitActionChoice(choice){
-    closeModal();
-    if(choice === 'logout'){
-      await logout();
-      return;
-    }
-    // Cancel keeps the user exactly where they were.
-  }
-
-  on('modalClose', 'click', closeModal);
-  on('modalScrim', 'click', closeModal);
-  document.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && $('modal') && $('modal').classList.contains('show')){
-      closeModal();
-    }
-  });
-  on('modal', 'submit', (e) => {
-    e.preventDefault();
-    if(e.target && e.target.matches('[data-modal-form]') && modalSubmitHandler){
-      modalSubmitHandler(new FormData(e.target));
-    }
-  });
-
-  on('addReflectionBtn','click',openReflectionModal);
-  on('viewJournalBtn','click',openJournalModal);
-  on('continueLearningBtn','click',()=>showScreen('classes'));
-  on('openSavedNoteBtn','click',()=>{ activeNotesView='saved'; showScreen('notesFull'); document.querySelectorAll('.notes-view-tab').forEach(b=>b.classList.toggle('active',b.dataset.notesView==='saved')); });
-  on('helpQuestionBtn','click',()=>showScreen('questions'));
-  on('notesFullList','click',(e)=>{ const b=e.target.closest('[data-save-note]'); if(!b)return; toggleSavedNote(b.dataset.saveNote); renderNotesFull(); renderPersonalHome(); });
-  document.addEventListener('click',(e)=>{ const b=e.target.closest('.notes-view-tab'); if(!b)return; activeNotesView=b.dataset.notesView; document.querySelectorAll('.notes-view-tab').forEach(x=>x.classList.toggle('active',x===b)); renderNotesFull(); });
-
-
-  // ---- persistent Quick Notes assistant ----
-  let quickNotesViewRole = 'leaf';
-  function quickNotesForRole(role){
-    try{
-      if(role==='tree'){
-        let items=JSON.parse(localStorage.getItem('eleaf_tree_quick_notes')||'[]');
-        if(!Array.isArray(items)) items=[];
-        const legacy=localStorage.getItem('eleaf_tree_quick_note')||'';
-        if(legacy && !items.some(x=>x.text===legacy)) items.unshift({id:'legacy-tree',text:legacy,createdAt:Date.now()});
-        return items;
-      }
-      return quickLeafNotes();
-    }catch(e){return []}
-  }
-  function saveAssistantQuickNote(role,text){
-    if(role==='tree'){
-      const items=quickNotesForRole('tree').filter(x=>x.id!=='legacy-tree');
-      items.unshift({id:Date.now(),text,createdAt:Date.now()});
-      localStorage.setItem('eleaf_tree_quick_notes',JSON.stringify(items.slice(0,100)));
-      localStorage.setItem('eleaf_tree_quick_note',text);
-    }else saveQuickLeafNoteText(text);
-  }
-  function renderQuickNotesAssistant(){
-    const host=$('quickNotesList'); if(!host) return;
-    document.querySelectorAll('.quick-notes-tab').forEach(b=>b.classList.toggle('active',b.dataset.quickRole===quickNotesViewRole));
-    if($('quickNotesRoleHint')) $('quickNotesRoleHint').textContent=`Saving to ${quickNotesViewRole==='tree'?'Tree':'Leaf'} notes`;
-    const items=quickNotesForRole(quickNotesViewRole);
-    host.innerHTML=items.length?items.map(i=>`<div class="quick-note-item"><div class="quick-note-item-time">${new Date(i.createdAt||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</div><div class="quick-note-item-text">${escapeHtml(i.text||'')}</div></div>`).join(''):'<div class="quick-notes-empty">No quick notes here yet.</div>';
-  }
-  function syncQuickNotesAssistant(screenName){
-    const wrap=$('quickNotesAssistant'); if(!wrap) return;
-    const appScreens=['leaf','tree','classes','students','planLesson','notesFull','trees','chat','questions','leaderboard','progress','discussion','liveClass','becomeTree'];
-    wrap.classList.toggle('visible',appScreens.includes(screenName));
-    if(!appScreens.includes(screenName)) wrap.classList.remove('open');
-    quickNotesViewRole=currentRole==='tree'?'tree':'leaf';
-    renderQuickNotesAssistant();
-  }
-  on('quickNotesFab','click',()=>{ const w=$('quickNotesAssistant'); if(!w)return; w.classList.toggle('open'); quickNotesViewRole=currentRole==='tree'?'tree':'leaf'; renderQuickNotesAssistant(); if(w.classList.contains('open')) setTimeout(()=>$('quickNotesInput')?.focus(),60); });
-  on('quickNotesClose','click',()=> $('quickNotesAssistant')?.classList.remove('open'));
-  on('quickNotesSave','click',()=>{ const box=$('quickNotesInput'); const text=(box?.value||'').trim(); if(!text){showToast('Write something first.');return;} saveAssistantQuickNote(quickNotesViewRole,text); box.value=''; renderQuickNotesAssistant(); showToast('Quick note kept.'); });
-  document.addEventListener('click',e=>{ const b=e.target.closest('.quick-notes-tab'); if(!b)return; quickNotesViewRole=b.dataset.quickRole; renderQuickNotesAssistant(); });
-
-  // Keep Leaf/Tree identity visible in the top-left logo on every app page.
-  function syncRoleLogo(screenName){
-    const screen=screens[screenName]; if(!screen) return;
-    const icon=currentRole==='tree'?'#ic-tree':'#ic-leaf';
-    const roleColor=currentRole==='tree'?'var(--bark-deep)':'var(--moss-deep)';
-    const logo=screen.querySelector('.dash-logo svg use');
-    const svg=screen.querySelector('.dash-logo svg');
-    if(logo){ logo.setAttribute('href',icon); logo.setAttribute('xlink:href',icon); }
-    if(svg) svg.style.color=roleColor;
-    // Carry the quiet Leaf/Tree identity into secondary pages too, without duplicating an existing home watermark.
-    const main=screen.querySelector('.dash-main');
-    if(main && !main.querySelector('.watermark')){
-      let mark=main.querySelector('.persistent-role-mark');
-      if(!mark){ mark=document.createElement('div'); mark.className='persistent-role-mark'; mark.innerHTML='<svg><use></use></svg>'; main.prepend(mark); }
-      const use=mark.querySelector('use'); use.setAttribute('href',icon); use.setAttribute('xlink:href',icon); mark.style.color=roleColor;
-    }
-  }
-
-  // ---- navigation bindings for the new screens ----
-  on('navHomeLeaf', 'click', () => showScreen('leaf'));
-  on('navDiscussionLeaf','click',()=>showScreen('discussion'));
-  on('navProgressLeaf','click',()=>showScreen('progress'));
-  on('openDiscussionBtn','click',()=>showScreen('discussion'));
-  on('seeAllProgressBtn','click',()=>showScreen('progress'));
-  on('homeAllClassesBtn','click',()=>showScreen('classes'));
-  on('homeClassPrimaryBtn','click',()=>showScreen('classes'));
-  on('saveQuickLeafNote','click',()=>{ const box=$('quickLeafNote'); const text=(box?.value||'').trim(); if(!text){showToast('Write something first.');return;} saveQuickLeafNoteText(text); box.value=''; if($('quickLeafNoteStatus')) $('quickLeafNoteStatus').textContent='Saved to your private quick notes'; showToast('Quick note kept.'); });
-  on('startDiscussionBtn','click',()=>openModal('Start a discussion',`<form data-modal-form><div class="field"><label>Topic</label><input name="topic" required maxlength="120" placeholder="What do you want to work out together?"></div><div class="field"><label>Context</label><textarea name="body" required maxlength="500" placeholder="Add enough context for other Leaves to join in."></textarea></div><button type="submit" class="submit-btn">Start discussion</button></form>`,fd=>{ leafDiscussions.unshift({title:(fd.get('topic')||'').trim(),subject:'General',author:currentUser.name||'You',replies:0,body:(fd.get('body')||'').trim()}); closeModal(); renderDiscussionPage(); renderDiscussionPreview(); showToast('Discussion started.'); }));
-  on('navNotesLeaf', 'click', () => { activeNotesView='mine'; showScreen('notesFull'); });
-  on('navClassesLeaf', 'click', () => { currentRole = 'leaf'; showScreen('classes'); });
-  on('classesNavNotes', 'click', () => showScreen('notesFull'));
-  on('classesNavClasses', 'click', () => showScreen('classes'));
-  on('classesNavTrees', 'click', () => showScreen('trees'));
-  on('classesNavQuestions', 'click', () => showScreen('questions'));
-  on('classesNavGrowth', 'click', () => showScreen('becomeTree'));
-  on('classesTreeTake', 'click', openQuickStartModal);
-  on('classesTreeUpload', 'click', openAddNoteModal);
-  on('classesTreeSchedule', 'click', openScheduleClassModal);
-  on('classesTreeStudents', 'click', () => showScreen('students'));
-  on('classesTreePost', 'click', openPostQuestionModal);
-  on('addNoteBtnLeaf', 'click', openAddNoteModal);
-
-
-  on('navHomeTree', 'click', () => showScreen('tree'));
-  on('navTakeClass', 'click', openQuickStartModal);
-  on('cardTakeClass', 'click', openQuickStartModal);
-  on('welcomeTakeClass', 'click', openQuickStartModal);
-  on('navUploadNotes', 'click', openAddNoteModal);
-  on('cardUploadNotes', 'click', openAddNoteModal);
-  on('navScheduleClass', 'click', () => showScreen('planLesson'));
-  on('cardScheduleClass', 'click', openScheduleClassModal);
-  on('navStudents', 'click', () => showScreen('students'));
-  on('cardStudents', 'click', () => showScreen('students'));
-  on('navNotesTree', 'click', () => { activeNotesView='mine'; showScreen('notesFull'); });
-  on('navClassesTree', 'click', () => showScreen('classes'));
-  on('navPostQuestion', 'click', openPostQuestionModal);
-  on('cardPostQuestion', 'click', openPostQuestionModal);
-  on('treePlanLessonBtn','click',()=>showScreen('planLesson'));
-  on('treeScheduleNextBtn','click',()=>showScreen('planLesson'));
-  on('planNewLessonBtn','click',openScheduleClassModal);
-  on('planPrevMonth','click',()=>{const d=window._treePlanMonth||new Date(); window._treePlanMonth=new Date(d.getFullYear(),d.getMonth()-1,1); renderPlanLesson();});
-  on('planNextMonth','click',()=>{const d=window._treePlanMonth||new Date(); window._treePlanMonth=new Date(d.getFullYear(),d.getMonth()+1,1); renderPlanLesson();});
-  on('treePostQuestionBtn','click',openPostQuestionModal);
-  on('treeNextClassBtn','click',()=>showScreen('classes'));
-  on('treeQuickNote','input',()=>{ const v=$('treeQuickNote').value.trim(); saveTreeQuickNoteValue(v); $('treeQuickNoteStatus').textContent=v?'Saved privately':'Private to you'; });
-  on('saveTreeQuickNote','click',()=>{ const v=($('treeQuickNote').value||'').trim(); saveTreeQuickNoteValue(v); $('treeQuickNoteStatus').textContent=v?'Saved privately':'Private to you'; showToast(v?'Teaching note saved':'Write a note first'); });
-  document.addEventListener('click',async(e)=>{ const b=e.target.closest('[data-tree-leaf-class]'); if(!b)return; const r=await store.get('class:'+b.dataset.treeLeafClass); if(!r||!r.value)return; const c=JSON.parse(r.value); currentRole='leaf'; if(c.status==='live') joinClass(c.id); else showScreen('classes'); });
-  on('addTreeNoteBtn', 'click', openTreeTeachingNoteModal);
-  on('viewTreeNotesBtn', 'click', openTreeTeachingNotes);
-  on('treeTeachNextBtn', 'click', openQuickStartModal);
-  on('treeHelpQuestionBtn', 'click', () => showScreen('questions'));
-  on('treeSeeClassesBtn', 'click', () => showScreen('classes'));
-  on('treeReviewNotesBtn', 'click', () => { activeNotesView='mine'; showScreen('notesFull'); });
-
-  // ---- Notes (full), Trees directory, Chat, Questions, Leaderboard navigation ----
-  on('seeMoreNotesLeaf', 'click', () => showScreen('notesFull'));
-  on('seeMoreNotesTree', 'click', () => showScreen('notesFull'));
-  on('seeMoreSubjectsLeaf', 'click', () => showScreen('notesFull'));
-  on('seeMoreClassesLeaf', 'click', () => showScreen('classes'));
-  on('seeMoreClassesTree', 'click', () => showScreen('classes'));
-  on('seeMoreTreesLeaf', 'click', () => showScreen('trees'));
-  on('seeMoreLeaderboardTree', 'click', () => showScreen('leaderboard'));
-  on('navTreesLeaf', 'click', () => showScreen('trees'));
-  on('navQuestionsLeaf', 'click', () => showScreen('questions'));
-  on('navLeaderboardLeaf', 'click', () => showScreen('leaderboard'));
-  on('navLeaderboardTree', 'click', () => showScreen('leaderboard'));
-  on('addNoteBtnFull', 'click', openAddNoteModal);
-  on('postQuestionBtn', 'click', openPostQuestionModal);
-
-  on('notesFullBackHome', 'click', () => showScreen(currentRole === 'tree' ? 'tree' : 'leaf'));
-  on('treesBackHome', 'click', () => showScreen(currentRole === 'tree' ? 'tree' : 'leaf'));
-  on('chatBackToTrees', 'click', () => showScreen('trees'));
-  on('questionsBackHome', 'click', () => showScreen(currentRole === 'tree' ? 'tree' : 'leaf'));
-  on('leaderboardBackHome', 'click', () => showScreen(currentRole === 'tree' ? 'tree' : 'leaf'));
-
-  on('classesBackHome', 'click', () => showScreen(currentRole === 'tree' ? 'tree' : 'leaf'));
-  on('studentsBackHome', 'click', () => showScreen('tree'));
-  on('scheduleClassBtn', 'click', openScheduleClassModal);
-
-  // ---- post-auth welcome transition ----
-  function beginWelcome(role){
-    if(!currentUser.id) return;
-    clearTimeout(welcomeTimer);
-    const treeAllowed = currentWorld === 'individual' ? individualCanTeach : canTeach;
-    currentRole = role === 'tree' && treeAllowed ? 'tree' : 'leaf';
-    welcomeDestination = currentRole;
-    const screen = screens.welcome;
-    const title = $('welcomeTitle');
-    const subtext = $('welcomeSubtext');
-    const name = $('welcomeUserName');
-    const eyebrow = $('welcomeEyebrow');
-    const mark = $('welcomeRoleMark');
-    const individualWelcome = currentWorld === 'individual';
-    if(name) name.textContent = currentUser.name || 'there';
-    if(eyebrow) eyebrow.textContent = individualWelcome ? (currentRole === 'tree' ? 'WELCOME, TEACHER' : 'WELCOME, LEARNER') : (currentRole === 'tree' ? 'WELCOME, TREE' : 'WELCOME, LEAF');
-    if(title) title.textContent = individualWelcome
-      ? (currentRole === 'tree' ? 'Welcome to your Individual teaching space.' : 'Welcome to your Individual learning space.')
-      : (currentRole === 'tree' ? 'Welcome to your Tree Dashboard.' : 'Welcome to your Leaf Dashboard.');
-    if(subtext) subtext.textContent = individualWelcome
-      ? (currentRole === 'tree' ? 'Share what you know while staying part of the wider community.' : 'Learn from the community, follow your curiosity, and keep discovering.')
-      : (currentRole === 'tree' ? `${currentUser.name || 'Your'} teaching space is ready.` : `${currentUser.name || 'Your'} learning space is ready.`);
-    if(mark){
-      mark.classList.toggle('tree', currentRole === 'tree');
-      mark.innerHTML = `<svg><use href="${currentRole === 'tree' ? '#ic-tree' : '#ic-leaf'}" xlink:href="${currentRole === 'tree' ? '#ic-tree' : '#ic-leaf'}"/></svg>`;
-    }
-    // Render the destination first so the welcome moment reveals the actual
-    // dashboard beneath it rather than loading the dashboard after the message.
-    const destination = currentWorld === 'individual'
-      ? (welcomeDestination === 'tree' ? 'individualTree' : 'individualLeaf')
-      : (welcomeDestination === 'tree' ? 'tree' : 'leaf');
-    showScreen(destination);
-    screen.classList.remove('welcome-exit');
-    screen.classList.add('active', 'welcome-overlay-active');
-
-    // Give the user a comfortable reading moment, then let the translucent
-    // welcome layer and its blur settle away into the already-rendered dashboard.
-    const readingDelay = 2200;
-    const exitDuration = 850;
-    welcomeTimer = setTimeout(() => {
-      screen.classList.add('welcome-exit');
-      welcomeTimer = setTimeout(() => {
-        screen.classList.remove('active', 'welcome-overlay-active', 'welcome-exit');
-      }, exitDuration);
-    }, readingDelay);
-  }
-
-  // ---- login/signup prototype ----
-  async function enterAfterAuth(isSignup){
-    const effectiveSignup = !!isSignup;
-    const nameInput=$('name');
-    const identifier=$('emailOrPhone');
-    const password=$('password');
-    const confirm=$('confirmPassword');
-
-    if(effectiveSignup && !((nameInput?.value||'').trim())){ showToast('Please enter your full name'); nameInput?.focus(); return; }
-    if(!((identifier?.value||'').trim())){ showToast('Enter your email'); identifier?.focus(); return; }
-    if(!((password?.value||'').trim())){ showToast('Enter your password'); password?.focus(); return; }
-    if(effectiveSignup && password.value.length < 8){ showToast('Password must be at least 8 characters'); password?.focus(); return; }
-    if(effectiveSignup && password.value !== (confirm?.value||'')){ showToast('Passwords do not match'); confirm?.focus(); return; }
-
-    if(!window.ELeafSupabase || !window.ELeafSupabase.ready){
-      showToast('Supabase is not configured correctly. Check the project URL and anon key.');
-      return;
-    }
-
-    try {
-      const email = (identifier?.value || '').trim();
-      const passwordValue = password?.value || '';
-      if(effectiveSignup){
-        const { data, error } = await window.ELeafSupabase.signUp({
-          email,
-          password: passwordValue,
-          fullName: (nameInput?.value || '').trim()
-        });
-
-        if(error){
-          showToast(mapSupabaseAuthError(error));
-          return;
-        }
-
-        if(data?.session){
-          await loadUserState();
-          applyIdentityUI();
-          closePanel();
-          currentRole = 'leaf';
-          authGateActive = false;
-          updateHomePath();
-          await reconcileGrowthStateAndRender();
-          currentWorld = 'institutional';
-          showScreen('worldSelector');
-          await saveUserState();
-          return;
-        }
-
-        currentUser = {
-          name: (nameInput?.value || '').trim() || 'Almost Fake',
-          id: null,
-          email: email
-        };
-        applyIdentityUI();
-        currentRole = 'leaf';
-        authGateActive = true;
-        showScreen('home');
-        openPanel('leaf', false);
-        showToast('Account created. Please confirm your email, then log in with the same credentials.');
-        return;
-      }
-
-      const { data, error } = await window.ELeafSupabase.signIn({ email, password: passwordValue });
-      if(error){
-        showToast(mapSupabaseAuthError(error));
-        return;
-      }
-
-      if(data?.session){
-        // A successful login must hydrate this specific account before the UI
-        // decides what the user has completed. This is what separates a
-        // returning user's path from a brand-new account.
-        await loadUserState();
-      }
-
-      closePanel();
-      currentRole = 'leaf';
-      authGateActive = false;
-      updateHomePath();
-      await reconcileGrowthStateAndRender();
-      currentWorld = 'institutional';
-      showScreen('worldSelector');
-      await saveUserState();
-    } catch(err) {
-      console.error('E-Leaf: failed to authenticate with Supabase', err);
-      showToast(mapSupabaseAuthError(err));
-    }
-  }
-
-  on('authForm', 'submit', (e) => {
-    e.preventDefault();
+function showContext(){hideAllOverlays();hydrateChoiceIcons();show($('#contextOverlay'));}
+function hideAllOverlays(){$$('.overlay').forEach(hide)}
+function openInstitution(){
+  transitionSpace('institution');
+}
+function openRole(world,institution=null){
+  context.world=world;
+  hydrateChoiceIcons();
+  context.institution=world==='institution'?(institution||userProfile?.institution||'Your institution'):null;
+  hide($('#contextOverlay'));
+  $('#roleEyebrow').textContent=world==='global'?'Global space':'Institutional space';
+  $('#roleTitle').textContent=world==='global'?'Step into the wider E-Leaf':'Step into your institution';
+  $('#roleCopy').textContent=world==='global'
+    ?'Choose how you want to enter the wider learning community today.'
+    :`You are part of ${context.institution}. Choose how you want to enter it today.`;
+  $('#enterTree').classList.toggle('hidden',!treeUnlockedForContext());
+  show($('#roleOverlay'));
+}
+function enterApp(role){
+  if(context.role===role){setRememberedRole(role);store.set('e_leaf_last_context:'+session.user.id,context);hideAllOverlays();renderApp();return;}
+  transitionRole(role);
+}
+function recordGrowthAction(action){
+  if(context.role!=='leaf'||!session||treeUnlockedForContext())return;
+  const state=growthState();
+  if(state.actions.includes(action)){
+    toast('That contribution is already part of your growth.');
+    return;
+  }
+  state.actions.push(action);
+  if(state.actions.length>=3){
+    state.unlocked=true;
+    store.set(contextKey(),state);
+    renderGrowthDock(true);
+    toast('Your tree is ready. It is yours to enter when you choose.');
+  }else{
+    store.set(contextKey(),state);
+    renderGrowthDock(true);
+    toast('Saved. Keep going with your learning.');
+  }
+}
+function unlockTree(){
+  const state=growthState();
+  state.unlocked=true;
+  store.set(contextKey(),state);
+  renderGrowthDock(true);
+  toast('Your tree is ready. It is yours to enter when you choose.');
+}
+function startLeafToTreeTransition(){
+  // Qualification never forces a role change. The completed growth tree is the invitation.
+  if(context.role!=='leaf'||!treeUnlockedForContext())return;
+  transitionRole('tree');
+}
+
+function renderApp(){
+  hide($('#publicView'));
+  const name=userProfile?.name||'Learner';
+  const worldClass=context.world==='global'?'space-global':'space-institutional';
+  const roleClass=context.role==='tree'?'role-tree':'role-leaf';
+  const contextName=context.world==='global'?'Global':context.institution||'Institutional';
+  const roleName=context.role==='tree'?'Tree':'Leaf';
+  const spaceLine=context.world==='global'?'The wider E-Leaf community':'Your institution';
+  $('#appView').innerHTML=`<div class="app-shell ${worldClass} ${roleClass}">
+    <div class="space-ambient" aria-hidden="true"><span class="particle p1">${context.world==='global'?'◦':'❧'}</span><span class="particle p2">${context.world==='global'?'·':'❧'}</span><span class="particle p3">${context.world==='global'?'◦':'❧'}</span><span class="particle p4">${context.world==='global'?'·':'❧'}</span><span class="particle p5">${context.world==='global'?'◦':'❧'}</span></div>
+    <header class="app-top"><div class="app-top-inner">
+      <button class="app-brand" id="appBrand"><span class="mark">e</span><span>E-Leaf</span></button>
+      <div class="context-identity"><span class="context-icon">${icon(context.world==='global'?'globe':'building')}</span><div><strong>${escapeHtml(contextName)}</strong><small>${spaceLine}</small></div></div>
+      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change space</button><button class="role-switch" id="changeRole"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
+    </div></header>
+    <main class="app-body"><nav class="app-nav" id="appNav"></nav><div id="appContent"></div></main><div id="growthDock"></div>
+  </div>`;
+  show($('#appView'));
+  $('#appBrand').onclick=()=>renderHome();
+  $('#changeContext').onclick=()=>showContext();
+  $('#changeRole').onclick=()=>transitionRole(context.role==='tree'?'leaf':'tree');
+  $('#logoutBtn').onclick=requestLogout;
+  renderHome();
+  renderGrowthDock();
+}
+function renderGrowthDock(animate=false){
+  const dock=$('#growthDock');
+  if(!dock)return;
+  if(!session||context.role!=='leaf'){dock.replaceChildren();return;}
+  const growth=growthState();
+  const done=Math.min(3,growth.actions.length), pct=Math.round((done/3)*100);
+  const fillY=204-(Math.max(0,Math.min(100,pct))*1.78);
+  const complete=done===3;
+  const previousWater=dock.querySelector('.growth-water');
+  const previousY=previousWater ? Number(previousWater.getAttribute('y')||fillY) : null;
+  dock.innerHTML=`<aside class="growth-tree-dock growth-stage-${done} ${complete?'growth-complete':''}" aria-label="Your growth${complete?' is complete':''}" tabindex="0" title="${complete?'You have grown enough to explore Tree.':'Your growth continues quietly as you learn and contribute.'}">
+    <div class="growth-tree-wrap">
+      <svg class="growth-tree-art" viewBox="0 0 180 220" role="img" aria-label="${complete?'A fully grown tree':'A growing tree'}">
+        <defs><clipPath id="growthTreeClip"><path d="M90 204V121C90 101 74 91 59 81C46 72 41 57 48 43C55 28 72 25 84 34C88 20 100 12 113 17C126 22 132 34 128 47C144 47 155 58 155 71C155 87 142 97 125 98C119 99 113 102 110 111C106 122 105 138 105 155V204Z"/></clipPath></defs>
+        <path class="growth-tree-outline" d="M90 204V121C90 101 74 91 59 81C46 72 41 57 48 43C55 28 72 25 84 34C88 20 100 12 113 17C126 22 132 34 128 47C144 47 155 58 155 71C155 87 142 97 125 98C119 99 113 102 110 111C106 122 105 138 105 155V204"/>
+        <g clip-path="url(#growthTreeClip)"><rect class="growth-water" x="24" y="${fillY}" width="132" height="220" rx="12"/><path class="growth-water-ripple" d="M20 ${fillY} C48 ${fillY-5}, 69 ${fillY+5}, 90 ${fillY} S132 ${fillY-5}, 160 ${fillY}"/></g>
+        <path class="growth-trunk-line" d="M90 204V125M90 154 69 135M90 168l22-25M90 141l-13-17M90 183l15-13"/>
+      </svg>
+      <div class="growth-tree-copy"><span>${complete?'Your tree is ready.':'Your growth'}</span>${complete?'<strong>Hover to explore</strong>':`<small>${done} of 3 steps</small><div class="growth-step-actions"><button type="button" data-growth-action="learn" class="growth-step ${growth.actions.includes('learn')?'done':''}"><span>1</span>Learn</button><button type="button" data-growth-action="share" class="growth-step ${growth.actions.includes('share')?'done':''}"><span>2</span>Share</button><button type="button" data-growth-action="help" class="growth-step ${growth.actions.includes('help')?'done':''}"><span>3</span>Help</button></div>`}</div>
+    </div>
+  </aside>`;
+  const tree=dock.querySelector('.growth-tree-dock');
+  tree.querySelectorAll('[data-growth-action]').forEach(button=>button.addEventListener('click',e=>{
     e.stopPropagation();
-    const signup = !!$('panel')?.classList.contains('mode-signup');
-    enterAfterAuth(signup);
-  });
-  on('submitBtn', 'click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const signup = !!$('panel')?.classList.contains('mode-signup');
-    enterAfterAuth(signup);
-  });
-
-  // ---- become a tree navigation ----
-
-
-  // ---- world selection / Individual entry ----
-  function enterWorld(world){
-    if(!currentUser?.id) return;
-    currentWorld = world === 'individual' ? 'individual' : 'institutional';
-    if(currentWorld === 'individual'){
-      currentRole='leaf';
-      renderIndividualProfile();
-      showScreen('individualProfile');
-    }else{
-      currentRole='leaf';
-      updateHomePath();
-      showScreen('home');
-    }
+    recordGrowthAction(button.dataset.growthAction);
+  }));
+  if(animate && previousY!==null){
+    const water=tree.querySelector('.growth-water');
+    water.style.y=`${previousY}px`;
+    requestAnimationFrame(()=>{ water.style.y=`${fillY}px`; });
   }
-  on('enterIndividualWorld','click',()=>enterWorld('individual'));
-  on('enterInstitutionalWorld','click',()=>enterWorld('institutional'));
-  on('individualBackToWorld','click',()=>showScreen('worldSelector'));
-  on('individualLeafChoice','click',()=>{ completeIndividualFirstVisit(); currentRole='leaf'; beginWelcome('leaf'); });
-  on('individualTreeChoice','click',()=>{ if(individualCanTeach){ completeIndividualFirstVisit(); currentRole='tree'; beginWelcome('tree'); } else { showToast('Grow through the Individual community before becoming a Teacher.'); } });
-  on('individualGrowBtn','click',individualGrowToTree);
-  on('individualLeafModeSwitch','click',()=>individualGrowToTree());
-  on('individualTreeModeSwitch','click',individualSwitchToLeaf);
-  document.addEventListener('click',(e)=>{
-    const b=e.target.closest('[data-individual-world-switch]'); if(b){ showScreen('worldSelector'); return; }
-    const p=e.target.closest('[data-individual-profile]'); if(p){ showScreen('individualProfile'); return; }
-    const nav=e.target.closest('[data-individual-nav]'); if(nav){ const target=nav.dataset.individualNav; if(target==='home') showScreen('individualLeaf'); else showToast(`${target.charAt(0).toUpperCase()+target.slice(1)} is part of the Individual World demo.`); return; }
-    const tnav=e.target.closest('[data-individual-tree-nav]'); if(tnav){ const target=tnav.dataset.individualTreeNav; if(target==='home') showScreen('individualTree'); else showToast(`${target.charAt(0).toUpperCase()+target.slice(1)} is part of the Individual World demo.`); return; }
-    const demo=e.target.closest('[data-individual-demo]'); if(demo){ showToast(demo.dataset.individualDemo==='explore'?'Explore more subjects and ideas in the Individual World.':'This Individual World demo keeps the focus on learning and community.'); return; }
-    const demoTree=e.target.closest('[data-individual-tree-action]'); if(demoTree){ showToast('This teaching action is available in the Individual World demo.'); return; }
-    const growth=e.target.closest('[data-individual-growth]'); if(growth){ const map={learn:'learned',share:'shared',help:'helped'}; completeIndividualGrowthStep(map[growth.dataset.individualGrowth]); return; }
-  });
-
-  // ---- logout ----
-  async function logout(){
-  resetUserScopedState();
-    if(window.ELeafSupabase && window.ELeafSupabase.ready){
-      try{
-        const { error } = await window.ELeafSupabase.signOut();
-        if(error){
-          showToast(mapSupabaseAuthError(error));
-          return;
-        }
-      }catch(err){
-        showToast('Could not log out. Please try again.');
-        return;
-      }
-    }
-
-    clearTimeout(welcomeTimer);
-    currentRole = 'leaf';
-    liveContext = null;
-    currentUser = { name: 'Leaf', id: null, email: '' };
-    authGateActive = true;
-    applyIdentityUI();
-    closePanel();
-    showScreen('home');
-    updateHomePath();
-    openPanel('leaf', false);
+  if(complete && location.hash!=='#tree'){
+    tree.addEventListener('click',()=>enterApp('tree'));
+    tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();enterApp('tree')}});
+    if(document.body.dataset.eLeafPage==='home') { tree.classList.remove('growth-home-shake'); void tree.offsetWidth; tree.classList.add('growth-home-shake'); }
   }
-  on('logoutBtnLeaf', 'click', openExitModal);
-  on('logoutBtnBT', 'click', openExitModal);
-  on('logoutBtnTree', 'click', openExitModal);
-  on('individualLeafLogout', 'click', openExitModal);
-  on('individualTreeLogout', 'click', openExitModal);
+}
 
-  // ---- growth transition ----
-  async function growToTree(){
-    const done = Object.values(growthProgress).filter(Boolean).length;
-    if(done < 3){ showToast('Complete all three steps before becoming a Tree.'); renderGrowthState(); return; }
-    const overlay = $('growth-overlay');
-    if(!overlay) return;
-    const firstGrowth = !canTeach;
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const line = overlay.querySelector('.grow-line');
-    if(line) line.textContent = firstGrowth
-      ? 'You’ve become a Tree. Time to carry the responsibility forward.'
-      : 'Welcome back, Tree.';
-
-    // Reset the overlay without using a display:none state. The overlay must
-    // remain mounted so the next Leaf to Tree transition can always start.
-    overlay.classList.remove('idle','quick','morph','reveal-text','complete','forward-mirror','reverse','fadeout');
-    overlay.classList.add('show');
-
-    // The first transformation uses the slower, meaningful morph.
-    // The repeat transformation uses the same rhythm as the working Tree to Leaf transition.
-    if(!firstGrowth) overlay.classList.add('forward-mirror');
-
-    if(reduce){
-      overlay.classList.add('morph','reveal-text');
-      await new Promise(r=>setTimeout(r,900));
-    }else if(!firstGrowth){
-      overlay.classList.add('quick');
-      await new Promise(r=>setTimeout(r,380));
-      overlay.classList.add('morph');
-      await new Promise(r=>setTimeout(r,760));
-      overlay.classList.add('reveal-text');
-      await new Promise(r=>setTimeout(r,520));
-    }else{
-      await new Promise(r=>setTimeout(r,650));
-      overlay.classList.add('morph');
-      await new Promise(r=>setTimeout(r,1650));
-      overlay.classList.add('reveal-text');
-      await new Promise(r=>setTimeout(r,1450));
-    }
-
-    // Start the final visual fade and reveal the destination dashboard at the
-    // exact same moment. The dashboard is rendered underneath the overlay,
-    // then the overlay fades away over it. This removes the dead/empty frame
-    // between the transition artwork and the dashboard.
-    overlay.classList.add('fadeout');
-
-    currentRole='tree';
-    canTeach=true;
-    const savePromise = saveUserState();
-    showScreen('tree');
-    overlay.classList.remove('show');
-
-    // Let the overlay finish fading over the already-rendered Tree dashboard.
-    await new Promise(r=>setTimeout(r,580));
-    await savePromise;
-
-    // Keep the overlay mounted and reset its visual state while hidden.
-    // Never enter a display:none state: the next Leaf to Tree transition must
-    // start from the same mounted overlay.
-    overlay.classList.remove('morph','reveal-text','quick','complete','forward-mirror','reverse','fadeout','show','idle');
-    updateHomePath();
-    renderGrowthState();
+function renderHome(){
+  document.body.dataset.eLeafPage='home';
+  setNav('home');
+  renderGrowthDock();
+  const name=userProfile?.name||'Learner';
+  if(context.world==='institution')return renderInstitutionHome(name);
+  return renderGlobalHome(name);
+}
+function renderInstitutionHome(name){
+  if(context.role==='tree'){
+    $('#appContent').innerHTML=`<div class="welcome institution-welcome"><div><div class="eyebrow">YOUR COLLEGE · TREE</div><h1>Welcome back, ${escapeHtml(name)}.</h1><p>You can still learn here. You can also open the classroom for others.</p></div><button class="btn btn-tree" onclick="routeApp('teach')">Open teaching</button></div>
+    <div class="institution-home-grid"><section><div class="app-card featured-class"><div class="big-meta">Next teaching space</div><h2>Python Fundamentals</h2><p>Your upcoming class · Friday · 4:00 PM</p><div class="card-action-row"><button class="btn btn-tree" onclick="routeApp('teach')">Prepare class</button><span class="quiet">12 learners enrolled</span></div></div><div class="institution-card-row"><button class="app-card small-action" onclick="routeApp('classes')"><span class="eyebrow">Classes</span><strong>See college classes</strong><span>Teach or join what is happening now.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Community</span><strong>Help your classmates</strong><span>Questions, notes, and conversations.</span></button><button class="app-card small-action" onclick="routeApp('college')"><span class="eyebrow">College</span><strong>Stay oriented</strong><span>Schedule, library, and college notices.</span></button></div></section><aside><div class="tree-panel role-tree-panel"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">YOUR TREE</div><h3>Teaching is a responsibility.</h3><p>Your Tree capability is specific to this institutional space. It does not change your Global role.</p></div></aside></div>`;
+  }else{
+    $('#appContent').innerHTML=`<div class="welcome institution-welcome"><div><div class="eyebrow">YOUR COLLEGE · LEAF</div><h1>Welcome back, ${escapeHtml(name)}.</h1><p>Your college is your learning world. Start with what is happening around you.</p></div><button class="btn btn-leaf" onclick="routeApp('classes')">See classes</button></div>
+    <div class="institution-home-grid"><section><div class="app-card featured-class"><div class="big-meta">Happening in your college</div><h2>Python Fundamentals</h2><p>Live with Arun · Today · 4:00 PM</p><div class="card-action-row"><button class="btn btn-leaf" onclick="routeApp('classes')">Join class</button><span class="quiet">Your classmate is teaching</span></div></div><div class="institution-card-row"><button class="app-card small-action" onclick="routeApp('classes')"><span class="eyebrow">Classes</span><strong>Upcoming learning</strong><span>See sessions, subjects, and who is teaching.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Community</span><strong>Notes & questions</strong><span>Learn with people from your college.</span></button><button class="app-card small-action" onclick="routeApp('college')"><span class="eyebrow">College</span><strong>More than classes</strong><span>Exam dates, library, notices, and campus resources.</span></button></div></section><aside><div class="leaf-panel"><div class="leaf-symbol">${icon('leaf')}</div><div class="eyebrow">LEAF</div><h3>A place to learn.</h3><p>You can explore freely inside your college. The people, subjects, curriculum, and resources stay within this community.</p></div></aside></div>`;
   }
-  on('miniGrowBtn', 'click', growToTree);
-  on('mainGrowBtn', 'click', growToTree);
-  // ---- subtle Tree to Leaf transition ----
-  async function switchToLeafMode(){
-    if(currentRole !== 'tree'){ showScreen('leaf'); return; }
-    const overlay = $('growth-overlay');
-    if(!overlay){ currentRole='leaf'; showScreen('leaf'); return; }
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const line = overlay.querySelector('.grow-line');
-    if(line) line.textContent = 'Time to Learn, Leaf.';
-    overlay.classList.remove('quick','morph','reveal-text','reverse');
-    overlay.classList.add('reverse','show');
-    if(reduce){
-      overlay.classList.add('morph','reveal-text');
-      await new Promise(r=>setTimeout(r,1200));
-    }else{
-      // Mirror the repeat Leaf to Tree transition: show the current role first,
-      // hold briefly, morph to the destination role, then reveal the message.
-      overlay.classList.add('quick');
-      await new Promise(r=>setTimeout(r,380));
-      overlay.classList.add('morph');
-      await new Promise(r=>setTimeout(r,760));
-      overlay.classList.add('reveal-text');
-      await new Promise(r=>setTimeout(r,520));
-    }
-    currentRole='leaf';
-    showScreen('leaf');
-    overlay.classList.remove('show','morph','reveal-text','quick','reverse');
-    updateMobileNav('leaf');
-    updateGlobalModeSwitch('leaf');
+}
+function renderGlobalHome(name){
+  if(context.role==='tree'){
+    $('#appContent').innerHTML=`<div class="welcome global-welcome"><div><div class="eyebrow">GLOBAL · TREE</div><h1>Welcome back, ${escapeHtml(name)}.</h1><p>The wider E-Leaf is open to you. Keep learning, and teach where your subject knowledge fits.</p></div><button class="btn btn-tree" onclick="routeApp('teach')">Open teaching</button></div><div class="global-hero-grid"><section><div class="app-card global-feature"><div class="big-meta">Your next teaching space</div><h2>Thinking clearly about probability</h2><p>Build a short learning session for people exploring evidence and uncertainty.</p><div class="card-action-row"><button class="btn btn-tree" onclick="routeApp('teach')">Prepare session</button><span class="quiet">Open to global learners</span></div></div><div class="global-card-row"><button class="app-card small-action" onclick="routeApp('explore')"><span class="eyebrow">Explore</span><strong>Find something new</strong><span>Music, programming, philosophy, science, anything.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Community</span><strong>Help beyond your classroom</strong><span>Questions from learners around E-Leaf.</span></button><button class="app-card small-action" onclick="routeApp('library')"><span class="eyebrow">Keep learning</span><strong>Return to your library</strong><span>Saved courses, notes, and ideas.</span></button></div></section><aside><div class="tree-panel global-tree-panel"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">GLOBAL TREE</div><h3>Your teaching reaches beyond one institution.</h3><p>Teach only in areas where you are qualified. Keep exploring everything else as a learner.</p></div></aside></div>`;
+  }else{
+    $('#appContent').innerHTML=`<div class="welcome global-welcome"><div><div class="eyebrow">GLOBAL · LEAF</div><h1>Welcome back, ${escapeHtml(name)}.</h1><p>There is no fixed curriculum here. Follow your curiosity.</p></div><button class="btn btn-global" onclick="routeApp('explore')">Explore learning</button></div><div class="global-hero-grid"><section><div class="app-card global-feature"><div class="big-meta">Continue learning</div><h2>Python Fundamentals</h2><p>Lesson 4 · Functions and practical problem solving</p><div class="progress"><span></span></div><div class="card-action-row"><button class="btn btn-global" onclick="routeApp('learn')">Continue</button><span class="quiet">8 lessons</span></div></div><div class="global-card-row"><button class="app-card small-action" onclick="routeApp('explore')"><span class="eyebrow">Explore</span><strong>Go anywhere</strong><span>Programming, music, physics, philosophy, and more.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Community</span><strong>Learn with the world</strong><span>Questions, notes, and conversations beyond one campus.</span></button><button class="app-card small-action" onclick="routeApp('library')"><span class="eyebrow">Library</span><strong>Keep what matters</strong><span>Save courses, notes, and ideas for later.</span></button></div></section><aside><div class="leaf-panel global-leaf-panel"><div class="leaf-symbol">${icon('leaf')}</div><div class="eyebrow">GLOBAL LEAF</div><h3>The world is your learning space.</h3><p>Explore subjects without an institutional curriculum deciding what comes next.</p></div></aside></div>`;
   }
+}
+function routeApp(page){
+  document.body.dataset.eLeafPage=page||'home';
+  if(page==='home')return renderHome();
+  renderGrowthDock();
+  setNav(page);
+  const pages={explore:renderExplore,learn:renderLearn,community:renderCommunity,library:renderLibrary,note:renderLibrary,teach:renderTeach,classes:renderClasses,college:renderCollege};
+  (pages[page]||renderHome)();
+}
+function renderClasses(){
+  const inst=context.world==='institution';
+  const title=inst?'Classes in your college':'Classes across E-Leaf';
+  const copy=inst?'See what is happening in your curriculum and community.':'Choose a subject, teacher, or live session from anywhere in the wider community.';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'COLLEGE':'GLOBAL'} · CLASSES</div><h1>${title}</h1><p>${copy}</p></div></div><div class="course-grid">${DEMO_COURSES.map(c=>`<button class="course" style="text-align:left" onclick="routeApp('learn')"><span class="course-tag">${c.subject}</span><h3>${c.title}</h3><p>${c.detail}</p><div class="course-meta"><span>${inst?'College class':'Global class'}</span><span>${c.meta.split(' · ')[1]}</span></div></button>`).join('')}</div>`;
+}
+function renderCollege(){
+  if(context.world!=='institution')return renderLibrary();
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">YOUR COLLEGE</div><h1>Everything around learning.</h1><p>Your college space is more than classes. Keep the practical things close.</p></div></div><div class="college-grid"><div class="app-card"><span class="eyebrow">Schedule</span><h3>Exam dates</h3><p>Mid-term examinations begin 14 October.</p><button class="btn btn-leaf">View dates</button></div><div class="app-card"><span class="eyebrow">Library</span><h3>College library</h3><p>Books, references, and reserved reading for your subjects.</p><button class="btn btn-leaf">Open library</button></div><div class="app-card"><span class="eyebrow">Notices</span><h3>College updates</h3><p>Important notices and events from your institution.</p><button class="btn btn-leaf">View notices</button></div></div>`;
+}
+function renderExplore(){
+  const inst=context.world==='institution';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'COLLEGE':'GLOBAL'} · EXPLORE</div><h1>${inst?'Explore what your college can teach you.':'Explore without a fixed curriculum.'}</h1><p>${inst?'Follow subjects and people inside your institution.':'Move freely between subjects, courses, and people from across E-Leaf.'}</p></div></div><div class="course-grid">${DEMO_COURSES.map(c=>`<button class="course" style="text-align:left" onclick="routeApp('learn')"><span class="course-tag">${c.subject}</span><h3>${c.title}</h3><p>${c.detail}</p><div class="course-meta"><span>${c.meta.split(' · ')[0]}</span><span>${inst?'Your college':'Global'}</span></div></button>`).join('')}</div>`;
+}
+function renderLearn(){
+  const inst=context.world==='institution';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'COLLEGE':'GLOBAL'} · LEARN</div><h1>Keep one clear next step.</h1><p>${inst?'Learn through classes and resources connected to your college.':'Learn from wherever your curiosity takes you.'}</p></div><button class="btn ${context.role==='tree'?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="recordGrowthAction('learn')">Complete lesson</button></div><div class="app-grid"><section><div class="app-card"><div class="eyebrow">Current course</div><h2 style="font-size:27px;margin-top:10px">Python Fundamentals</h2><p>Lesson 4 · Functions and practical problem solving</p><div class="progress"><span></span></div><div class="list"><div class="list-item"><div><strong>Lesson 4 · Functions</strong><small>Continue where you stopped.</small></div><button class="btn ${context.role==='tree'?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="recordGrowthAction('learn')">Open</button></div><div class="list-item"><div><strong>Practice · Small problem</strong><small>Try the idea before moving on.</small></div><button class="btn">Try</button></div></div></div></section><aside><div class="app-card"><div class="eyebrow">Around this course</div><h3>People are learning this too.</h3><p>Questions, notes, and discussion stay connected to what you are learning.</p><button class="btn" onclick="routeApp('community')">Open community</button></div></aside></div>`;
+}
+function renderCommunity(){
+  const inst=context.world==='institution';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'COLLEGE':'GLOBAL'} · COMMUNITY</div><h1>Learn with other people.</h1><p>${inst?'Talk with people from your college, where the curriculum and community meet.':'Learn with people from anywhere in E-Leaf.'}</p></div><button class="btn ${context.role==='tree'?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="recordGrowthAction('help')">Help a learner</button></div><div class="list"><div class="list-item"><div><strong>How do functions help organize a program?</strong><small>Programming · 3 replies · active</small></div><button class="btn" onclick="recordGrowthAction('help')">Open</button></div><div class="list-item"><div><strong>What is the difference between mass and weight?</strong><small>Physics · 5 replies · useful</small></div><button class="btn">Open</button></div><div class="list-item"><div><strong>A simple way to think about epistemic doubt</strong><small>Philosophy · shared note</small></div><button class="btn">Read</button></div></div>`;
+}
+function renderLibrary(){
+  const inst=context.world==='institution';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'Notes':'Library'}</div><h1>${inst?'Notes worth keeping.':'Things worth returning to.'}</h1><p>${inst?'Useful notes and learning material from your college, kept close to the work.':'Your saved lessons, notes, and ideas in one quiet place.'}</p></div><button class="btn ${context.role==='tree'?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="recordGrowthAction('share')">Share a note</button></div><div class="list"><div class="list-item"><div><strong>Python Fundamentals</strong><small>Continue learning · Lesson 4</small></div><button class="btn">Open</button></div><div class="list-item"><div><strong>The mathematics of uncertainty</strong><small>Saved learning session</small></div><button class="btn">Open</button></div></div>`;
+}
+function renderTeach(){
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">Teach</div><h1>Help people learn well.</h1><p>Your teaching space should be about learners, sessions, and useful explanations, not vanity metrics.</p></div><button class="btn btn-primary">Plan a session</button></div><div class="app-grid"><section><div class="app-card"><div class="eyebrow">Next session</div><h2 style="margin-top:9px">Thinking clearly about probability</h2><p>Prepare a small learning session for people exploring evidence and uncertainty.</p><button class="btn btn-primary">Open session</button></div><div class="card-row"><div class="app-card small-action"><span class="eyebrow">Learners</span><strong>See your learners</strong><span>Questions, attendance, and follow-up.</span></div><div class="app-card small-action"><span class="eyebrow">Create</span><strong>Make a learning experience</strong><span>Class, lesson, or useful resource.</span></div><div class="app-card small-action"><span class="eyebrow">Help</span><strong>Answer a question</strong><span>Contribute where your subject knowledge fits.</span></div></div></section><aside><div class="tree-panel"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">CAPABILITY</div><h3>Teaching areas</h3><p>Your teaching capability is subject-specific. Only areas you are qualified to teach should appear here.</p></div></aside></div>`;
+}
+function requestLogout(){
+  const modal=$('#logoutConfirm');
+  if(!modal)return performLogout();
+  modal.classList.remove('hidden'); modal.setAttribute('aria-hidden','false');
+  setTimeout(()=>$('#logoutCancel')?.focus(),40);
+}
+function closeLogout(){
+  const modal=$('#logoutConfirm');
+  if(!modal)return;
+  modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true');
+}
+async function performLogout(){
+  closeLogout();
+  await supabaseClient?.auth.signOut();
+  session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};
+  hide($('#appView'));show($('#publicView'));window.scrollTo(0,0);
+}
 
-  on('seeGrowthBtn','click',()=>showScreen('becomeTree'));
-
-  // ---- rising particles on home ----
-  const particleHost = $('risingParticles');
-  if(particleHost){
-    for(let i=0;i<16;i++){
-      const p = document.createElement('div');
-      p.className = 'rp' + (i % 2 === 0 ? ' leafy' : '');
-      p.style.left = (Math.random()*100) + '%';
-      p.style.bottom = (Math.random()*15) + '%';
-      p.style.animationDelay = (Math.random()*12) + 's';
-      p.style.animationDuration = (9 + Math.random()*7) + 's';
-      particleHost.appendChild(p);
-    }
-  }
-
-  const panelParticleHost = $('panelParticles');
-  if(panelParticleHost){
-    for(let i=0;i<28;i++){
-      const p = document.createElement('div');
-      p.className = 'rp' + (i % 3 === 0 ? ' leafy' : '');
-      p.style.left = (Math.random()*100) + '%';
-      p.style.bottom = (Math.random()*18) + '%';
-      p.style.animationDelay = (Math.random()*10) + 's';
-      p.style.animationDuration = (11 + Math.random()*8) + 's';
-      panelParticleHost.appendChild(p);
-    }
-  }
-
-  // ---- initialize ----
-  // Authentication is the only entry point. A restored Supabase session may identify
-  // the returning user, but it must never choose a dashboard or role before login.
-  loadUserState().then(async () => {
-    await seedIfNeeded();
-    authGateActive = true;
-    currentRole = 'leaf';
-    clearTimeout(welcomeTimer);
-    updateHomePath();
-    renderGrowthState();
-    updateMobileNav('home');
-    showScreen('home');
-    openPanel('leaf', false);
-  }).catch(() => {
-    authGateActive = true;
-    currentRole = 'leaf';
-    showScreen('home');
-    openPanel('leaf', false);
-  });
-})();
-
+$('#logoutCancel').onclick=closeLogout;
+$('#logoutConfirmButton').onclick=performLogout;
+$('#logoutConfirm').addEventListener('click',e=>{if(e.target.id==='logoutConfirm')closeLogout()});
+$('#loginBtn').onclick=()=>openAuth('login');
+$('#joinBtn').onclick=()=>openAuth('signup');
+$('#heroJoin').onclick=()=>openAuth('signup');
+$('#finalJoin').onclick=()=>openAuth('signup');
+$('#heroExplore').onclick=()=>document.querySelector('#explore').scrollIntoView({behavior:'smooth'});
+$('#authClose').onclick=closeAuth;
+$('#signupTab').onclick=()=>setAuthMode('signup');
+$('#loginTab').onclick=()=>setAuthMode('login');
+$('#authForm').onsubmit=submitAuth;
+$('#globalChoice').onclick=()=>{if(session){hydrateChoiceIcons();transitionSpace('global');}};
+$('#institutionChoice').onclick=()=>{if(session){hydrateChoiceIcons();transitionSpace('institution');}};
+$('#roleClose').onclick=()=>{hide($('#roleOverlay'));show($('#contextOverlay'))};
+$('#enterLeaf').onclick=()=>enterApp('leaf');
+$('#enterTree').onclick=()=>enterApp('tree');
+$$('[data-public-action="course"]').forEach(b=>b.onclick=()=>openAuth('signup','course'));
+if(supabaseClient){
+  supabaseClient.auth.getSession().then(({data})=>{if(data.session){session=data.session;userProfile=loadProfile(data.session.user)}});
+  supabaseClient.auth.onAuthStateChange((_event,s)=>{session=s;if(s)userProfile=loadProfile(s.user)});
+}
