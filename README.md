@@ -8,7 +8,7 @@ E-Leaf is a learning ecosystem built around a simple idea:
 
 E-Leaf is designed to make learning more participatory. A person does not simply consume courses and leave. They learn from others, share what they understand, help other learners, and can eventually develop the capability to teach.
 
-The product is intended to support both **individual learning** and **institutional education** while keeping those contexts distinct.
+The product is intended to support both **Global learning** and **institutional education** while keeping those contexts distinct.
 
 Every person begins as a **Leaf**.
 
@@ -26,7 +26,7 @@ E-Leaf deliberately separates several concepts that can otherwise become confuse
 
 | Concept | Meaning |
 |---|---|
-| **Individual / Institutional** | The world or context in which a person is participating |
+| **Global / Institutional** | The world or context in which a person is participating |
 | **Leaf / Tree** | The person's learning and teaching capability/mode |
 | **Admin roles** | Authorization roles used to manage the platform or an institution |
 | **Membership** | The relationship between a person and an institution |
@@ -49,7 +49,7 @@ E-Leaf is intended to operate in two connected but distinct contexts:
                             │
               ┌─────────────┴─────────────┐
               │                           │
-       INDIVIDUAL WORLD             INSTITUTIONAL WORLD
+       GLOBAL WORLD             INSTITUTIONAL WORLD
               │                           │
       Global learning               Controlled academic
          ecosystem                     environments
@@ -62,15 +62,15 @@ E-Leaf is intended to operate in two connected but distinct contexts:
 
 A person's identity can participate in both worlds without forcing the two data contexts to become the same thing.
 
-## Individual World
+## Global World
 
-The Individual World is E-Leaf as a global learning ecosystem.
+The Global World is E-Leaf as the open learning ecosystem beyond the boundaries of any one institution.
 
-A person joins E-Leaf primarily to learn. They can explore multiple subjects, attend courses and classes taught by Trees from around the world, read and plant useful notes, ask questions, answer other learners, and participate in discussions.
+A person joins E-Leaf primarily to learn beyond the boundaries of their institution. They can explore multiple subjects, attend courses and classes taught by Trees from around the world, read and plant useful notes, ask questions, answer other learners, and participate in discussions.
 
 A person does not have to belong to a college to use this part of E-Leaf.
 
-The Individual World is intended to support:
+The Global World is intended to support:
 
 - learning across multiple subjects,
 - courses and lessons from qualified Trees,
@@ -81,7 +81,7 @@ The Individual World is intended to support:
 - discovering Trees and their teaching areas,
 - and eventually becoming a qualified Tree.
 
-The Individual World should feel like a **social learning ecosystem**, not a conventional social network. Popularity, follower counts, likes, XP, leaderboards, and engagement-maximizing mechanics should not define success.
+The Global World should feel like a **social learning ecosystem**, not a conventional social network. Popularity, follower counts, likes, XP, leaderboards, and engagement-maximizing mechanics should not define success.
 
 ## Institutional World
 
@@ -127,7 +127,7 @@ The intended identity model is:
           ┌────────────────┼────────────────┐
           │                │                │
           ▼                ▼                ▼
- Individual World   Global Tree       Institution
+ Global World   Global Tree       Institution
                     capability        memberships
                                            │
                               ┌────────────┴────────────┐
@@ -137,7 +137,7 @@ The intended identity model is:
 
 The same person could therefore be:
 
-- a Leaf in the Individual World,
+- a Leaf in the Global World,
 - a globally qualified Tree for specific teaching areas,
 - a student at College A,
 - a Tree provisioned by College B,
@@ -227,7 +227,7 @@ The cycle has no real final step.
 
 # Becoming a Tree
 
-Becoming a Tree is intentionally different in the Individual and Institutional worlds.
+Becoming a Tree is intentionally different in the Global and Institutional worlds.
 
 ## Current prototype qualification
 
@@ -251,7 +251,7 @@ This model is intentionally simple for the prototype. It demonstrates the produc
 
 ## Intended production qualification
 
-The production Individual World should use a substantially more rigorous process.
+The production Global World should use a substantially more rigorous process.
 
 The goal is not simply to reward activity. The goal is to determine whether someone is genuinely ready to take responsibility for teaching other people.
 
@@ -309,7 +309,7 @@ E-Leaf can support more than one origin for Tree capability.
 
 A Global Tree is reviewed and approved through E-Leaf's qualification process.
 
-This Tree can teach within their approved Individual World teaching areas and offer learning experiences to the wider E-Leaf community.
+This Tree can teach within their approved Global World teaching areas and offer learning experiences to the wider E-Leaf community.
 
 ## Institutional Tree
 
@@ -498,7 +498,7 @@ User / Identity
 ├── Global capabilities
 │   └── Tree teaching areas
 │
-├── Individual participation
+├── Global participation
 │
 └── Institution memberships
     │
@@ -515,7 +515,7 @@ For example, a user might have:
 
 ```text
 Authenticated: yes
-Individual Tree: yes
+Global Tree: yes
 Current mode: Leaf
 College A membership: Student
 College B membership: Academic Admin
@@ -525,7 +525,7 @@ Another person might have:
 
 ```text
 Authenticated: yes
-Individual Tree: no
+Global Tree: no
 Current mode: Leaf
 College A membership: Student
 ```
@@ -603,7 +603,7 @@ Examples include:
 
 # Curriculum vision
 
-E-Leaf can support structured academic learning without making the Individual World dependent on one institution.
+E-Leaf can support structured academic learning without making the Global World dependent on one institution.
 
 A possible institutional curriculum structure is:
 
@@ -625,7 +625,7 @@ Learning activity
 
 The exact hierarchy can evolve, but the important architectural principle is that institutional curriculum belongs to the institution that controls it.
 
-The Individual World can use the wider E-Leaf subject taxonomy and Tree teaching areas instead of inheriting a college's curriculum.
+The Global World can use the wider E-Leaf subject taxonomy and Tree teaching areas instead of inheriting a college's curriculum.
 
 ---
 
@@ -870,7 +870,7 @@ The high-level product model is:
                                  │
              ┌───────────────────┴───────────────────┐
              │                                       │
-       INDIVIDUAL WORLD                         INSTITUTIONAL WORLD
+       GLOBAL WORLD                         INSTITUTIONAL WORLD
              │                                       │
        Global learning                         Institutions
           ecosystem                                  │
@@ -900,7 +900,7 @@ The identity layer sits across these contexts:
               ┌───────────────────┼───────────────────┐
               │                   │                   │
               ▼                   ▼                   ▼
-       Individual use       Global Tree         Institution
+       Global use       Global Tree         Institution
                             capability          memberships
                                                     │
                                       ┌─────────────┼─────────────┐
@@ -908,7 +908,7 @@ The identity layer sits across these contexts:
                                   College A     College B      ...
 ```
 
-This architecture allows E-Leaf to be an individual's learning platform first while still supporting institutions as controlled environments inside the same ecosystem.
+This architecture allows E-Leaf to be a global learning platform beyond any one institution while still supporting institutions as controlled environments inside the same ecosystem.
 
 ---
 
@@ -918,7 +918,7 @@ E-Leaf should not become just another course catalogue or just another college L
 
 It should become an environment where learning can naturally turn into contribution, and contribution can naturally turn into teaching.
 
-The Individual World provides the open learning ecosystem.
+The Global World provides the open learning ecosystem.
 
 The Institutional World provides controlled academic environments.
 
@@ -950,13 +950,36 @@ If someone understands only one thing about E-Leaf, it should be this:
 >
 > **And every Tree can still return to being a Leaf.**
 >
-> **E-Leaf can support this journey both individually and inside institutions.**
+> **E-Leaf can support this journey both globally and inside institutions.**
 
 **E-Leaf: Come as a learner. Grow into a teacher.**
 
-## V2.16 Demo UI: Individual World
+## Global means beyond the institution
 
-The prototype now includes an Individual World without changing the existing Institutional World dashboard structure. Authentication remains the existing Supabase flow. After authentication, the user chooses a world, then chooses their Individual Learner/Teacher path.
+In E-Leaf, **Global** and **Institutional** describe two learning contexts, not two kinds of account.
+
+- **Global** means learning from the wider E-Leaf world, beyond the boundaries of a person's institution. A learner can discover subjects, Trees, classes, notes, questions, and discussions from the broader community.
+- **Institutional** means learning within an institution through its classmates, institutional Trees, curriculum, classes, and resources.
+
+The same authenticated E-Leaf identity can participate in both contexts. Switching context changes the learning environment; it does not create another account.
+
+The words **Leaf** and **Tree** remain separate from this context distinction: a person can be a Leaf or an authorized Tree in either context where the relevant capability exists.
+
+## Demo qualification vs production qualification
+
+The prototype intentionally uses a simple **three-action demo threshold** so the Leaf → Tree transition can be shown clearly in presentations:
+
+1. **Learn** — attend a demo learning session from another Tree.
+2. **Share** — plant a useful note in the demo library.
+3. **Help** — help another learner through a useful conversation.
+
+Completing the three actions reveals the Tree transition, changes the dashboard/navigation, and exposes the demo teaching space. This is **presentation behavior only**. It must not be treated as production certification.
+
+Production Global Tree qualification remains a separate process involving evidence, eligibility, application, review, teaching demonstration, approval, and scoped teaching areas.
+
+## V3.1 Demo UI: Global World
+
+The prototype now includes an Global World without changing the existing Institutional World dashboard structure. Authentication remains the existing Supabase flow. After authentication, the user chooses a world, then chooses their Global Learner/Teacher path.
 
 ### Current demo flow
 
@@ -964,22 +987,22 @@ The prototype now includes an Individual World without changing the existing Ins
 Authenticate
     ↓
 Choose E-Leaf World
-    ├── Individual
+    ├── Global
     │      ↓
-    │  Individual profile
+    │  Global profile
     │      ↓
     │  Learner / Teacher
     │      ↓
-    │  Individual dashboard
+    │  Global dashboard
     │
     └── Institutional
            ↓
        Existing institutional profile/dashboard
 ```
 
-### Individual World
+### Global World
 
-The Individual World has a deliberately different UI language from the Institutional World. It is wider, more open, discovery-oriented, and community-focused rather than curriculum-oriented. Its primary concepts are:
+The Global World has a deliberately different UI language from the Institutional World. It is wider, more open, discovery-oriented, and community-focused rather than curriculum-oriented. Its primary concepts are:
 
 - Home
 - Explore
@@ -989,17 +1012,17 @@ The Individual World has a deliberately different UI language from the Instituti
 - Trees
 - Journey
 
-The Individual Tree experience adds teaching without turning the user into a separate account or a separate product. A Tree remains a Learner and can switch back at any time.
+The Global Tree experience adds teaching without turning the user into a separate account or a separate product. A Tree remains a Learner and can switch back at any time.
 
 ### Demo Tree progression
 
-The Individual World currently uses a separate demo growth state so it cannot unlock or modify the Institutional Tree state. The three demo actions are:
+The Global World currently uses a separate demo growth state so it cannot unlock or modify the Institutional Tree state. The three demo actions are:
 
 1. Attend a demo learning session.
 2. Share something useful to My Library.
 3. Help the community through a useful conversation.
 
-After all three are completed, the Individual Teacher path becomes available.
+After all three are completed, the Global Tree path becomes available.
 
 This is a prototype-only representation of the eventual, substantially stricter global Tree qualification and approval process described in the product architecture.
 
@@ -1007,10 +1030,36 @@ This is a prototype-only representation of the eventual, substantially stricter 
 
 The current demo keeps the following concepts separate in frontend state:
 
-- Individual World vs Institutional World
-- Individual Tree capability vs Institutional Tree capability
-- Individual growth progress vs Institutional growth progress
+- Global World vs Institutional World
+- Global Tree capability vs Institutional Tree capability
+- Global growth progress vs Institutional growth progress
 - World selection vs Learner/Teacher mode
 
-The Individual World is intentionally implemented as a separate UI shell. The Institutional UI and its existing navigation are not redesigned as part of V2.16.
+The Global World is intentionally implemented as a separate UI shell. The Institutional UI and its existing navigation are not redesigned as part of V2.16.
 
+
+
+---
+
+# V3.2 refinement notes
+
+This build keeps the original project structure and extends the prototype without changing the core architecture. The main refinements are:
+
+- Global is explicitly defined as learning beyond the user's institution.
+- Global discovery now has a search-first surface across demo subjects, courses, classes, notes, questions, and Trees.
+- Global navigation includes a Journey surface for the Learn → Share → Help → Teach model.
+- The three-action Leaf → Tree threshold remains intentionally available for demonstrations and presentations.
+- Tree UI communicates scoped teaching capability rather than implying unrestricted teaching authority.
+- Global Home emphasizes a next learning step, discovery, contribution, and the learner's journey rather than a generic social feed.
+- Institutional navigation and its existing structure remain separate from the Global shell.
+- These additions remain prototype/demo behavior; backend authorization, RLS, qualification review, institutional membership, and production persistence remain future implementation work.
+
+- The authenticated navbar now uses the same Leaf mark as the public E-Leaf space.
+- Demo Tree criteria now make the Tree ready at 3/3 without automatically switching the learner into Tree mode.
+- A fully satisfied demo Tree is visually filled completely and gives a restrained invitation cue on Home.
+- Entering Tree mode from the growth Tree uses the same canonical Leaf → Tree transition as the normal role switch.
+- Dashboard ambient visuals remain subtle and preserve the existing color foundation; Global/Institutional and Leaf/Tree states use different levels of organic contextual motion rather than separate color themes.
+
+## V3.3 refinement notes
+
+- Persistent World + Leaf/Tree context orientation, mobile bottom navigation, responsive layout refinement, and true 100% Tree fill at 3/3.
