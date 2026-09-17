@@ -1063,3 +1063,39 @@ This build keeps the original project structure and extends the prototype withou
 ## V3.3 refinement notes
 
 - Persistent World + Leaf/Tree context orientation, mobile bottom navigation, responsive layout refinement, and true 100% Tree fill at 3/3.
+
+## V3.4 — Growth Tree + Internal UX Consistency Fix
+
+This refinement pass focused on interaction integrity across the four internal contexts and on clarifying the Growth Tree as a qualification companion rather than a generic floating widget.
+
+- The Growth Tree now has explicit lifecycle states: growing → ready → enter Tree. At 3/3, its fill is a true 100% state and the completed state provides an explicit **Enter Tree** action.
+- Growth progress continues to derive from the shared world-specific growth state and remains stable while navigating between internal pages.
+- Leaf → Tree and Tree → Leaf transitions retain destination-specific visual language; the transition label also identifies the destination world and mode.
+- User-facing Leaf/Tree language is framed as participation/mode rather than implying a separate account role.
+- World switching is labelled **Change world** to distinguish Global ↔ Institutional from Leaf ↔ Tree mode switching.
+- Institutional Explore labels its content as institutional rather than Global.
+- Tree users can continue learning without attempting to mutate Tree qualification progress through lesson completion.
+- Institutional Tree class selections route into the teaching experience rather than the Leaf learning experience.
+- Visible presentation actions provide feedback instead of silently failing; Tree profile actions now also explain when an experience is represented by the demo.
+- Journey/context copy respects the current world rather than assuming Global.
+
+
+## V3.5 — Contextual Visual Consistency
+
+- Internal interactive actions now inherit the current Leaf/Tree participation accent by default, preventing mode-inconsistent green/orange controls across dashboards.
+- Interactive course/action cards receive a restrained mode accent without recoloring the whole interface.
+- Journey progress states use the current mode accent consistently.
+- Neutral institutional information can remain neutral where explicitly marked, while actionable controls stay contextual.
+- World styling remains environmental and separate from mode-specific action styling; contextual color is treated as a signal rather than a full-page skin.
+
+
+## V3.6 — Internal Dashboard Integrity + Semantic Consistency
+
+- Fixed Growth Tree fill persistence so its state-derived SVG fill remains visible after internal navigation and dashboard rerenders.
+- Refined action styling so Leaf/Tree colors identify participation-mode actions rather than indiscriminately recoloring every button.
+- Institutional College infrastructure actions (exam dates, library, and notices) remain neutral in both Leaf and Tree modes.
+- Institutional Classes now make the participation action explicit: Leaf sees **Join** and Tree sees **Prepare**.
+- Tree learning no longer presents lesson completion as qualification progress; its primary learning action is framed as **Continue learning**.
+- Global Tree Explore no longer jumps directly from discovery into the teaching space; course selection is represented as a neutral course-details step in the presentation demo.
+- UI terminology and controls continue to distinguish **World** (Global / Institutional) from **Mode** (Leaf / Tree), while internal authorization roles remain a separate concept.
+- Role-switch controls now expose explicit accessible labels such as **Switch to Tree mode** / **Switch to Leaf mode**.
