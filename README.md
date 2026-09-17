@@ -1099,3 +1099,54 @@ This refinement pass focused on interaction integrity across the four internal c
 - Global Tree Explore no longer jumps directly from discovery into the teaching space; course selection is represented as a neutral course-details step in the presentation demo.
 - UI terminology and controls continue to distinguish **World** (Global / Institutional) from **Mode** (Leaf / Tree), while internal authorization roles remain a separate concept.
 - Role-switch controls now expose explicit accessible labels such as **Switch to Tree mode** / **Switch to Leaf mode**.
+
+
+---
+
+## V3.9 — Guided Demo & UX Integrity
+
+This iteration keeps presentation assistance clearly separate from the product surface while tightening accessibility and demo-flow logic.
+
+- Guided Demo Journey is now an optional, collapsible presentation helper rather than a dominant dashboard block.
+- Leaf demo path now exposes all four demonstration steps: Explore, Learn, Share, and Help.
+- Tree demo path now exposes Teach, Plan, and Support, including an explicit class-planning action.
+- Demo completion state now requires the visible journey steps to have been demonstrated.
+- The authenticated app no longer treats the entire dashboard as a live region; transient announcements remain in the dedicated toast/status layer.
+- The demonstration notice is informational rather than an assertive status announcement.
+- Skip navigation now targets the public main content before login and the authenticated main content after login.
+- Main content targets are keyboard-focusable for reliable skip navigation.
+- Demo-specific copy now explicitly frames the guide as presentation assistance and keeps normal navigation independent from it.
+
+
+
+## V3.10 — Calm Transitions & Unified Demo Control
+
+- Replaced the separate Demo Guide hide/recovery behavior with one persistent **Show demo guide / Hide demo guide** control positioned beside the guided-demo area across desktop, tablet, and mobile.
+- Removed the competing desktop navbar Demo Guide control so presentation guidance has one consistent mental model.
+- Slowed Global and Institutional Leaf ↔ Tree transitions with deliberate readable stages before revealing the destination dashboard.
+- Added a shared lightweight page-reveal pattern for ordinary dashboard navigation and a longer transition tier for world/mode changes.
+- Added a visible close control to the Change World chooser; Escape closes it as well.
+- Closing the world chooser preserves the current dashboard context, mode, and current page; initial world selection safely returns to the public space if no world has been chosen yet.
+- World changes normalize to Home after the destination world is selected, while valid dashboard pages are preserved when rebuilding the current app shell.
+- Reduced-motion handling disables the new reveal/transition motion without removing access to the underlying content.
+
+
+## V3.11 — Public Space Narrative Redesign
+- Reworked the public landing experience around E-Leaf’s core learning model rather than decorative explanation.
+- Hero now explicitly connects Leaf → Tree to learner growth and teaching capability.
+- Added a clear distinction between a conventional completion-driven learning model and E-Leaf’s Learn → Contribute → Help → Teach loop.
+- Clarified that Tree is a capability grown from learning, not a separate identity.
+- Reframed Global and Institutional as two connected worlds for the same person.
+- Reworked people examples as clearly marked demo examples rather than implied social proof.
+- Added a clearer “start as a learner” path and delayed the join ask until after the product model is explained.
+- Updated public navigation and hero CTA semantics to match the new narrative.
+- Preserved existing authentication, internal dashboard, Supabase, growth, and demo systems.
+
+## V3.12 — Public Space Visual and World Ordering Refinement
+- Enclosed the hero Leaf and Tree visual in a product-style card so the two states read as part of the E-Leaf model rather than as decoration alone.
+- Replaced decorative arrow glyphs in the public experience with restrained standard separators and simple visual rules.
+- Tightened vertical spacing between Public Space sections while preserving intentional breathing room.
+- Reordered the Public Space world story to place Institutional before Global, reflecting the intended institution-first adoption path.
+- Reordered the authenticated world chooser to place Institutional before Global and updated the chooser language accordingly.
+- Kept Global and Institutional as connected contexts for the same person rather than implying separate identities.
+- Removed arrow glyphs from the authenticated Journey heading as part of the platform-wide visual language refinement.

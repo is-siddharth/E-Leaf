@@ -1,13 +1,14 @@
 function toast(message){
   let el=$('#appToast');
   if(!el){
-    el=document.createElement('div'); el.id='appToast'; el.className='app-toast'; el.setAttribute('role','status'); document.body.appendChild(el);
+    el=document.createElement('div'); el.id='appToast'; el.className='app-toast'; el.setAttribute('role','status'); el.setAttribute('aria-live','polite'); el.setAttribute('aria-atomic','true'); document.body.appendChild(el);
   }
   el.textContent=message; el.classList.add('show');
   clearTimeout(window.__eLeafToastTimer);
   window.__eLeafToastTimer=setTimeout(()=>el.classList.remove('show'),2400);
 }
 function demoAction(message){ toast(message||'This is a demonstration action. No real data was changed.'); }
+function updateSkipTarget(target){const link=document.querySelector('.skip-link');if(link)link.setAttribute('href',target)}
 function isBackendReady(){return Boolean(supabaseClient&&SUPABASE_URL&&SUPABASE_KEY)}
 function setAuthBusy(busy){const button=$('#authSubmit');if(!button)return;button.disabled=busy;button.setAttribute('aria-busy',String(busy));button.textContent=busy?'Please wait...':($('#signupTab').classList.contains('active')?'Create account':'Log in')}
 function friendlyAuthError(error){const message=String(error?.message||'').toLowerCase();if(message.includes('invalid login credentials'))return 'That email or password did not match an E-Leaf account.';if(message.includes('already registered')||message.includes('already been registered'))return 'An account already exists for this email. Try logging in instead.';if(message.includes('email not confirmed'))return 'Please confirm your email, then try logging in.';if(message.includes('network')||message.includes('fetch'))return 'We could not reach the account service. Check your connection and try again.';return error?.message||'Something went wrong. Please try again.';}
@@ -84,44 +85,53 @@ function treeUnlockedForWorld(world){
 function setRememberedRole(role){
   if(session&&context.world)store.set(roleKey(context.world),role);
 }
+function beginPageReveal(){
+  const content=$('#appContent');
+  if(!content||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  content.classList.remove('page-enter');
+  void content.offsetWidth;
+  content.classList.add('page-enter');
+  clearTimeout(window.__eLeafPageRevealTimer);
+  window.__eLeafPageRevealTimer=setTimeout(()=>content.classList.remove('page-enter'),520);
+}
 function transitionSpace(targetWorld){
   if(!session)return;
-  if(!context.world){
-    context.world=targetWorld;
-    context.institution=targetWorld==='institution'?(userProfile?.institution||'Your institution'):null;
-    openRole(targetWorld,context.institution);
-    return;
-  }
   if(context.world===targetWorld){renderApp();return;}
+  if(document.body.classList.contains('e-leaf-transitioning'))return;
   const overlay=$('#spaceTransition');
   $('#spaceTransitionMark').innerHTML=icon(targetWorld==='global'?'globe':'building');
   $('#spaceTransitionEyebrow').textContent=targetWorld==='global'?'GLOBAL SPACE':'INSTITUTIONAL SPACE';
   $('#spaceTransitionTitle').textContent=targetWorld==='global'?'Stepping into the wider world.':'Coming back to your college space.';
   $('#spaceTransitionCopy').textContent=targetWorld==='global'?'There is more to explore beyond one curriculum.':'Your learning returns to the people, classes, and resources of your institution.';
+  document.body.classList.add('e-leaf-transitioning');
   hideAllOverlays(); overlay.classList.remove('hidden','out');
   setTimeout(()=>{
     context.world=targetWorld;
     context.institution=targetWorld==='institution'?(userProfile?.institution||'Your institution'):null;
     context.role=rememberedRole(targetWorld);
     store.set(`e_leaf_last_context:${session.user.id}`,context);
+    document.body.dataset.eLeafPage='home';
     renderApp();
     overlay.classList.add('out');
-    setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out')},430);
-  },900);
+  },1450);
+  setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out');document.body.classList.remove('e-leaf-transitioning')},2150);
 }
 function transitionRole(targetRole){
   if(context.role===targetRole){renderApp();return;}
+  if(document.body.classList.contains('e-leaf-transitioning'))return;
   const overlay=$('#roleTransition');
   const toTree=targetRole==='tree';
   $('#roleTransitionMark').innerHTML=icon(toTree?'tree':'leaf');
   $('#roleTransitionEyebrow').textContent=toTree?`${context.world==='global'?'GLOBAL':'INSTITUTION'} · TREE`:`${context.world==='global'?'GLOBAL':'INSTITUTION'} · LEAF`;
   $('#roleTransitionTitle').textContent=toTree?'Moving into your teaching space.':'Returning to your learning space.';
   $('#roleTransitionCopy').textContent=toTree?'You can keep learning, and now you can teach here too.':'Teaching stays available to you. For now, you are here to learn.';
+  document.body.classList.add('e-leaf-transitioning');
   hideAllOverlays(); overlay.classList.remove('hidden','out','to-tree','to-leaf'); overlay.classList.add(toTree?'to-tree':'to-leaf');
   setTimeout(()=>{
-    context.role=targetRole; setRememberedRole(targetRole); store.set('e_leaf_last_context:'+session.user.id,context); renderApp(); overlay.classList.add('out');
-    setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out')},430);
-  },850);
+    context.role=targetRole; setRememberedRole(targetRole); store.set(`e_leaf_last_context:${session.user.id}`,context); renderApp();
+  },1850);
+  setTimeout(()=>{overlay.classList.add('out')},1980);
+  setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out','to-tree','to-leaf');document.body.classList.remove('e-leaf-transitioning')},2750);
 }
 
 function setPasswordVisibility(inputSelector,toggleSelector){
@@ -195,7 +205,8 @@ async function submitAuth(e){
     $('#authMessage').textContent=friendlyAuthError(err);
   }finally{setAuthBusy(false);}
 }
-function showContext(){hideAllOverlays();show($('#contextOverlay'));}
+function showContext(){hideAllOverlays();show($('#contextOverlay'));$('#contextClose')?.focus();}
+function closeContext(){hide($('#contextOverlay'));if(context.world){renderApp();}else{show($('#publicView'));hide($('#appView'));updateSkipTarget('#publicMain');}}
 function hideAllOverlays(){$$('.overlay').forEach(hide)}
 function openInstitution(){
   transitionSpace('institution');
@@ -253,7 +264,7 @@ function startLeafToTreeTransition(){
   setTimeout(()=>{overlay.className='growth-transition hidden';document.body.classList.remove('transitioning-growth')},2700);
 }
 function demoJourney(){
-  return store.get('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),{dismissed:false,seen:{}});
+  return store.get('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),{dismissed:false,collapsed:true,seen:{}});
 }
 function saveDemoJourney(next){store.set('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),next);}
 function demoJourneyStep(key){
@@ -262,37 +273,41 @@ function demoJourneyStep(key){
 function renderDemoJourney(){
   const host=$('#demoJourney');if(!host||!session)return;
   const state=demoJourney();
-  if(state.dismissed){host.replaceChildren();return;}
   const leaf=context.role==='leaf', ready=treeUnlockedForContext();
   const steps=leaf ? [
     ['explore','1','Explore','See the people, classes, and ideas in this space.'],
     ['learn','2','Learn','Open a learning area or a class.'],
-    ['share','3','Share','Use a demo growth action to show a useful contribution.'],
-    ['help','4','Help','Complete the demonstration journey toward Tree readiness.']
+    ['share','3','Share','Make one useful contribution.'],
+    ['help','4','Help','Help another learner through a useful conversation.']
   ] : [
-    ['teach','1','Teach','Open teaching to show a Tree\'s next responsibility.'],
+    ['teach','1','Teach','Open teaching to see the Tree responsibility.'],
     ['classes','2','Plan','View the class and lesson planning direction.'],
     ['community','3','Support','Show how Trees help the learning community.']
   ];
-  const complete=leaf ? ready : steps.every(([key])=>state.seen[key]);
-  host.innerHTML=`<section class="demo-journey" aria-labelledby="demoJourneyTitle"><div class="demo-journey-head"><div><div class="eyebrow">GUIDED DEMO</div><h2 id="demoJourneyTitle">${leaf?(ready?'Your Tree is ready to preview.':'A simple path through E-Leaf.'):'Show the teaching side of E-Leaf.'}</h2><p>${leaf?'Follow these optional steps to demonstrate how a learner grows through learning, contribution, and support.':'These steps help explain what Tree capability looks like in this demonstration.'}</p></div><button type="button" class="text-button demo-journey-dismiss" data-demo-dismiss>Hide guide</button></div><ol class="demo-journey-steps">${steps.map(([key,num,title,copy])=>`<li class="${state.seen[key]?'is-complete':''}"><span class="demo-step-number">${state.seen[key]?'✓':num}</span><div><strong>${title}</strong><small>${copy}</small></div></li>`).join('')}</ol><div class="demo-journey-actions">${leaf&&!ready?'<button type="button" class="btn btn-leaf" data-demo-action="learn">Explore learning</button><button type="button" class="btn btn-soft" data-demo-action="share">Mark a demo contribution</button>':leaf?'<button type="button" class="btn btn-tree" data-demo-action="tree">Preview Tree mode</button>':'<button type="button" class="btn btn-tree" data-demo-action="teach">Open teaching</button><button type="button" class="btn btn-soft" data-demo-action="community">Show community support</button>'}<span class="demo-progress-copy">${complete?'Demo path complete. You can repeat any step.':'Optional guide - your normal navigation is always available.'}</span></div></section>`;
-  host.querySelector('[data-demo-dismiss]')?.addEventListener('click',()=>{state.dismissed=true;saveDemoJourney(state);renderDemoJourney();});
+  const complete=leaf ? ready && steps.every(([key])=>state.seen[key]) : steps.every(([key])=>state.seen[key]);
+  const intro=leaf?(ready?'Your Tree is ready to preview.':'A simple path through E-Leaf.'):'Show the teaching side of E-Leaf.';
+  const copy=leaf?'Optional presentation assistance. Your normal navigation always remains available.':'Optional presentation assistance for showing Tree capability. Your normal navigation always remains available.';
+  const actions=leaf&&!ready
+    ? '<button type="button" class="btn btn-leaf" data-demo-action="learn">Explore learning</button><button type="button" class="btn btn-soft" data-demo-action="share">Mark a demo contribution</button><button type="button" class="btn btn-soft" data-demo-action="help">Help a learner</button>'
+    : leaf
+      ? '<button type="button" class="btn btn-tree" data-demo-action="tree">Preview Tree mode</button>'
+      : '<button type="button" class="btn btn-tree" data-demo-action="teach">Open teaching</button><button type="button" class="btn btn-soft" data-demo-action="classes">Plan a class</button><button type="button" class="btn btn-soft" data-demo-action="community">Show community support</button>';
+  const open=!state.collapsed;
+  host.innerHTML=`<div class="demo-journey-control"><button type="button" class="demo-guide-toggle" id="demoGuideToggle" aria-expanded="${open}">${open?'Hide demo guide':'Show demo guide'}</button><span>Presentation assistance · optional</span></div>${open?`<section class="demo-journey" aria-label="Guided demo journey"><div class="demo-journey-summary"><span><span class="eyebrow">GUIDED DEMO · OPTIONAL</span><strong>${intro}</strong><small>${copy}</small></span><span class="demo-journey-summary-meta">${complete?'Complete':'Open guide'}</span></div><div class="demo-journey-body"><ol class="demo-journey-steps">${steps.map(([key,num,title,stepCopy])=>`<li class="${state.seen[key]?'is-complete':''}"><span class="demo-step-number">${state.seen[key]?'✓':num}</span><div><strong>${title}</strong><small>${stepCopy}</small></div></li>`).join('')}</ol><div class="demo-journey-actions">${actions}<span class="demo-progress-copy">${complete?'Demo path complete. You can repeat any step.':'Use it only when presenting; your normal navigation is always available.'}</span></div></div></section>`:''}`;
+  $('#demoGuideToggle').onclick=()=>{state.collapsed=!state.collapsed;saveDemoJourney(state);renderDemoJourney();$('#demoGuideToggle')?.focus();};
   host.querySelectorAll('[data-demo-action]').forEach(button=>button.addEventListener('click',()=>{
     const action=button.dataset.demoAction;
     if(action==='learn'){demoJourneyStep('explore');demoJourneyStep('learn');routeApp(context.world==='global'?'explore':'classes');}
     else if(action==='share'){recordGrowthAction('share');demoJourneyStep('share');}
+    else if(action==='help'){recordGrowthAction('help');demoJourneyStep('help');routeApp('community');}
     else if(action==='tree'){enterApp('tree');}
     else {demoJourneyStep(action);routeApp(action);}
   }));
 }
-function showDemoGuide(){
-  const existing=$('#demoGuideOverlay');if(existing){show(existing);existing.querySelector('[data-demo-guide-close]')?.focus();return;}
-  const overlay=document.createElement('div');overlay.id='demoGuideOverlay';overlay.className='overlay demo-guide-overlay';
-  overlay.innerHTML=`<div class="dialog demo-guide-dialog" role="dialog" aria-modal="true" aria-labelledby="demoGuideTitle"><div class="dialog-head"><div><div class="eyebrow">E-LEAF WALKTHROUGH</div><h2 id="demoGuideTitle">A clear demonstration path</h2></div><button class="close" type="button" data-demo-guide-close aria-label="Close demo guide">×</button></div><p>Start as a Leaf, show learning and contribution, then use the simulated growth steps to preview Tree capability. Global is the wider community; Institutional is the focused academic space.</p><ol class="demo-guide-list"><li><strong>Enter a world.</strong> Show that the same identity can move between Global and Institutional spaces.</li><li><strong>Learn as a Leaf.</strong> Open Explore, Learn, Classes, Notes, or Community.</li><li><strong>Use the growth companion.</strong> The Learn, Share, and Help buttons are intentional demo actions.</li><li><strong>Preview Tree mode.</strong> When ready, show teaching, class planning, and community support.</li></ol><button type="button" class="btn btn-primary" data-demo-guide-close>Continue the demo</button></div>`;
-  document.body.appendChild(overlay);overlay.querySelectorAll('[data-demo-guide-close]').forEach(button=>button.addEventListener('click',()=>{hide(overlay);$('#demoGuideBtn')?.focus();}));overlay.addEventListener('click',e=>{if(e.target===overlay)hide(overlay)});overlay.querySelector('[data-demo-guide-close]')?.focus();
-}
+
 function renderApp(){
   hide($('#publicView'));
+  updateSkipTarget('#appContentStart');
   const name=userProfile?.name||'Learner';
   const worldClass=context.world==='global'?'space-global':'space-institutional';
   const roleClass=context.role==='tree'?'role-tree':'role-leaf';
@@ -304,19 +319,21 @@ function renderApp(){
     <header class="app-top"><div class="app-top-inner">
       <button class="app-brand" id="appBrand" aria-label="E-Leaf home">${brandMark()}<span>E-Leaf</span></button>
       <div class="context-identity"><span class="context-icon">${icon(context.world==='global'?'globe':'building')}</span><div><strong>${escapeHtml(contextName)}</strong><small>${spaceLine}</small></div></div>
-      <div class="app-actions"><button class="btn btn-soft demo-guide-btn" id="demoGuideBtn">Demo guide</button><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
+      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
     </div></header>
-    <main id="appContentStart" class="app-body"><div class="demo-notice" role="status"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></div>${contextOrientation()}<div id="demoJourney"></div><nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
+    <main id="appContentStart" class="app-body" tabindex="-1"><aside class="demo-notice" role="note" aria-label="Demonstration build notice"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></aside>${contextOrientation()}<div id="demoJourney"></div><nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
   </div>`;
   show($('#appView'));
-  $('#appBrand').onclick=()=>renderHome();
-  $('#demoGuideBtn').onclick=showDemoGuide;
+  $('#appBrand').onclick=()=>routeApp('home');
   $('#changeContext').onclick=()=>showContext();
   $('#changeContextMobile').onclick=()=>showContext();
   $('#changeRole').onclick=()=>openRole(context.world,context.institution);
   $('#logoutBtn').onclick=requestLogout;
-  renderHome();
-  renderGrowthDock();
+  const validPages=context.role==='tree'
+    ? (context.world==='institution'?['home','classes','teach','community','college']:['home','explore','teach','community','library','journey'])
+    : (context.world==='institution'?['home','classes','learn','note','community','college']:['home','explore','learn','community','library','journey']);
+  const page=validPages.includes(document.body.dataset.eLeafPage)?document.body.dataset.eLeafPage:'home';
+  routeApp(page);
 }
 function renderGrowthDock(animate=false){
   const dock=$('#growthDock');
@@ -392,11 +409,12 @@ function renderGlobalHome(name){
 }
 function routeApp(page){
   document.body.dataset.eLeafPage=page||'home';
-  if(page==='home')return renderHome();
+  if(page==='home'){renderHome();beginPageReveal();return;}
   renderGrowthDock();
   setNav(page);
   const pages={explore:renderExplore,learn:renderLearn,community:renderCommunity,library:renderLibrary,note:renderLibrary,journey:renderJourney,teach:renderTeach,classes:renderClasses,college:renderCollege};
   (pages[page]||renderHome)();
+  beginPageReveal();
 }
 function renderClasses(){
   const inst=context.world==='institution';
@@ -437,7 +455,7 @@ function renderJourney(){
   const done=Math.min(3,growth.actions.length);
   const steps=[['learn','Learn','Attend a learning session from another Tree.'],['share','Share','Plant something useful in your library.'],['help','Help','Help another learner through a useful conversation.']];
   $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${worldLabel} · JOURNEY</div><h1>${tree?'Keep learning. Keep teaching.':'See how learning can become contribution.'}</h1><p>${tree?'You have crossed the demo threshold. The Tree space adds teaching without taking away your learner identity.':'For this presentation demo, three simple actions show the transition from Leaf to Tree. Production qualification will be much more rigorous.'}</p></div><button class="btn ${tree?'btn-tree':'btn-global'}" onclick="${tree?"routeApp('teach')":"routeApp('learn')"}">${tree?'Open teaching':'Start learning'}</button></div>
-  <div class="journey-layout"><section class="journey-card"><div class="journey-header"><div><div class="eyebrow">DEMO GROWTH PATH</div><h2>Learn → Share → Help → Teach</h2></div><span class="journey-count">${tree?3:done} / 3</span></div><div class="journey-steps">${steps.map(([key,title,desc],i)=>`<div class="journey-step ${growth.actions.includes(key)?'done':''} ${!tree&&i===done?'current':''}"><span class="journey-step-mark">${growth.actions.includes(key)?'✓':i+1}</span><div><strong>${title}</strong><p>${desc}</p></div>${!tree&&!growth.actions.includes(key)?`<button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" data-journey-action="${key}">Do this</button>`:'<span class="journey-status">'+(growth.actions.includes(key)?'Complete':'Next')+'</span>'}</div>`).join('')}</div>${tree?'<div class="journey-unlocked"><div class="trust-symbol">'+icon('tree')+'</div><div><div class="eyebrow">TREE READY · DEMO</div><strong>Teaching capability is now visible.</strong><p>This prototype intentionally uses three simple actions so the transition can be demonstrated in a presentation.</p></div></div>':''}</section><aside><div class="tree-panel ${tree?'is-tree':''}"><div class="tree-symbol">${icon(tree?'tree':'leaf')}</div><div class="eyebrow">${worldLabel} ${tree?'TREE':'LEAF'} CAPABILITY</div><h3>${tree?'Approved area: Physics · Demo':'Your growth stays yours.'}</h3><p>${tree?'In production, this would be backed by a reviewed qualification and scoped teaching areas.':'The same E-Leaf identity remains a learner. The demo only reveals the teaching transition after three contributions.'}</p><button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="${tree?"routeApp('teach')":"routeApp('community')"}">${tree?'View teaching space':'Help someone'}</button></div></aside></div>`;
+  <div class="journey-layout"><section class="journey-card"><div class="journey-header"><div><div class="eyebrow">DEMO GROWTH PATH</div><h2>Learn, Share, Help, Teach</h2></div><span class="journey-count">${tree?3:done} / 3</span></div><div class="journey-steps">${steps.map(([key,title,desc],i)=>`<div class="journey-step ${growth.actions.includes(key)?'done':''} ${!tree&&i===done?'current':''}"><span class="journey-step-mark">${growth.actions.includes(key)?'✓':i+1}</span><div><strong>${title}</strong><p>${desc}</p></div>${!tree&&!growth.actions.includes(key)?`<button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" data-journey-action="${key}">Do this</button>`:'<span class="journey-status">'+(growth.actions.includes(key)?'Complete':'Next')+'</span>'}</div>`).join('')}</div>${tree?'<div class="journey-unlocked"><div class="trust-symbol">'+icon('tree')+'</div><div><div class="eyebrow">TREE READY · DEMO</div><strong>Teaching capability is now visible.</strong><p>This prototype intentionally uses three simple actions so the transition can be demonstrated in a presentation.</p></div></div>':''}</section><aside><div class="tree-panel ${tree?'is-tree':''}"><div class="tree-symbol">${icon(tree?'tree':'leaf')}</div><div class="eyebrow">${worldLabel} ${tree?'TREE':'LEAF'} CAPABILITY</div><h3>${tree?'Approved area: Physics · Demo':'Your growth stays yours.'}</h3><p>${tree?'In production, this would be backed by a reviewed qualification and scoped teaching areas.':'The same E-Leaf identity remains a learner. The demo only reveals the teaching transition after three contributions.'}</p><button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="${tree?"routeApp('teach')":"routeApp('community')"}">${tree?'View teaching space':'Help someone'}</button></div></aside></div>`;
   $$('#appContent [data-journey-action]').forEach(b=>b.onclick=()=>recordGrowthAction(b.dataset.journeyAction));
 }
 function renderTeach(){
@@ -458,7 +476,7 @@ async function performLogout(){
   closeLogout();
   await supabaseClient?.auth.signOut();
   session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};
-  hide($('#appView'));show($('#publicView'));window.scrollTo(0,0);
+  hide($('#appView'));show($('#publicView'));updateSkipTarget('#publicMain');window.scrollTo(0,0);
 }
 
 $('#logoutCancel').onclick=closeLogout;
@@ -468,7 +486,7 @@ $('#loginBtn').onclick=()=>openAuth('login');
 $('#joinBtn').onclick=()=>openAuth('signup');
 $('#heroJoin').onclick=()=>openAuth('signup');
 $('#finalJoin').onclick=()=>openAuth('signup');
-$('#heroExplore').onclick=()=>document.querySelector('#explore').scrollIntoView({behavior:'smooth'});
+$('#heroExplore').onclick=()=>document.querySelector('#model').scrollIntoView({behavior:'smooth'});
 $('#authClose').onclick=closeAuth;
 $('#signupTab').onclick=()=>setAuthMode('signup');
 $('#loginTab').onclick=()=>setAuthMode('login');
@@ -477,7 +495,8 @@ $('#passwordToggle').onclick=()=>setPasswordVisibility('#authPassword','#passwor
 $('#confirmPasswordToggle').onclick=()=>setPasswordVisibility('#authPasswordConfirm','#confirmPasswordToggle');
 $('#globalChoice').onclick=()=>{if(session)transitionSpace('global');};
 $('#institutionChoice').onclick=()=>{if(session)transitionSpace('institution');};
-$('#roleClose').onclick=()=>{hide($('#roleOverlay'));show($('#contextOverlay'))};
+$('#roleClose').onclick=()=>{hide($('#roleOverlay'));show($('#contextOverlay'));$('#institutionChoice')?.focus()};
+$('#contextClose').onclick=closeContext;
 $('#enterLeaf').onclick=()=>enterApp('leaf');
 $('#enterTree').onclick=()=>enterApp('tree');
 $$('[data-public-action="course"]').forEach(b=>b.onclick=()=>openAuth('signup','course'));
@@ -488,7 +507,7 @@ if(supabaseClient){
 
 window.addEventListener('unhandledrejection',event=>{console.error('E-Leaf action failed',event.reason);toast('That action could not be completed. Please try again.');});
 window.addEventListener('error',event=>{console.error('E-Leaf interface error',event.error||event.message);});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));}}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#demoGuideOverlay')?.classList.contains('hidden'))hide($('#demoGuideOverlay'));else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));$('#institutionChoice')?.focus();}else if(!$('#contextOverlay')?.classList.contains('hidden'))closeContext();}});
 
 // Public growth story: the four steps are an explorable visual, not a passive card grid.
 (function bindPublicGrowthStory(){

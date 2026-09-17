@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>E-Leaf | Learn, contribute, teach</title>
-<meta name="description" content="E-Leaf is a learning community where people learn from others, contribute what they understand, and grow into teachers when ready.">
+<meta name="description" content="E-Leaf is a learning community where people learn from others, contribute what they understand, help other learners, and grow into people who can teach.">
 
 <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
-<a class="skip-link" href="#appContent">Skip to main content</a>
+<a class="skip-link" href="#publicMain">Skip to main content</a>
 <!-- E-Leaf icon system: inline SVG geometry based on established open icon conventions; no font glyphs. -->
 <svg class="icon-defs" aria-hidden="true">
 <symbol id="ic-leaf" viewBox="0 0 64 64"><path d="M32 6C46 11 54 22 54 34C54 48 44 58 32 58C20 58 10 48 10 34C10 22 18 11 32 6Z" fill="currentColor"/><path d="M32 10v44M32 24c-4 2-8 5-8 5M32 34c-5 2-9 6-9 6M32 44c-5 2-8 5-8 5" stroke="rgba(255,255,255,.55)" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
@@ -28,100 +28,98 @@
 </svg>
 
 <div id="publicView">
-<header class="public-nav public-nav-v2">
+<header class="public-nav public-nav-v3">
   <div class="public-nav-inner">
     <a class="public-brand" href="#top" aria-label="E-Leaf home"><span class="public-brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><span>E-Leaf</span></a>
     <nav class="public-links" aria-label="Public navigation">
-      <a href="#explore">Explore</a><a href="#how">How it works</a><a href="#teachers">People</a><a href="#institutions">Two spaces</a>
+      <a href="#model">Why E-Leaf</a><a href="#how">How it grows</a><a href="#spaces">Your worlds</a><a href="#people">Learn from people</a>
     </nav>
     <div class="nav-actions"><button class="btn btn-quiet" id="loginBtn">Log in</button><button class="btn btn-primary" id="joinBtn">Join E-Leaf</button></div>
   </div>
 </header>
-<main id="top" class="public-main-v2">
-  <section class="public-hero-v2">
-    <div class="public-hero-copy-v2">
-      <div class="eyebrow">A place to learn and contribute</div>
-      <h1>Come to learn.<br><em>Grow into someone who can teach.</em></h1>
-      <p>E-Leaf connects learning with people, contribution, and teaching, so what you learn can keep moving beyond the place where you first learned it.</p>
-      <div class="hero-actions"><button class="btn btn-primary" id="heroExplore">Explore learning</button><button class="btn" id="heroJoin">Join E-Leaf</button></div>
-      <div class="hero-philosophy"><span class="hero-philosophy-leaf"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><span>Start as a learner. Let your understanding grow.</span><span class="hero-philosophy-tree"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-tree"></use></svg></span></div>
+<main id="publicMain" class="public-main-v3" tabindex="-1">
+  <section class="public-hero-v3" id="top">
+    <div class="hero-v3-copy">
+      <div class="eyebrow">Learning that keeps moving</div>
+      <h1>Learn something.<br><em>Make it useful.</em></h1>
+      <p class="hero-v3-lead">E-Leaf is a learning community where you do more than collect lessons. You learn from people, contribute what you understand, help someone else, and grow into someone who can teach.</p>
+      <div class="hero-v3-actions"><button class="btn btn-primary" id="heroExplore">See how E-Leaf works</button><button class="btn" id="heroJoin">Join E-Leaf</button></div>
+      <p class="hero-v3-proof"><strong>Not a course library.</strong> Not a race for points. Your learning can become useful to someone else.</p>
     </div>
-    <div class="public-hero-growth" aria-label="E-Leaf growth from learner to teacher">
-      <div class="growth-orbit orbit-one"></div><div class="growth-orbit orbit-two"></div>
-      <div class="hero-growth-stage stage-leaf"><span class="stage-caption">LEARN</span><svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 197V112" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M90 135C67 120 49 100 42 73C72 72 94 84 100 107C104 124 97 134 90 135Z" fill="currentColor" opacity=".8"/><path d="M90 153C110 139 126 121 134 98C110 97 91 107 85 126" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></div>
-      <div class="hero-growth-stage stage-tree"><span class="stage-caption">TEACH</span><svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 196V112M90 144 62 119M90 152l31-28M90 126V91" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><circle cx="90" cy="72" r="34" fill="currentColor" opacity=".9"/><circle cx="56" cy="93" r="27" fill="currentColor" opacity=".82"/><circle cx="125" cy="95" r="29" fill="currentColor" opacity=".86"/></svg></div>
-      <div class="hero-growth-label"><span>One person.</span><strong>Many places to learn.</strong><span>More ways to help.</span></div>
-    </div>
-  </section>
-
-  <section class="public-section-v2 public-explore" id="explore">
-    <div class="section-heading-row"><div><div class="eyebrow">Explore the idea</div><h2>Learning can start anywhere.</h2></div><p>Inside a curriculum or beyond it, the learner stays the same person.</p></div>
-    <div class="space-explore-grid">
-      <button class="space-explore-card space-global-card" data-public-action="course">
-        <div class="space-card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-globe"></use></svg></div>
-        <div class="space-card-kicker">Beyond your institution</div><h3>Explore Astronomy and keep learning about the stars.</h3>
-        <p>Move into subjects because you are curious, not because they are on your current timetable.</p><span class="space-card-foot">Global learning <span>Explore</span></span>
-      </button>
-      <button class="space-explore-card space-institution-card" data-public-action="course">
-        <div class="space-card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-building"></use></svg></div>
-        <div class="space-card-kicker">Within your institution</div><h3>Explore your classmate teaching Python Fundamentals for semester exams.</h3>
-        <p>Learn from people close to you, inside the classes and subjects you already belong to.</p><span class="space-card-foot">Institutional learning <span>Explore</span></span>
-      </button>
-    </div>
-  </section>
-
-  <section class="public-section-v2 public-how-v2" id="how">
-    <div class="section-heading-row"><div><div class="eyebrow">How it works</div><h2>A small leaf can become something useful to others.</h2></div><p>No points. No race. Just a gradual change in what you can give back.</p></div>
-    <div class="growth-story">
-      <div class="growth-story-art" aria-hidden="true">
-        <div class="story-ground"></div>
-        <svg viewBox="0 0 520 360" class="growth-story-svg">
-          <defs><linearGradient id="storyLeafFill" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#87a96e"/><stop offset="1" stop-color="#b8d49f"/></linearGradient><linearGradient id="storyTreeFill" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#a96945"/><stop offset=".58" stop-color="#c28a5c"/><stop offset="1" stop-color="#d4a476"/></linearGradient></defs>
-          <path d="M72 314C118 311 154 313 199 314" stroke="#cfd8ca" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <g class="story-stage stage-1"><path d="M128 313V259" stroke="#769263" stroke-width="6" stroke-linecap="round"/><path d="M128 273C108 261 96 246 94 227C116 227 132 241 133 258C134 264 132 269 128 273Z" fill="url(#storyLeafFill)"/></g>
-          <g class="story-stage stage-2"><path d="M250 313V218" stroke="#718c5f" stroke-width="7" stroke-linecap="round"/><path d="M250 253C226 239 211 217 210 190C240 190 258 210 258 232C258 242 255 249 250 253Z" fill="url(#storyLeafFill)"/><path d="M250 272C270 256 284 239 287 216" stroke="#769263" stroke-width="5" fill="none" stroke-linecap="round"/></g>
-          <g class="story-stage stage-3"><path d="M368 313V189M368 238 335 210M368 251l36-32M368 211V182" stroke="#9b6949" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="368" cy="159" r="35" fill="url(#storyTreeFill)"/><circle cx="330" cy="181" r="27" fill="url(#storyTreeFill)"/><circle cx="408" cy="184" r="29" fill="url(#storyTreeFill)"/></g>
-          <g class="story-stage stage-4"><path d="M462 313V171M462 226 423 194M462 244l44-38M462 201V166" stroke="#935c3d" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="462" cy="133" r="49" fill="url(#storyTreeFill)"/><circle cx="411" cy="165" r="36" fill="url(#storyTreeFill)"/><circle cx="513" cy="168" r="39" fill="url(#storyTreeFill)"/></g>
+    <div class="hero-v3-growth-model" aria-label="The E-Leaf model: a person can learn as a Leaf and, as understanding grows, teach as a Tree.">
+      <div class="hero-v3-role-card hero-v3-role-leaf">
+        <div class="hero-v3-role-head"><span>LEAF</span><strong>Learn</strong></div>
+        <div class="hero-v3-role-art">
+          <svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 197V112" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M90 135C67 120 49 100 42 73C72 72 94 84 100 107C104 124 97 134 90 135Z" fill="currentColor" opacity=".82"/><path d="M90 153C110 139 126 121 134 98C110 97 91 107 85 126" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
+        </div>
+        <p>You come to learn.</p>
+      </div>
+      <div class="hero-v3-role-meaning" aria-hidden="true">
+        <span>Understanding grows</span>
+        <svg class="hero-v3-growth-arrow" viewBox="0 0 150 72" preserveAspectRatio="none">
+          <path d="M8 36 H112" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+          <path d="M102 20 L126 36 L102 52" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div class="growth-story-steps">
-        <button class="growth-story-step active"><span class="story-step-icon icon-learn"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-note"></use></svg></span><span><small>01</small><strong>Learn</strong><em>Take something in.</em></span></button>
-        <button class="growth-story-step"><span class="story-step-icon icon-share"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><span><small>02</small><strong>Contribute</strong><em>Leave something useful behind.</em></span></button>
-        <button class="growth-story-step"><span class="story-step-icon icon-help"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-question"></use></svg></span><span><small>03</small><strong>Help</strong><em>Move another learner forward.</em></span></button>
-        <button class="growth-story-step"><span class="story-step-icon icon-teach"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-teach"></use></svg></span><span><small>04</small><strong>Teach</strong><em>Grow into someone who can teach.</em></span></button>
+      <div class="hero-v3-role-card hero-v3-role-tree">
+        <div class="hero-v3-role-head"><span>TREE</span><strong>Teach</strong></div>
+        <div class="hero-v3-role-art">
+          <svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 196V112M90 144 62 119M90 152l31-28M90 126V91" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><circle cx="90" cy="72" r="34" fill="currentColor" opacity=".9"/><circle cx="56" cy="93" r="27" fill="currentColor" opacity=".82"/><circle cx="125" cy="95" r="29" fill="currentColor" opacity=".86"/></svg>
+        </div>
+        <p>You can teach what you know.</p>
       </div>
+      <div class="hero-v3-growth-model-foot"><span>One person.</span><strong>Growing capability.</strong></div>
     </div>
   </section>
 
-  <section class="public-section-v2 public-people-v2" id="teachers">
-    <div class="section-heading-row"><div><div class="eyebrow">Learn from people</div><h2>Not just content.</h2></div><p>People become useful learning resources because they understand something and choose to share it.</p></div>
-    <div class="people-lane"><div class="people-lane-label"><span class="lane-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-building"></use></svg></span><div><strong>From your institution</strong><small>Classmates and Trees around the curriculum</small></div></div><div class="people-scroll">
-      <article class="person-card"><div class="person-avatar avatar-green">AM</div><div class="person-main"><span class="person-context">Programming · Institutional</span><h3>Arun Mehta</h3><p>Python Fundamentals for semester problem solving.</p><span class="person-demo">Demo Tree profile</span></div></article>
-      <article class="person-card"><div class="person-avatar avatar-sage">NS</div><div class="person-main"><span class="person-context">Physics · Institutional</span><h3>Nadia Shah</h3><p>Mechanics explained through worked examples and questions.</p><span class="person-demo">Demo Tree profile</span></div></article>
-      <article class="person-card"><div class="person-avatar avatar-earth">RF</div><div class="person-main"><span class="person-context">Mathematics · Institutional</span><h3>Ravi Fern</h3><p>Linear algebra notes built for people who prefer intuition.</p><span class="person-demo">Demo Tree profile</span></div></article>
-    </div></div>
-    <div class="people-lane"><div class="people-lane-label"><span class="lane-icon lane-global"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-globe"></use></svg></span><div><strong>From Trees around the world</strong><small>Keep learning beyond your institution</small></div></div><div class="people-scroll">
-      <article class="person-card"><div class="person-avatar avatar-earth">WP</div><div class="person-main"><span class="person-context">Biology · Global</span><h3>Willow Peer</h3><p>Visual explanations connecting biology to the world outside the classroom.</p><span class="person-demo">Demo Tree profile</span></div></article>
-      <article class="person-card"><div class="person-avatar avatar-sage">EG</div><div class="person-main"><span class="person-context">Astronomy · Global</span><h3>Elias Grove</h3><p>Stars, scale, and the questions that make the night sky worth studying.</p><span class="person-demo">Demo Tree profile</span></div></article>
-      <article class="person-card"><div class="person-avatar avatar-green">MF</div><div class="person-main"><span class="person-context">Philosophy · Global</span><h3>Mira Fern</h3><p>Arguments, uncertainty, and learning to ask better questions.</p><span class="person-demo">Demo Tree profile</span></div></article>
-    </div></div>
+  <section class="public-section-v3 public-model-v3" id="model">
+    <div class="model-intro"><div><div class="eyebrow">Why E-Leaf</div><h2>Learning does not stop when the lesson ends.</h2></div><p>Most learning platforms help you consume information. E-Leaf is built around what happens after you understand something: you can contribute it, use it to help another learner, and eventually teach it.</p></div>
+    <div class="model-contrast">
+      <article class="model-side model-traditional"><span class="model-kicker">A familiar model</span><h3>Learn, finish, move on.</h3><p>Content is the centre. Progress is measured by what you complete.</p><div class="model-line"><span>Lesson</span><i aria-hidden="true"></i><span>Completion</span><i aria-hidden="true"></i><span>Next lesson</span></div></article>
+      <article class="model-side model-eleaf"><span class="model-kicker">The E-Leaf model</span><h3>Learn, contribute, help, teach.</h3><p>Understanding becomes something you can pass forward. The learner stays part of the cycle.</p><div class="model-line model-line-eleaf"><span>Learn</span><i aria-hidden="true"></i><span>Contribute</span><i aria-hidden="true"></i><span>Help</span><i aria-hidden="true"></i><span>Teach</span></div></article>
+    </div>
+    <div class="model-statement"><span class="statement-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><p><strong>A Tree is still a Leaf.</strong> Teaching is not a separate identity. It is a capability that can grow from learning and contribution.</p></div>
   </section>
 
-  <section class="public-section-v2 public-belong-v2" id="institutions">
-    <div class="belong-intro"><div class="eyebrow">Two ways to belong</div><h2>Learning shouldn't depend on the place you belong.<br><em>It should expand beyond it.</em></h2><p>One person can learn inside an institution and keep exploring with the wider E-Leaf community. The context changes. The learner does not.</p></div>
-    <div class="belong-map">
-      <div class="belong-space belong-global"><span class="belong-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-globe"></use></svg></span><small>GLOBAL</small><h3>Learn with the wider community.</h3><p>Explore subjects, people, questions, and teaching from beyond one curriculum.</p></div>
-      <div class="belong-bridge"><span class="bridge-line"></span><span class="bridge-leaf"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><span>same person</span><span class="bridge-tree"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-tree"></use></svg></span><span class="bridge-line"></span></div>
-      <div class="belong-space belong-institution"><span class="belong-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-building"></use></svg></span><small>INSTITUTIONAL</small><h3>Learn inside your institution.</h3><p>Stay connected to classes, curriculum, classmates, and the people around your learning.</p></div>
+  <section class="public-section-v3 public-how-v3" id="how">
+    <div class="section-heading-v3"><div><div class="eyebrow">How it grows</div><h2>One learning loop. Four ways to take part.</h2></div><p>You do not switch from learner to teacher overnight. You grow through what you learn and what you choose to give back.</p></div>
+    <div class="growth-loop-v3">
+      <article class="growth-node growth-node-learn"><span class="growth-node-num">01</span><span class="growth-node-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-note"></use></svg></span><h3>Learn</h3><p>Take in an idea, skill, question, or lesson from someone else.</p></article>
+      <div class="growth-connector" aria-hidden="true"><i></i></div>
+      <article class="growth-node growth-node-share"><span class="growth-node-num">02</span><span class="growth-node-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><h3>Contribute</h3><p>Leave behind a note, explanation, question, example, or useful piece of understanding.</p></article>
+      <div class="growth-connector" aria-hidden="true"><i></i></div>
+      <article class="growth-node growth-node-help"><span class="growth-node-num">03</span><span class="growth-node-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-question"></use></svg></span><h3>Help</h3><p>Use what you know to move another learner forward.</p></article>
+      <div class="growth-connector" aria-hidden="true"><i></i></div>
+      <article class="growth-node growth-node-teach"><span class="growth-node-num">04</span><span class="growth-node-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-teach"></use></svg></span><h3>Teach</h3><p>When your understanding is ready, grow into a Tree who can teach in an area you know.</p></article>
+    </div>
+    <div class="growth-loop-foot"><span>And then the loop continues.</span><strong>Trees keep learning too.</strong></div>
+  </section>
+
+  <section class="public-section-v3 public-spaces-v3" id="spaces">
+    <div class="section-heading-v3"><div><div class="eyebrow">Two worlds. One person.</div><h2>Your learning context can change without changing who you are.</h2></div><p>E-Leaf gives the same person two connected spaces: one beyond an institution, and one within it.</p></div>
+    <div class="spaces-grid-v3">
+      <article class="space-v3 space-institution-v3"><div class="space-v3-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-building"></use></svg></div><span class="space-v3-kicker">INSTITUTIONAL</span><h3>Start where you learn every day.</h3><p>Connect classes, curriculum, classmates, and the people around your institution.</p><div class="space-v3-example"><small>For example</small><strong>Preparing for an exam?</strong><span>Learn from a classmate who can explain the difficult part.</span></div></article>
+      <div class="space-v3-bridge"><span></span><div><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg><b>same person</b><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-tree"></use></svg></div><span></span></div>
+      <article class="space-v3 space-global-v3"><div class="space-v3-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-globe"></use></svg></div><span class="space-v3-kicker">GLOBAL</span><h3>Then take that learning beyond your institution.</h3><p>Explore subjects, people, questions, and teaching from the wider E-Leaf community.</p><div class="space-v3-example"><small>For example</small><strong>Curious about astronomy?</strong><span>Learn from a Tree who understands the night sky.</span></div></article>
     </div>
   </section>
 
-  <section class="public-final-cta-v2"><div class="final-growth-mark" aria-hidden="true"><svg viewBox="0 0 180 180"><path d="M90 158V99M90 122 64 99M90 132l28-26M90 106V81" stroke="currentColor" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="90" cy="59" r="31" fill="currentColor" opacity=".9"/><circle cx="58" cy="82" r="25" fill="currentColor" opacity=".82"/><circle cx="122" cy="83" r="27" fill="currentColor" opacity=".86"/></svg></div><div><div class="eyebrow">Start simply</div><h2>Come to learn. See where it takes you.</h2><p>You do not need to know your path before you begin.</p></div><button class="btn btn-primary" id="finalJoin">Join E-Leaf</button></section>
+  <section class="public-section-v3 public-people-v3" id="people">
+    <div class="section-heading-v3"><div><div class="eyebrow">Learn from people</div><h2>Content can teach you. People can teach you why.</h2></div><p>People bring context, examples, questions, mistakes, and ways of thinking that a static lesson cannot always provide.</p></div>
+    <div class="people-feature-grid-v3">
+      <article class="people-feature-card-v3"><div class="people-feature-top"><span class="person-avatar avatar-green">AM</span><div><span class="person-context">Programming · Institutional</span><h3>Arun Mehta</h3></div></div><p>Explains Python Fundamentals through the kinds of problems students actually meet in class.</p><span class="people-feature-label">Demo Tree profile · example only</span></article>
+      <article class="people-feature-card-v3 people-feature-global-v3"><div class="people-feature-top"><span class="person-avatar avatar-earth">EG</span><div><span class="person-context">Astronomy · Global</span><h3>Elias Grove</h3></div></div><p>Turns questions about stars and scale into explanations that make the subject easier to keep exploring.</p><span class="people-feature-label">Demo Tree profile · example only</span></article>
+      <div class="people-principle-v3"><span class="eyebrow">The point</span><h3>You are not only looking for the right content.</h3><p>You are also looking for someone who understands it well enough to make it useful to you.</p></div>
+    </div>
+  </section>
+
+  <section class="public-section-v3 public-start-v3">
+    <div class="start-card-v3"><div class="start-mark-v3"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></div><div><div class="eyebrow">Start as a learner</div><h2>You do not need to know what you will teach.</h2><p>Join to learn. Explore what interests you. Contribute when you have something useful to give. See where your understanding takes you.</p></div><button class="btn btn-primary" id="finalJoin">Join E-Leaf</button></div>
+  </section>
 </main>
-<footer><div class="container footer-inner"><span>E-Leaf</span><span>You come as a learner. You become a teacher.</span><span>Learning · Contribution · Teaching</span></div></footer>
+<footer class="public-footer-v3"><div class="container footer-inner"><span>E-Leaf</span><span>You come as a learner. You become someone who can teach.</span><span>Learning · Contribution · Teaching</span></div></footer>
 </div>
-
-<div id="appView" class="hidden" aria-live="polite"></div>
+<div id="appView" class="hidden"></div>
 
 <div class="overlay hidden" id="authOverlay"><div class="dialog"><div class="dialog-head"><div><div class="eyebrow">E-Leaf account</div><h2 id="authTitle">Join E-Leaf</h2></div><button class="close" id="authClose" aria-label="Close">×</button></div><p id="authCopy">Create an account when you are ready to become part of the learning community.</p><div class="auth-tabs"><button id="signupTab" class="active">Create account</button><button id="loginTab">Log in</button></div><form id="authForm"><div id="nameField"><label for="authName">Your name</label><input id="authName" autocomplete="name" placeholder="How should E-Leaf call you?"></div><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"><div class="password-field"><label for="authPassword">Password</label><div class="password-input-wrap"><input id="authPassword" type="password" autocomplete="new-password" required placeholder="At least 6 characters"><button class="password-toggle" type="button" id="passwordToggle" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-5 9.5-5 9.5 5 9.5 5-3.4 5-9.5 5-9.5-5-9.5-5Z"></path><circle cx="12" cy="12" r="2.2"></circle></svg></button></div></div><div class="password-field confirm-password-field" id="confirmPasswordField"><label for="authPasswordConfirm">Confirm password</label><div class="password-input-wrap"><input id="authPasswordConfirm" type="password" autocomplete="new-password" placeholder="Enter your password again"><button class="password-toggle" type="button" id="confirmPasswordToggle" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-5 9.5-5 9.5 5 9.5 5-3.4 5-9.5 5-9.5-5-9.5-5Z"></path><circle cx="12" cy="12" r="2.2"></circle></svg></button></div></div><div class="form-message" id="authMessage" role="alert" aria-live="polite"></div><div class="form-actions"><button class="btn btn-primary" style="width:100%" id="authSubmit">Create account</button></div></form></div></div>
 
@@ -136,7 +134,7 @@
   </div>
 </div>
 
-<div class="overlay hidden" id="contextOverlay"><div class="dialog"><div class="eyebrow">Your E-Leaf space</div><h2>Where would you like to learn?</h2><p>Choose the space you want to enter. You can return here later and choose another context.</p><div class="choice-grid"><button class="choice" id="globalChoice"><span class="choice-mark icon-mark global-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-globe"></use></svg></span><strong>Global</strong><span>Explore and learn with the wider E-Leaf community.</span><span class="choice-action">Enter Global</span></button><button class="choice" id="institutionChoice"><span class="choice-mark icon-mark institution-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-building"></use></svg></span><strong>Institutional</strong><span>Use the curriculum, classes, and community of your institution.</span><span class="choice-action">Enter your institution</span></button></div><p style="margin-top:20px;font-size:12px">Your identity stays the same across both spaces.</p></div></div>
+<div class="overlay hidden" id="contextOverlay"><div class="dialog context-dialog"><div class="dialog-head"><div><div class="eyebrow">Your E-Leaf space</div><h2>Where would you like to learn?</h2></div><button class="close" id="contextClose" type="button" aria-label="Close world chooser">×</button></div><p>Choose the space you want to enter. You can return here later and choose another context.</p><div class="choice-grid"><button class="choice" id="institutionChoice"><span class="choice-mark icon-mark institution-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-building"></use></svg></span><strong>Institutional</strong><span>Start with the curriculum, classes, and community of your institution.</span><span class="choice-action">Enter your institution</span></button><button class="choice" id="globalChoice"><span class="choice-mark icon-mark global-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-globe"></use></svg></span><strong>Global</strong><span>Take your learning beyond your institution with the wider E-Leaf community.</span><span class="choice-action">Enter Global</span></button></div><p style="margin-top:20px;font-size:12px">Your identity stays the same across both spaces.</p></div></div>
 
 
 
