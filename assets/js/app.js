@@ -231,6 +231,7 @@ function recordGrowthAction(action){
     state.unlocked=true;
     store.set(contextKey(),state);
     renderGrowthDock(true);
+    renderDemoJourney();
     toast('Your Tree is ready. You can enter your teaching space when you choose.');
     if(document.body.dataset.eLeafPage==='home') {
       const dock=$('#growthDock .growth-tree-dock');
@@ -239,6 +240,7 @@ function recordGrowthAction(action){
   } else {
     store.set(contextKey(),state);
     renderGrowthDock(true);
+    renderDemoJourney();
     toast('Saved. Keep going with your learning.');
   }
 }
@@ -249,6 +251,45 @@ function startLeafToTreeTransition(){
   setTimeout(()=>overlay.classList.add('phase-3'),1320);
   setTimeout(()=>{ context.role='tree'; store.set('e_leaf_last_context:'+session.user.id,context); renderApp(); overlay.classList.add('exit'); },2050);
   setTimeout(()=>{overlay.className='growth-transition hidden';document.body.classList.remove('transitioning-growth')},2700);
+}
+function demoJourney(){
+  return store.get('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),{dismissed:false,seen:{}});
+}
+function saveDemoJourney(next){store.set('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),next);}
+function demoJourneyStep(key){
+  const state=demoJourney();state.seen[key]=true;saveDemoJourney(state);renderDemoJourney();
+}
+function renderDemoJourney(){
+  const host=$('#demoJourney');if(!host||!session)return;
+  const state=demoJourney();
+  if(state.dismissed){host.replaceChildren();return;}
+  const leaf=context.role==='leaf', ready=treeUnlockedForContext();
+  const steps=leaf ? [
+    ['explore','1','Explore','See the people, classes, and ideas in this space.'],
+    ['learn','2','Learn','Open a learning area or a class.'],
+    ['share','3','Share','Use a demo growth action to show a useful contribution.'],
+    ['help','4','Help','Complete the demonstration journey toward Tree readiness.']
+  ] : [
+    ['teach','1','Teach','Open teaching to show a Tree\'s next responsibility.'],
+    ['classes','2','Plan','View the class and lesson planning direction.'],
+    ['community','3','Support','Show how Trees help the learning community.']
+  ];
+  const complete=leaf ? ready : steps.every(([key])=>state.seen[key]);
+  host.innerHTML=`<section class="demo-journey" aria-labelledby="demoJourneyTitle"><div class="demo-journey-head"><div><div class="eyebrow">GUIDED DEMO</div><h2 id="demoJourneyTitle">${leaf?(ready?'Your Tree is ready to preview.':'A simple path through E-Leaf.'):'Show the teaching side of E-Leaf.'}</h2><p>${leaf?'Follow these optional steps to demonstrate how a learner grows through learning, contribution, and support.':'These steps help explain what Tree capability looks like in this demonstration.'}</p></div><button type="button" class="text-button demo-journey-dismiss" data-demo-dismiss>Hide guide</button></div><ol class="demo-journey-steps">${steps.map(([key,num,title,copy])=>`<li class="${state.seen[key]?'is-complete':''}"><span class="demo-step-number">${state.seen[key]?'✓':num}</span><div><strong>${title}</strong><small>${copy}</small></div></li>`).join('')}</ol><div class="demo-journey-actions">${leaf&&!ready?'<button type="button" class="btn btn-leaf" data-demo-action="learn">Explore learning</button><button type="button" class="btn btn-soft" data-demo-action="share">Mark a demo contribution</button>':leaf?'<button type="button" class="btn btn-tree" data-demo-action="tree">Preview Tree mode</button>':'<button type="button" class="btn btn-tree" data-demo-action="teach">Open teaching</button><button type="button" class="btn btn-soft" data-demo-action="community">Show community support</button>'}<span class="demo-progress-copy">${complete?'Demo path complete. You can repeat any step.':'Optional guide - your normal navigation is always available.'}</span></div></section>`;
+  host.querySelector('[data-demo-dismiss]')?.addEventListener('click',()=>{state.dismissed=true;saveDemoJourney(state);renderDemoJourney();});
+  host.querySelectorAll('[data-demo-action]').forEach(button=>button.addEventListener('click',()=>{
+    const action=button.dataset.demoAction;
+    if(action==='learn'){demoJourneyStep('explore');demoJourneyStep('learn');routeApp(context.world==='global'?'explore':'classes');}
+    else if(action==='share'){recordGrowthAction('share');demoJourneyStep('share');}
+    else if(action==='tree'){enterApp('tree');}
+    else {demoJourneyStep(action);routeApp(action);}
+  }));
+}
+function showDemoGuide(){
+  const existing=$('#demoGuideOverlay');if(existing){show(existing);existing.querySelector('[data-demo-guide-close]')?.focus();return;}
+  const overlay=document.createElement('div');overlay.id='demoGuideOverlay';overlay.className='overlay demo-guide-overlay';
+  overlay.innerHTML=`<div class="dialog demo-guide-dialog" role="dialog" aria-modal="true" aria-labelledby="demoGuideTitle"><div class="dialog-head"><div><div class="eyebrow">E-LEAF WALKTHROUGH</div><h2 id="demoGuideTitle">A clear demonstration path</h2></div><button class="close" type="button" data-demo-guide-close aria-label="Close demo guide">×</button></div><p>Start as a Leaf, show learning and contribution, then use the simulated growth steps to preview Tree capability. Global is the wider community; Institutional is the focused academic space.</p><ol class="demo-guide-list"><li><strong>Enter a world.</strong> Show that the same identity can move between Global and Institutional spaces.</li><li><strong>Learn as a Leaf.</strong> Open Explore, Learn, Classes, Notes, or Community.</li><li><strong>Use the growth companion.</strong> The Learn, Share, and Help buttons are intentional demo actions.</li><li><strong>Preview Tree mode.</strong> When ready, show teaching, class planning, and community support.</li></ol><button type="button" class="btn btn-primary" data-demo-guide-close>Continue the demo</button></div>`;
+  document.body.appendChild(overlay);overlay.querySelectorAll('[data-demo-guide-close]').forEach(button=>button.addEventListener('click',()=>{hide(overlay);$('#demoGuideBtn')?.focus();}));overlay.addEventListener('click',e=>{if(e.target===overlay)hide(overlay)});overlay.querySelector('[data-demo-guide-close]')?.focus();
 }
 function renderApp(){
   hide($('#publicView'));
@@ -263,12 +304,13 @@ function renderApp(){
     <header class="app-top"><div class="app-top-inner">
       <button class="app-brand" id="appBrand" aria-label="E-Leaf home">${brandMark()}<span>E-Leaf</span></button>
       <div class="context-identity"><span class="context-icon">${icon(context.world==='global'?'globe':'building')}</span><div><strong>${escapeHtml(contextName)}</strong><small>${spaceLine}</small></div></div>
-      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
+      <div class="app-actions"><button class="btn btn-soft demo-guide-btn" id="demoGuideBtn">Demo guide</button><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
     </div></header>
-    <main class="app-body"><div class="demo-notice" role="status"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></div>${contextOrientation()}<nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
+    <main id="appContentStart" class="app-body"><div class="demo-notice" role="status"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></div>${contextOrientation()}<div id="demoJourney"></div><nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
   </div>`;
   show($('#appView'));
   $('#appBrand').onclick=()=>renderHome();
+  $('#demoGuideBtn').onclick=showDemoGuide;
   $('#changeContext').onclick=()=>showContext();
   $('#changeContextMobile').onclick=()=>showContext();
   $('#changeRole').onclick=()=>openRole(context.world,context.institution);
@@ -324,8 +366,9 @@ function renderHome(){
   setNav('home');
   renderGrowthDock();
   const name=userProfile?.name||'Learner';
-  if(context.world==='institution')return renderInstitutionHome(name);
-  return renderGlobalHome(name);
+  if(context.world==='institution')renderInstitutionHome(name);
+  else renderGlobalHome(name);
+  renderDemoJourney();
 }
 function renderInstitutionHome(name){
   if(context.role==='tree'){
@@ -412,9 +455,10 @@ function closeLogout(){
   modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true');
 }
 async function performLogout(){
-  const button=$('#logoutConfirmButton'); if(button){button.disabled=true;button.textContent='Logging out...';}
-  try{if(supabaseClient) {const {error}=await supabaseClient.auth.signOut();if(error)throw error;}}catch(err){toast('We could not reach the account service. This device has been signed out locally.');}
-  finally{closeLogout();session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};hide($('#appView'));show($('#publicView'));window.scrollTo(0,0);if(button){button.disabled=false;button.textContent='Log out';}}
+  closeLogout();
+  await supabaseClient?.auth.signOut();
+  session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};
+  hide($('#appView'));show($('#publicView'));window.scrollTo(0,0);
 }
 
 $('#logoutCancel').onclick=closeLogout;
