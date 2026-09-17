@@ -7,7 +7,10 @@ function toast(message){
   clearTimeout(window.__eLeafToastTimer);
   window.__eLeafToastTimer=setTimeout(()=>el.classList.remove('show'),2400);
 }
-function demoAction(message){ toast(message); }
+function demoAction(message){ toast(message||'This is a demonstration action. No real data was changed.'); }
+function isBackendReady(){return Boolean(supabaseClient&&SUPABASE_URL&&SUPABASE_KEY)}
+function setAuthBusy(busy){const button=$('#authSubmit');if(!button)return;button.disabled=busy;button.setAttribute('aria-busy',String(busy));button.textContent=busy?'Please wait...':($('#signupTab').classList.contains('active')?'Create account':'Log in')}
+function friendlyAuthError(error){const message=String(error?.message||'').toLowerCase();if(message.includes('invalid login credentials'))return 'That email or password did not match an E-Leaf account.';if(message.includes('already registered')||message.includes('already been registered'))return 'An account already exists for this email. Try logging in instead.';if(message.includes('email not confirmed'))return 'Please confirm your email, then try logging in.';if(message.includes('network')||message.includes('fetch'))return 'We could not reach the account service. Check your connection and try again.';return error?.message||'Something went wrong. Please try again.';}
 function icon(name){
   const icons={
     home:`<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>`,
@@ -139,7 +142,7 @@ function openAuth(mode='signup',action=null){
   setAuthMode(mode);
   setTimeout(()=>$(mode==='signup'?'#authName':'#authEmail')?.focus(),50);
 }
-function closeAuth(){hide($('#authOverlay'));$('#authMessage').textContent='';}
+function closeAuth(){hide($('#authOverlay'));$('#authMessage').textContent='';setAuthBusy(false);}
 function setAuthMode(mode){
   const signup=mode==='signup';
   $('#signupTab').classList.toggle('active',signup);
@@ -157,6 +160,9 @@ function setAuthMode(mode){
 async function submitAuth(e){
   e.preventDefault();
   $('#authMessage').textContent='';
+  if(!isBackendReady()){ $('#authMessage').textContent='Account access is not configured for this demo build. Please use the configured demonstration environment.'; return; }
+  if(!$('#authForm').reportValidity()) return;
+  setAuthBusy(true);
   const email=$('#authEmail').value.trim(),password=$('#authPassword').value;
   const signup=$('#signupTab').classList.contains('active');
   try{
@@ -186,8 +192,8 @@ async function submitAuth(e){
     showContext();
   }catch(err){
     $('#authMessage').style.color='var(--danger)';
-    $('#authMessage').textContent=err.message||'Something went wrong. Please try again.';
-  }
+    $('#authMessage').textContent=friendlyAuthError(err);
+  }finally{setAuthBusy(false);}
 }
 function showContext(){hideAllOverlays();show($('#contextOverlay'));}
 function hideAllOverlays(){$$('.overlay').forEach(hide)}
@@ -207,6 +213,8 @@ function openRole(world,institution=null){
   show($('#roleOverlay'));
 }
 function enterApp(role){
+  if(!session){toast('Please log in before entering E-Leaf.');openAuth('login');return;}
+  if(role==='tree'&&!treeUnlockedForContext()){toast('Your Tree teaching space is not ready yet. Complete the three demo growth steps first.');return;}
   if(context.role===role){setRememberedRole(role);store.set('e_leaf_last_context:'+session.user.id,context);hideAllOverlays();renderApp();return;}
   transitionRole(role);
 }
@@ -257,7 +265,7 @@ function renderApp(){
       <div class="context-identity"><span class="context-icon">${icon(context.world==='global'?'globe':'building')}</span><div><strong>${escapeHtml(contextName)}</strong><small>${spaceLine}</small></div></div>
       <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
     </div></header>
-    <main class="app-body">${contextOrientation()}<nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
+    <main class="app-body"><div class="demo-notice" role="status"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></div>${contextOrientation()}<nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
   </div>`;
   show($('#appView'));
   $('#appBrand').onclick=()=>renderHome();
@@ -404,10 +412,9 @@ function closeLogout(){
   modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true');
 }
 async function performLogout(){
-  closeLogout();
-  await supabaseClient?.auth.signOut();
-  session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};
-  hide($('#appView'));show($('#publicView'));window.scrollTo(0,0);
+  const button=$('#logoutConfirmButton'); if(button){button.disabled=true;button.textContent='Logging out...';}
+  try{if(supabaseClient) {const {error}=await supabaseClient.auth.signOut();if(error)throw error;}}catch(err){toast('We could not reach the account service. This device has been signed out locally.');}
+  finally{closeLogout();session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};hide($('#appView'));show($('#publicView'));window.scrollTo(0,0);if(button){button.disabled=false;button.textContent='Log out';}}
 }
 
 $('#logoutCancel').onclick=closeLogout;
@@ -434,6 +441,10 @@ if(supabaseClient){
   supabaseClient.auth.getSession().then(({data})=>{if(data.session){session=data.session;userProfile=loadProfile(data.session.user)}});
   supabaseClient.auth.onAuthStateChange((_event,s)=>{session=s;if(s)userProfile=loadProfile(s.user)});
 }
+
+window.addEventListener('unhandledrejection',event=>{console.error('E-Leaf action failed',event.reason);toast('That action could not be completed. Please try again.');});
+window.addEventListener('error',event=>{console.error('E-Leaf interface error',event.error||event.message);});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));}}});
 
 // Public growth story: the four steps are an explorable visual, not a passive card grid.
 (function bindPublicGrowthStory(){

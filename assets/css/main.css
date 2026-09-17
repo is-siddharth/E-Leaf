@@ -447,3 +447,11 @@
 .app-shell .app-content .person-mini button{margin-top:9px}
 .app-shell .app-content .btn-neutral{background:rgba(255,255,255,.72)!important;border-color:var(--space-line)!important;color:var(--space-accent-strong)!important;box-shadow:none!important}
 .app-shell .app-content .btn-neutral:hover,.app-shell .app-content .btn-neutral:focus-visible{filter:none}
+
+
+/* Phase 1: demo stability, orientation, and accessibility */
+.skip-link{position:fixed;left:12px;top:12px;z-index:9999;transform:translateY(-160%);background:var(--ink,#20301f);color:#fff;padding:10px 14px;border-radius:8px;font-weight:700;text-decoration:none}.skip-link:focus{transform:translateY(0)}
+.demo-notice{display:flex;gap:10px;align-items:flex-start;margin:0 0 16px;padding:10px 13px;border:1px solid rgba(92,74,35,.22);border-radius:12px;background:#fff9e9;color:#59471d;font-size:.82rem;line-height:1.45}.demo-notice strong{white-space:nowrap}.demo-notice span{opacity:.92}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #2e6d5b;outline-offset:3px}.btn:disabled{opacity:.62;cursor:not-allowed}.form-message:empty{display:none}
+@media (max-width:680px){.demo-notice{flex-direction:column;gap:3px}.demo-notice strong{white-space:normal}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
