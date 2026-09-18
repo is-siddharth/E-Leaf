@@ -9,6 +9,14 @@ function toast(message){
 }
 function demoAction(message){ toast(message||'This is a demonstration action. No real data was changed.'); }
 function updateSkipTarget(target){const link=document.querySelector('.skip-link');if(link)link.setAttribute('href',target)}
+function setTransitionControlsBusy(busy){
+  ['#changeContext','#changeContextMobile','#changeRole','#logoutBtn'].forEach(selector=>{
+    const button=$(selector);
+    if(!button)return;
+    button.disabled=busy;
+    button.setAttribute('aria-disabled',String(busy));
+  });
+}
 function isBackendReady(){return Boolean(supabaseClient&&SUPABASE_URL&&SUPABASE_KEY)}
 function setAuthBusy(busy){const button=$('#authSubmit');if(!button)return;button.disabled=busy;button.setAttribute('aria-busy',String(busy));button.textContent=busy?'Please wait...':($('#signupTab').classList.contains('active')?'Create account':'Log in')}
 function friendlyAuthError(error){const message=String(error?.message||'').toLowerCase();if(message.includes('invalid login credentials'))return 'That email or password did not match an E-Leaf account.';if(message.includes('already registered')||message.includes('already been registered'))return 'An account already exists for this email. Try logging in instead.';if(message.includes('email not confirmed'))return 'Please confirm your email, then try logging in.';if(message.includes('network')||message.includes('fetch'))return 'We could not reach the account service. Check your connection and try again.';return error?.message||'Something went wrong. Please try again.';}
@@ -104,6 +112,7 @@ function transitionSpace(targetWorld){
   $('#spaceTransitionTitle').textContent=targetWorld==='global'?'Stepping into the wider world.':'Coming back to your college space.';
   $('#spaceTransitionCopy').textContent=targetWorld==='global'?'There is more to explore beyond one curriculum.':'Your learning returns to the people, classes, and resources of your institution.';
   document.body.classList.add('e-leaf-transitioning');
+  setTransitionControlsBusy(true);
   hideAllOverlays(); overlay.classList.remove('hidden','out');
   setTimeout(()=>{
     context.world=targetWorld;
@@ -112,9 +121,10 @@ function transitionSpace(targetWorld){
     store.set(`e_leaf_last_context:${session.user.id}`,context);
     document.body.dataset.eLeafPage='home';
     renderApp();
+    setTransitionControlsBusy(true);
     overlay.classList.add('out');
   },1450);
-  setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out');document.body.classList.remove('e-leaf-transitioning')},2150);
+  setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out');document.body.classList.remove('e-leaf-transitioning');setTransitionControlsBusy(false)},2150);
 }
 function transitionRole(targetRole){
   if(context.role===targetRole){renderApp();return;}
@@ -126,12 +136,13 @@ function transitionRole(targetRole){
   $('#roleTransitionTitle').textContent=toTree?'Moving into your teaching space.':'Returning to your learning space.';
   $('#roleTransitionCopy').textContent=toTree?'You can keep learning, and now you can teach here too.':'Teaching stays available to you. For now, you are here to learn.';
   document.body.classList.add('e-leaf-transitioning');
+  setTransitionControlsBusy(true);
   hideAllOverlays(); overlay.classList.remove('hidden','out','to-tree','to-leaf'); overlay.classList.add(toTree?'to-tree':'to-leaf');
   setTimeout(()=>{
-    context.role=targetRole; setRememberedRole(targetRole); store.set(`e_leaf_last_context:${session.user.id}`,context); renderApp();
+    context.role=targetRole; setRememberedRole(targetRole); store.set(`e_leaf_last_context:${session.user.id}`,context); renderApp(); setTransitionControlsBusy(true);
   },1850);
   setTimeout(()=>{overlay.classList.add('out')},1980);
-  setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out','to-tree','to-leaf');document.body.classList.remove('e-leaf-transitioning')},2750);
+  setTimeout(()=>{overlay.classList.add('hidden');overlay.classList.remove('out','to-tree','to-leaf');document.body.classList.remove('e-leaf-transitioning');setTransitionControlsBusy(false)},2750);
 }
 
 function setPasswordVisibility(inputSelector,toggleSelector){
@@ -319,7 +330,7 @@ function renderApp(){
     <header class="app-top"><div class="app-top-inner">
       <button class="app-brand" id="appBrand" aria-label="E-Leaf home">${brandMark()}<span>E-Leaf</span></button>
       <div class="context-identity"><span class="context-icon">${icon(context.world==='global'?'globe':'building')}</span><div><strong>${escapeHtml(contextName)}</strong><small>${spaceLine}</small></div></div>
-      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button class="profile-btn" id="profileBtn"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
+      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><div class="profile-btn" aria-label="Signed in as ${escapeHtml(name)}"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></div><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
     </div></header>
     <main id="appContentStart" class="app-body" tabindex="-1"><aside class="demo-notice" role="note" aria-label="Demonstration build notice"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></aside>${contextOrientation()}<div id="demoJourney"></div><nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
   </div>`;
@@ -507,7 +518,7 @@ if(supabaseClient){
 
 window.addEventListener('unhandledrejection',event=>{console.error('E-Leaf action failed',event.reason);toast('That action could not be completed. Please try again.');});
 window.addEventListener('error',event=>{console.error('E-Leaf interface error',event.error||event.message);});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#demoGuideOverlay')?.classList.contains('hidden'))hide($('#demoGuideOverlay'));else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));$('#institutionChoice')?.focus();}else if(!$('#contextOverlay')?.classList.contains('hidden'))closeContext();}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));$('#institutionChoice')?.focus();}else if(!$('#contextOverlay')?.classList.contains('hidden'))closeContext();}});
 
 // Public growth story: the four steps are an explorable visual, not a passive card grid.
 (function bindPublicGrowthStory(){

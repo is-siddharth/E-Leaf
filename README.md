@@ -1150,3 +1150,7 @@ This iteration keeps presentation assistance clearly separate from the product s
 - Reordered the authenticated world chooser to place Institutional before Global and updated the chooser language accordingly.
 - Kept Global and Institutional as connected contexts for the same person rather than implying separate identities.
 - Removed arrow glyphs from the authenticated Journey heading as part of the platform-wide visual language refinement.
+
+
+## V3.21 refinement
+Restored the V3.19 public hero composition and retained the final Learning Never Stops Leaf↔Tree element as a smaller right-side visual.

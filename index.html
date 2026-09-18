@@ -32,43 +32,84 @@
   <div class="public-nav-inner">
     <a class="public-brand" href="#top" aria-label="E-Leaf home"><span class="public-brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><span>E-Leaf</span></a>
     <nav class="public-links" aria-label="Public navigation">
-      <a href="#model">Why E-Leaf</a><a href="#how">How it grows</a><a href="#spaces">Your worlds</a><a href="#people">Learn from people</a>
+      <a href="#what-you-can-do">What you can do</a><a href="#model">Why E-Leaf</a><a href="#how">How it grows</a><a href="#spaces">Your worlds</a><a href="#people">Learn from people</a>
     </nav>
     <div class="nav-actions"><button class="btn btn-quiet" id="loginBtn">Log in</button><button class="btn btn-primary" id="joinBtn">Join E-Leaf</button></div>
   </div>
 </header>
 <main id="publicMain" class="public-main-v3" tabindex="-1">
-  <section class="public-hero-v3" id="top">
+  <section class="public-hero-v3 hero-v3-merged" id="top" aria-labelledby="heroV3Title">
     <div class="hero-v3-copy">
       <div class="eyebrow">Learning that keeps moving</div>
-      <h1>Learn something.<br><em>Make it useful.</em></h1>
+      <h1 id="heroV3Title">Learn something.<br><em>Make it useful.</em></h1>
       <p class="hero-v3-lead">E-Leaf is a learning community where you do more than collect lessons. You learn from people, contribute what you understand, help someone else, and grow into someone who can teach.</p>
       <div class="hero-v3-actions"><button class="btn btn-primary" id="heroExplore">See how E-Leaf works</button><button class="btn" id="heroJoin">Join E-Leaf</button></div>
       <p class="hero-v3-proof"><strong>Not a course library.</strong> Not a race for points. Your learning can become useful to someone else.</p>
     </div>
-    <div class="hero-v3-growth-model" aria-label="The E-Leaf model: a person can learn as a Leaf and, as understanding grows, teach as a Tree.">
-      <div class="hero-v3-role-card hero-v3-role-leaf">
-        <div class="hero-v3-role-head"><span>LEAF</span><strong>Learn</strong></div>
-        <div class="hero-v3-role-art">
-          <svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 197V112" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M90 135C67 120 49 100 42 73C72 72 94 84 100 107C104 124 97 134 90 135Z" fill="currentColor" opacity=".82"/><path d="M90 153C110 139 126 121 134 98C110 97 91 107 85 126" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
+
+    <div class="hero-v4-side">
+      <div class="hero-v4-cycle" aria-label="The E-Leaf learning cycle. You come to learn as a Leaf, your understanding grows, and you can teach what you know as a Tree. Trees keep learning too.">
+        <div class="hero-v4-card hero-v4-leaf" aria-label="Leaf: learn. You come to learn.">
+          <span class="hero-v4-card-label"><span>LEAF</span><span>LEARN</span></span>
+          <div class="hero-v4-art">
+            <svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 197V112" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M90 135C67 120 49 100 42 73C72 72 94 84 100 107C104 124 97 134 90 135Z" fill="currentColor" opacity=".9"/><path d="M90 153C110 139 126 121 134 98C110 97 91 107 85 126" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
+          </div>
+          <strong>You come to learn.</strong>
         </div>
-        <p>You come to learn.</p>
-      </div>
-      <div class="hero-v3-role-meaning" aria-hidden="true">
-        <span>Understanding grows</span>
-        <svg class="hero-v3-growth-arrow" viewBox="0 0 150 72" preserveAspectRatio="none">
-          <path d="M8 36 H112" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
-          <path d="M102 20 L126 36 L102 52" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div class="hero-v3-role-card hero-v3-role-tree">
-        <div class="hero-v3-role-head"><span>TREE</span><strong>Teach</strong></div>
-        <div class="hero-v3-role-art">
-          <svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 196V112M90 144 62 119M90 152l31-28M90 126V91" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><circle cx="90" cy="72" r="34" fill="currentColor" opacity=".9"/><circle cx="56" cy="93" r="27" fill="currentColor" opacity=".82"/><circle cx="125" cy="95" r="29" fill="currentColor" opacity=".86"/></svg>
+
+        <div class="hero-v4-loop" aria-hidden="true">
+          <div class="hero-v4-arrow hero-v4-arrow-back">
+            <span>Learning Never Stops</span>
+            <svg viewBox="0 0 320 105" preserveAspectRatio="none"><path d="M300 73 C245 23 135 8 54 40 C42 45 31 51 22 59 L22 38 L2 70 L22 102 L22 81 C55 55 104 39 153 39 C211 39 264 53 300 82 Z"/></svg>
+          </div>
+          <div class="hero-v4-arrow hero-v4-arrow-forward">
+            <svg viewBox="0 0 320 105" preserveAspectRatio="none"><path d="M20 32 C75 82 185 97 266 65 C278 60 289 54 298 46 L298 67 L318 35 L298 3 L298 24 C265 50 216 66 167 66 C109 66 56 52 20 23 Z"/></svg>
+            <span>Understanding Grows</span>
+          </div>
         </div>
-        <p>You can teach what you know.</p>
+
+        <div class="hero-v4-card hero-v4-tree" aria-label="Tree: teach. You can teach what you know.">
+          <span class="hero-v4-card-label"><span>TREE</span><span>TEACH</span></span>
+          <div class="hero-v4-art">
+            <svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 196V112M90 144 62 119M90 152l31-28M90 126V91" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><circle cx="90" cy="72" r="34" fill="currentColor" opacity=".92"/><circle cx="56" cy="93" r="27" fill="currentColor" opacity=".84"/><circle cx="125" cy="95" r="29" fill="currentColor" opacity=".88"/></svg>
+          </div>
+          <strong>You can teach what you know.</strong>
+        </div>
       </div>
-      <div class="hero-v3-growth-model-foot"><span>One person.</span><strong>Growing capability.</strong></div>
+    </div>
+  </section>
+
+  <section class="public-section-v3 public-can-do-v3" id="what-you-can-do" aria-labelledby="whatYouCanDoTitle">
+    <div class="can-do-intro">
+      <div>
+        <div class="eyebrow">WHAT YOU CAN DO</div>
+        <h2 id="whatYouCanDoTitle">A place to learn, make meaning, and pass it forward.</h2>
+      </div>
+      <p>Start with the help you need today. As your understanding grows, E-Leaf gives you ways to make it useful to someone else.</p>
+    </div>
+    <div class="can-do-grid-v3">
+      <article class="can-do-card-v3 can-do-learn-v3">
+        <span class="can-do-num-v3">01</span>
+        <div class="can-do-card-head-v3"><span class="can-do-icon-v3"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-note"></use></svg></span><h3>Learn</h3></div>
+        <p>Explore subjects, notes, questions, classes, and people who can make a difficult idea click.</p>
+        <strong>Find understanding, not just material.</strong>
+      </article>
+      <article class="can-do-card-v3 can-do-contribute-v3">
+        <span class="can-do-num-v3">02</span>
+        <div class="can-do-card-head-v3"><span class="can-do-icon-v3"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span><h3>Contribute</h3></div>
+        <p>Turn what you understand into a note, example, question, explanation, or useful response.</p>
+        <strong>Let your learning help someone else.</strong>
+      </article>
+      <article class="can-do-card-v3 can-do-teach-v3">
+        <span class="can-do-num-v3">03</span>
+        <div class="can-do-card-head-v3"><span class="can-do-icon-v3"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-teach"></use></svg></span><h3>Teach</h3></div>
+        <p>When ready, use Tree capability to plan, teach, support learners, and keep learning yourself.</p>
+        <strong>Teaching is a responsibility, not a rank.</strong>
+      </article>
+    </div>
+    <div class="can-do-closing-v3">
+      <span class="can-do-closing-mark-v3"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#ic-leaf"></use></svg></span>
+      <p><strong>You do not need to know what you will teach.</strong> Join as a Leaf and begin with what you want to learn.</p>
     </div>
   </section>
 
@@ -82,7 +123,7 @@
   </section>
 
   <section class="public-section-v3 public-how-v3" id="how">
-    <div class="section-heading-v3"><div><div class="eyebrow">How it grows</div><h2>One learning loop. Four ways to take part.</h2></div><p>You do not switch from learner to teacher overnight. You grow through what you learn and what you choose to give back.</p></div>
+    <div class="section-heading-v3"><div><div class="eyebrow">How participation grows</div><h2>What you do can grow with what you understand.</h2></div><p>E-Leaf does not ask you to become a teacher first. You begin by learning, then decide what you want to contribute, who you can help, and when you are ready to teach.</p></div>
     <div class="growth-loop-v3">
       <article class="growth-node growth-node-learn"><span class="growth-node-num">01</span><span class="growth-node-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-note"></use></svg></span><h3>Learn</h3><p>Take in an idea, skill, question, or lesson from someone else.</p></article>
       <div class="growth-connector" aria-hidden="true"><i></i></div>
@@ -106,6 +147,14 @@
 
   <section class="public-section-v3 public-people-v3" id="people">
     <div class="section-heading-v3"><div><div class="eyebrow">Learn from people</div><h2>Content can teach you. People can teach you why.</h2></div><p>People bring context, examples, questions, mistakes, and ways of thinking that a static lesson cannot always provide.</p></div>
+    <div class="people-use-story-v3" aria-label="A simple example of learning in E-Leaf">
+      <div class="people-use-story-intro"><span class="eyebrow">In practice</span><h3>One question can become a learning loop.</h3><p>You start with something you do not understand. E-Leaf helps you find a useful explanation, make sense of it, and leave something behind for the next learner.</p></div>
+      <ol class="people-use-steps-v3">
+        <li><span>01</span><strong>Ask</strong><small>Find the question that is blocking you.</small></li>
+        <li><span>02</span><strong>Understand</strong><small>Learn from a person, note, class, or explanation.</small></li>
+        <li><span>03</span><strong>Pass it forward</strong><small>Contribute what finally made the idea click.</small></li>
+      </ol>
+    </div>
     <div class="people-feature-grid-v3">
       <article class="people-feature-card-v3"><div class="people-feature-top"><span class="person-avatar avatar-green">AM</span><div><span class="person-context">Programming · Institutional</span><h3>Arun Mehta</h3></div></div><p>Explains Python Fundamentals through the kinds of problems students actually meet in class.</p><span class="people-feature-label">Demo Tree profile · example only</span></article>
       <article class="people-feature-card-v3 people-feature-global-v3"><div class="people-feature-top"><span class="person-avatar avatar-earth">EG</span><div><span class="person-context">Astronomy · Global</span><h3>Elias Grove</h3></div></div><p>Turns questions about stars and scale into explanations that make the subject easier to keep exploring.</p><span class="people-feature-label">Demo Tree profile · example only</span></article>
