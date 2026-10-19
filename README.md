@@ -229,25 +229,27 @@ The cycle has no real final step.
 
 Becoming a Tree is intentionally different in the Global and Institutional worlds.
 
-## Current prototype qualification
+## Current presentation-build progression
 
-The current prototype uses a simple three-condition model:
+The interface demonstrates an adaptive readiness concept without exposing a fixed eligibility checklist. A small set of simulated learning activities can move the demo account into a **ready for review** state. The user must submit the request; an administrator then reviews it and assigns one or more teaching subjects before approving Tree access.
 
-### 1. Learn
+This review queue is a **local demonstration simulation**. Its state is stored in the browser and is not an authenticated production admin workflow. The current build does not contain a production ML model that learns from live student behaviour, nor does it write review decisions to Supabase. Do not present those parts as already deployed.
 
-Attend at least one class from another Tree.
+The production design should retain the same separation of states:
 
-### 2. Share
-
-Plant at least one useful note.
-
-### 3. Help
-
-Answer at least one question from another learner.
-
-When all three conditions are complete, the prototype can unlock Tree capability.
-
-This model is intentionally simple for the prototype. It demonstrates the product philosophy and state transitions without pretending to be the final qualification system.
+```text
+Learning activity
+       ↓
+Adaptive readiness assessment
+       ↓
+User submits for review
+       ↓
+Administrator review queue
+       ↓
+Approve or decline + assign teaching subjects
+       ↓
+Tree capability scoped to approved subjects
+```
 
 ## Intended production qualification
 

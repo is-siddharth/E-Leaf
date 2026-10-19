@@ -63,33 +63,34 @@ function contextOrientation(){
 
 function navIcon(name){return `<span class="nav-icon nav-icon-${name}">${icon(name)}</span>`}
 function navItems(){
-  if(context.world==='institution') return context.role==='tree'
-    ? [['home','Home'],['classes','Classes'],['teach','Teach'],['community','Community'],['college','College']]
-    : [['home','Home'],['classes','Classes'],['learn','Learn'],['note','Notes'],['community','Community'],['college','College']];
-  return context.role==='tree'
-    ? [['home','Home'],['explore','Explore'],['teach','Teach'],['community','Community'],['library','Library'],['journey','Journey']]
-    : [['home','Home'],['explore','Explore'],['learn','Learn'],['community','Community'],['library','Library'],['journey','Journey']];
+  // Keep primary navigation stable across worlds; secondary destinations live inside Home and relevant workspaces.
+  return [['home','Home'],[context.role==='tree'?'teach':'learn',context.role==='tree'?'Teach':'Learn'],['community','Community'],['journey','Journey']];
 }
 function setNav(active){
   const nav=$('#appNav');
   if(!nav)return;
-  nav.innerHTML=navItems().map(([key,label])=>`<button class="${active===key?'active':''}" data-nav="${key}">${navIcon(key)}<span>${label}</span></button>`).join('');
+  const primaryActive=({classes:context.role==='tree'?'teach':'learn',explore:context.role==='tree'?'teach':'learn',library:context.role==='tree'?'teach':'learn',note:'learn',college:'home',review:'journey'})[active]||active;
+  nav.innerHTML=navItems().map(([key,label])=>`<button type="button" class="${primaryActive===key?'active':''}" ${primaryActive===key?'aria-current="page"':''} data-nav="${key}">${navIcon(key)}<span>${label}</span></button>`).join('');
   nav.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>routeApp(button.dataset.nav)));
 }
-function roleKey(world){
-  return session ? `e_leaf_last_role:${session.user.id}:${world}` : null;
+function roleKey(world){return session ? `e_leaf_last_role:${session.user.id}:${world}` : null;}
+function growthKeyForWorld(world,institution=null){
+  const userId=session?.user?.id||'anonymous';
+  const institutionName=world==='institution'?(institution||userProfile?.institution||'Your institution'):'';
+  return `${E_LEAF_DEMO_GROWTH_KEY||'e_leaf_growth_v1'}:${userId}:${world}:${institutionName}`;
 }
-function rememberedRole(world){
-  if(!session)return 'leaf';
-  const saved=store.get(roleKey(world),null);
-  return saved==='tree' && treeUnlockedForWorld(world) ? 'tree' : 'leaf';
+function defaultGrowthState(){return {actions:[],status:'learning',approvedSubjects:[],submittedAt:null,decisionNote:'',updatedAt:null};}
+function readGrowthForWorld(world,institution=null){
+  const raw=store.get(growthKeyForWorld(world,institution),null);
+  if(!raw)return defaultGrowthState();
+  const result={...defaultGrowthState(),...raw,actions:Array.isArray(raw.actions)?raw.actions:[],approvedSubjects:Array.isArray(raw.approvedSubjects)?raw.approvedSubjects:[]};
+  if(raw.unlocked===true&&!['pending_review','approved','declined'].includes(result.status))result.status='ready_for_review';
+  if(result.actions.length>=3&&result.status==='learning')result.status='ready_for_review';
+  return result;
 }
-function treeUnlockedForWorld(world){
-  if(!session)return false;
-  const institution=userProfile?.institution||'Your institution';
-  const key=world==='global' ? `e_leaf_global_growth:${session.user.id}` : `e_leaf_institution_growth:${session.user.id}:${institution}`;
-  return !!store.get(key,{unlocked:false}).unlocked;
-}
+function writeGrowthState(value,world=context.world,institution=context.institution){value.updatedAt=new Date().toISOString();return store.set(growthKeyForWorld(world,institution),value);}
+function rememberedRole(world){if(!session)return 'leaf';const saved=store.get(roleKey(world),null);return saved==='tree'&&treeUnlockedForWorld(world)?'tree':'leaf';}
+function treeUnlockedForWorld(world){if(!session)return false;return readGrowthForWorld(world,world==='institution'?(userProfile?.institution||'Your institution'):null).status==='approved';}
 function setRememberedRole(role){
   if(session&&context.world)store.set(roleKey(context.world),role);
 }
@@ -208,15 +209,61 @@ async function submitAuth(e){
       if(result.error) throw result.error;
     }
     session=result.data.session;
+    isDemoSession=false;
     userProfile=loadProfile(session.user);
     closeAuth();
-    showContext();
+    if(userProfile.setupComplete)showContext();else showOnboarding();
   }catch(err){
     $('#authMessage').style.color='var(--danger)';
     $('#authMessage').textContent=friendlyAuthError(err);
   }finally{setAuthBusy(false);}
 }
 function showContext(){hideAllOverlays();show($('#contextOverlay'));$('#contextClose')?.focus();}
+let onboardingDraft={},onboardingStepIndex=0;
+function onboardingStages(){
+  const base=[{key:'name',title:'What should we call you?',copy:'Your learning space should feel like yours from the beginning.',placeholder:'Your name',required:true,max:80},
+    {key:'world',title:'Where would you like to begin?',copy:'Your choice shapes the space we set up for you.',kind:'world',required:true}];
+  if(onboardingDraft.world==='institution')base.push(
+    {key:'institution',title:'Where are you studying?',copy:'Choose the college community you belong to.',placeholder:'College or institution name',required:true,max:120},
+    {key:'course',title:'What course are you pursuing?',copy:'We will use this to make your academic space more relevant.',placeholder:'e.g. B.Tech Computer Science',required:true,max:100},
+    {key:'year',title:'Which year are you in?',copy:'This helps E-Leaf understand your academic context.',kind:'select',options:['1st year','2nd year','3rd year','4th year','5th year or above','Not applicable'],optional:true},
+    {key:'semester',title:'Which semester are you in?',copy:'You can update this whenever your semester changes.',kind:'select',options:['Semester 1','Semester 2','Semester 3','Semester 4','Semester 5','Semester 6','Semester 7','Semester 8','Not applicable'],optional:true},
+    {key:'rollNumber',title:'Would you like to add your roll number?',copy:'This is optional. You can leave it blank and add it later if your institution needs it.',placeholder:'Roll number (optional)',optional:true,max:40});
+  base.push({key:'interests',title:'What are you curious about?',copy:'Add a few subjects or interests. You can change these any time.',placeholder:'e.g. Python, psychology, astronomy',optional:true,max:240});
+  return base;
+}
+function showOnboarding(){hideAllOverlays();fillOnboarding();show($('#onboardingOverlay'));renderOnboardingStep();}
+function fillOnboarding(){const p=userProfile||{};onboardingDraft={name:p.name==='Demo Learner'?'':(p.name||''),world:'',institution:p.institution||'',course:p.course||'',year:p.year||'',semester:p.semester||'',rollNumber:p.rollNumber||'',interests:p.interests||''};onboardingStepIndex=0;$('#onboardingMessage').textContent='';}
+function renderOnboardingStep(){
+  const stages=onboardingStages();onboardingStepIndex=Math.max(0,Math.min(onboardingStepIndex,stages.length-1));const step=stages[onboardingStepIndex];
+  $('#onboardingStepLabel').textContent=`STEP ${onboardingStepIndex+1} OF ${stages.length}`;$('#onboardingProgressFill').style.width=`${((onboardingStepIndex+1)/stages.length)*100}%`;
+  $('#onboardingTitle').textContent=step.title;$('#onboardingCopy').textContent=step.copy;$('#onboardingMessage').textContent='';
+  const host=$('#onboardingStepContent');
+  if(step.kind==='world')host.innerHTML=`<div class="onboarding-world-options"><button type="button" class="onboarding-world-choice ${onboardingDraft.world==='institution'?'selected':''}" data-onboarding-world="institution"><span class="onboarding-choice-icon">${icon('building')}</span><strong>Institutional</strong><small>Learn with your college community.</small></button><button type="button" class="onboarding-world-choice ${onboardingDraft.world==='global'?'selected':''}" data-onboarding-world="global"><span class="onboarding-choice-icon">${icon('globe')}</span><strong>Global</strong><small>Explore interests beyond one institution.</small></button></div>`;
+  else if(step.kind==='select')host.innerHTML=`<label class="onboarding-step-label" for="onboardingStepInput">${step.key==='year'?'Academic year':'Semester'}</label><select id="onboardingStepInput" class="onboarding-step-input"><option value="">Choose later</option>${step.options.map(v=>`<option ${onboardingDraft[step.key]===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select>`;
+  else host.innerHTML=`<label class="onboarding-step-label" for="onboardingStepInput">${step.key==='name'?'Your name':step.key==='institution'?'College or institution':step.key==='course'?'Course or degree':step.key==='rollNumber'?'Roll number':'Subjects and interests'}</label><input id="onboardingStepInput" class="onboarding-step-input" ${step.required?'required':''} maxlength="${step.max||240}" value="${escapeHtml(onboardingDraft[step.key]||'')}" placeholder="${escapeHtml(step.placeholder||'')}" autocomplete="${step.key==='name'?'name':'off'}">`;
+  $('#onboardingBack').disabled=onboardingStepIndex===0;$('#onboardingBack').style.visibility=onboardingStepIndex===0?'hidden':'visible';$('#onboardingSkip').classList.toggle('hidden',!step.optional);$('#onboardingContinue').textContent=onboardingStepIndex===stages.length-1?'Finish setup':'Continue';
+  host.querySelectorAll('[data-onboarding-world]').forEach(button=>button.addEventListener('click',()=>{onboardingDraft.world=button.dataset.onboardingWorld;const current=onboardingStages();onboardingStepIndex=Math.min(onboardingStepIndex,current.length-1);renderOnboardingStep();}));
+  const input=$('#onboardingStepInput');if(input)input.focus();
+}
+function captureOnboardingStep(){const stages=onboardingStages(),step=stages[onboardingStepIndex],input=$('#onboardingStepInput');if(step.kind==='world'&&!onboardingDraft.world){$('#onboardingMessage').textContent='Choose where you would like to begin.';return false;}if(input){const value=input.value.trim();if(step.required&&!value){$('#onboardingMessage').textContent=step.key==='name'?'Please enter the name you want to use on E-Leaf.':`Please add your ${step.key==='institution'?'college':step.key==='course'?'course':'answer'} to continue.`;input.focus();return false;}onboardingDraft[step.key]=value;}return true;}
+function nextOnboardingStep(skip=false){if(!skip&&!captureOnboardingStep())return;const stages=onboardingStages();if(onboardingStepIndex<stages.length-1){onboardingStepIndex++;renderOnboardingStep();return;}saveOnboarding();}
+function saveOnboarding(){const name=(onboardingDraft.name||'').trim();if(!name){$('#onboardingMessage').textContent='Please enter the name you want to use on E-Leaf.';onboardingStepIndex=0;renderOnboardingStep();return;}userProfile={...(userProfile||{}),name,institution:onboardingDraft.world==='institution'?(onboardingDraft.institution||'').trim()||null:null,course:(onboardingDraft.course||'').trim(),year:onboardingDraft.year||'',semester:onboardingDraft.semester||'',rollNumber:(onboardingDraft.rollNumber||'').trim(),interests:(onboardingDraft.interests||'').trim(),setupComplete:true};if(isDemoSession){userProfile.avatarData='';}else saveProfile();hide($('#onboardingOverlay'));context.world=onboardingDraft.world||'institution';context.institution=context.world==='institution'?(userProfile.institution||'Your institution'):null;openRole(context.world,context.institution);}
+
+function startDemoSession(){
+  isDemoSession=true;
+  // A fresh demo session is intentionally ephemeral and starts with no Leaf-to-Tree activity.
+  session={user:{id:'demo-user',email:null,user_metadata:{full_name:'Demo Learner'}}};
+  userProfile={name:'',institution:null,course:'',year:'',semester:'',rollNumber:'',interests:'',avatarData:'',setupComplete:false};
+  try{Object.keys(localStorage).filter(key=>key.startsWith('e_leaf_growth_v1:demo-user:')).forEach(key=>localStorage.removeItem(key));}catch(err){}
+  store.remove('e_leaf_last_context:demo-user');store.remove('e_leaf_last_role:demo-user:institution');store.remove('e_leaf_last_role:demo-user:global');
+  context={world:null,institution:null,role:'leaf'};
+  closeAuth();showOnboarding();
+}
+function openProfile(){if(!session)return;const p=userProfile||{};$('#profileName').value=p.name||'';$('#profileCollege').value=p.institution||'';$('#profileCourse').value=p.course||'';$('#profileYear').value=p.year||'';$('#profileSemester').value=p.semester||'';$('#profileRoll').value=p.rollNumber||'';$('#profileInterests').value=p.interests||'';$('#profileMessage').textContent='';renderProfilePhoto();show($('#profileOverlay'));}
+function renderProfilePhoto(){const el=$('#profilePhotoPreview');if(!el)return;const p=userProfile||{};el.innerHTML=p.avatarData?`<img src="${p.avatarData}" alt="Profile photo preview">`:escapeHtml(initials(p.name||'Learner'));}
+function saveProfileForm(e){e.preventDefault();userProfile={...(userProfile||{}),name:$('#profileName').value.trim(),institution:$('#profileCollege').value.trim()||null,course:$('#profileCourse').value.trim(),year:$('#profileYear').value,semester:$('#profileSemester').value,rollNumber:$('#profileRoll').value.trim(),interests:$('#profileInterests').value.trim(),setupComplete:true};if(!userProfile.name){$('#profileMessage').textContent='Please enter your name.';return;}saveProfile();hide($('#profileOverlay'));if(context.world==='institution')context.institution=userProfile.institution||'Your institution';renderApp();toast(isDemoSession?'Profile updated for this demo session.':'Profile updated on this browser.');}
+function handlePhotoUpload(e){const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Choose an image file.');return;}if(file.size>1*1024*1024){toast('Choose an image smaller than 1 MB.');e.target.value='';return;}const reader=new FileReader();reader.onload=()=>{userProfile={...(userProfile||{}),avatarData:String(reader.result||'')};renderProfilePhoto();};reader.readAsDataURL(file);}
 function closeContext(){hide($('#contextOverlay'));if(context.world){renderApp();}else{show($('#publicView'));hide($('#appView'));updateSkipTarget('#publicMain');}}
 function hideAllOverlays(){$$('.overlay').forEach(hide)}
 function openInstitution(){
@@ -229,42 +276,42 @@ function openRole(world,institution=null){
   $('#roleEyebrow').textContent=world==='global'?'Global world':'Institutional world';
   $('#roleTitle').textContent=world==='global'?'Step into the wider E-Leaf':'Step into your institution';
   $('#roleCopy').textContent=world==='global'
-    ?'Choose how you want to participate in the wider learning community today.'
-    :`You are part of ${context.institution}. Choose how you want to enter it today.`;
-  $('#enterTree').classList.toggle('hidden',!treeUnlockedForContext());
+    ?(treeUnlockedForWorld(world)?'Choose how you want to participate in the wider learning community today.':'Everyone starts as a Leaf. Tree becomes available after readiness review and administrator approval.')
+    :(treeUnlockedForWorld(world)?`You are part of ${context.institution}. Choose how you want to enter it today.`:`You are part of ${context.institution}. Start as a Leaf; Tree access follows readiness review and administrator approval.`);
+  $('#enterTree').classList.toggle('hidden',!treeUnlockedForWorld(world));
   show($('#roleOverlay'));
 }
 function enterApp(role){
   if(!session){toast('Please log in before entering E-Leaf.');openAuth('login');return;}
-  if(role==='tree'&&!treeUnlockedForContext()){toast('Your Tree teaching space is not ready yet. Complete the three demo growth steps first.');return;}
+  if(role==='tree'&&!treeUnlockedForContext()){toast('Tree access opens after an administrator approves your review.');return;}
   if(context.role===role){setRememberedRole(role);store.set('e_leaf_last_context:'+session.user.id,context);hideAllOverlays();renderApp();return;}
   transitionRole(role);
 }
 function recordGrowthAction(action){
-  if(context.role!=='leaf'||!session||treeUnlockedForContext())return;
+  if(context.role!=='leaf'||!session)return;
   const state=growthState();
-  if(state.actions.includes(action)){
-    toast('That contribution is already part of your growth.');
-    return;
-  }
+  if(['pending_review','approved'].includes(state.status))return;
+  if(state.actions.includes(action)){toast('That activity is already reflected in your learning journey.');return;}
   state.actions.push(action);
-  if(state.actions.length>=3){
-    // Demo rule: the third contribution makes the Tree READY, not automatically active.
-    state.unlocked=true;
-    store.set(contextKey(),state);
-    renderGrowthDock(true);
-    renderDemoJourney();
-    toast('Your Tree is ready. You can enter your teaching space when you choose.');
-    if(document.body.dataset.eLeafPage==='home') {
-      const dock=$('#growthDock .growth-tree-dock');
-      if(dock){ dock.classList.remove('growth-home-shake'); void dock.offsetWidth; dock.classList.add('growth-home-shake'); }
-    }
-  } else {
-    store.set(contextKey(),state);
-    renderGrowthDock(true);
-    renderDemoJourney();
-    toast('Saved. Keep going with your learning.');
-  }
+  // Illustrative demo signals only; this is not a production ML assessment.
+  if(state.actions.length>=3&&state.status!=='declined')state.status='ready_for_review';
+  else if(state.status==='declined')state.status='learning';
+  writeGrowthState(state);
+  renderGrowthDock(true);
+  if(document.body.dataset.eLeafPage==='journey')renderJourney();
+  toast(state.status==='ready_for_review'?'Your learning journey is ready to be submitted for administrator review.':'Activity saved. Your learning journey continues to develop.');
+}
+function submitTreeReview(){
+  const value=growthState();
+  if(value.status!=='ready_for_review'){toast('Keep participating as a Leaf. Your review will become available when the demo assessment is ready.');return;}
+  value.status='pending_review';value.submittedAt=new Date().toISOString();value.decisionNote='';writeGrowthState(value);renderGrowthDock();renderJourney();toast('Submitted to the administrator review queue.');
+}
+function renderReviewQueue(){
+  const value=growthState(),subjects=['Python fundamentals','Physics','Programming'];
+  const date=value.submittedAt?new Date(value.submittedAt).toLocaleString():'Not submitted';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">DEMO ADMIN WORKSPACE · REVIEW QUEUE</div><h1>Review Tree eligibility.</h1><p>Illustrative administrator flow for this presentation build. Decisions and subject permissions are stored locally in this browser; this is not production admin authorization.</p></div><button class="btn btn-neutral" onclick="routeApp('journey')">Back to learning journey</button></div><div class="review-layout"><section class="app-card review-candidate"><div class="review-topline"><span class="review-avatar">${escapeHtml(initials(userProfile?.name||'Learner'))}</span><div><div class="eyebrow">CANDIDATE</div><h2>${escapeHtml(userProfile?.name||'Learner')}</h2><p>${escapeHtml(session?.user?.email||'Demo account')} · ${context.world==='institution'?'Institutional':'Global'} World</p></div><span class="review-status ${value.status==='pending_review'?'is-pending':value.status==='approved'?'is-approved':''}">${value.status.replaceAll('_',' ')}</span></div><div class="review-evidence"><div><span class="eyebrow">ASSESSMENT SUMMARY</span><h3>Learning pattern review</h3><p>Review the overall learning journey and the available demonstration signals. The exact eligibility criteria are intentionally not shown as a fixed checklist.</p></div><div class="review-evidence-grid"><div><strong>${value.actions.length?'Recorded':'No'} activity</strong><span>Learning journey activity</span></div><div><strong>${value.status==='pending_review'?'Ready for review':value.status==='approved'?'Approved':'In progress'}</strong><span>Assessment state</span></div><div><strong>${date}</strong><span>Submission time</span></div></div></div>${value.status==='pending_review'?`<div class="review-decision"><h3>Teaching scope</h3><p>Select subject areas to authorize if the candidate is approved.</p><div class="review-subjects">${subjects.map(subject=>`<label><input type="checkbox" name="reviewSubject" value="${escapeHtml(subject)}" ${value.approvedSubjects.includes(subject)?'checked':''}> <span>${escapeHtml(subject)}</span></label>`).join('')}</div><label class="review-note-label" for="reviewNote">Optional review note</label><textarea id="reviewNote" rows="3" placeholder="Add a brief internal note (optional)">${escapeHtml(value.decisionNote||'')}</textarea><div class="review-actions"><button class="btn btn-neutral" id="declineReview">Decline for now</button><button class="btn btn-tree" id="approveReview">Approve Tree</button></div></div>`:value.status==='approved'?`<div class="review-result success"><strong>Tree approved</strong><p>Approved subjects: ${escapeHtml(value.approvedSubjects.join(', ')||'No subject assigned')}.</p><button class="btn btn-tree" onclick="enterApp('tree')">Open approved Tree space</button></div>`:value.status==='declined'?`<div class="review-result"><strong>Review declined</strong><p>${escapeHtml(value.decisionNote||'The candidate can continue learning and be reconsidered later.')}</p><button class="btn btn-neutral" onclick="routeApp('journey')">Return to journey</button></div>`:`<div class="review-result"><strong>No application is waiting for review.</strong><p>Return to the Leaf journey and submit once the demonstration assessment is ready.</p><button class="btn btn-leaf" onclick="routeApp('journey')">Open learning journey</button></div>`}</section><aside class="tree-panel review-principle"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">HUMAN REVIEW</div><h3>Readiness is not authorization.</h3><p>The assessment can surface a candidate for review. An administrator makes the final decision and grants teaching scope by subject.</p></aside></div>`;
+  $('#approveReview')?.addEventListener('click',()=>{const selected=$$('#appContent input[name="reviewSubject"]:checked').map(input=>input.value);if(!selected.length){toast('Select at least one subject before approving Tree access.');return;}value.status='approved';value.approvedSubjects=selected;value.decisionNote=$('#reviewNote')?.value.trim()||'';value.reviewedAt=new Date().toISOString();writeGrowthState(value);store.set(roleKey(context.world),'tree');toast('Tree approved with subject permissions.');renderApp();routeApp('review');});
+  $('#declineReview')?.addEventListener('click',()=>{value.status='declined';value.decisionNote=$('#reviewNote')?.value.trim()||'Not approved at this time. Continue learning and return when ready.';value.reviewedAt=new Date().toISOString();writeGrowthState(value);renderReviewQueue();toast('Review decision saved in the demo queue.');});
 }
 function startLeafToTreeTransition(){
   const overlay=$('#growthTransition'); if(!overlay)return;
@@ -273,47 +320,6 @@ function startLeafToTreeTransition(){
   setTimeout(()=>overlay.classList.add('phase-3'),1320);
   setTimeout(()=>{ context.role='tree'; store.set('e_leaf_last_context:'+session.user.id,context); renderApp(); overlay.classList.add('exit'); },2050);
   setTimeout(()=>{overlay.className='growth-transition hidden';document.body.classList.remove('transitioning-growth')},2700);
-}
-function demoJourney(){
-  return store.get('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),{dismissed:false,collapsed:true,seen:{}});
-}
-function saveDemoJourney(next){store.set('e_leaf_demo_journey:'+(session?.user?.id||'anonymous'),next);}
-function demoJourneyStep(key){
-  const state=demoJourney();state.seen[key]=true;saveDemoJourney(state);renderDemoJourney();
-}
-function renderDemoJourney(){
-  const host=$('#demoJourney');if(!host||!session)return;
-  const state=demoJourney();
-  const leaf=context.role==='leaf', ready=treeUnlockedForContext();
-  const steps=leaf ? [
-    ['explore','1','Explore','See the people, classes, and ideas in this space.'],
-    ['learn','2','Learn','Open a learning area or a class.'],
-    ['share','3','Share','Make one useful contribution.'],
-    ['help','4','Help','Help another learner through a useful conversation.']
-  ] : [
-    ['teach','1','Teach','Open teaching to see the Tree responsibility.'],
-    ['classes','2','Plan','View the class and lesson planning direction.'],
-    ['community','3','Support','Show how Trees help the learning community.']
-  ];
-  const complete=leaf ? ready && steps.every(([key])=>state.seen[key]) : steps.every(([key])=>state.seen[key]);
-  const intro=leaf?(ready?'Your Tree is ready to preview.':'A simple path through E-Leaf.'):'Show the teaching side of E-Leaf.';
-  const copy=leaf?'Optional presentation assistance. Your normal navigation always remains available.':'Optional presentation assistance for showing Tree capability. Your normal navigation always remains available.';
-  const actions=leaf&&!ready
-    ? '<button type="button" class="btn btn-leaf" data-demo-action="learn">Explore learning</button><button type="button" class="btn btn-soft" data-demo-action="share">Mark a demo contribution</button><button type="button" class="btn btn-soft" data-demo-action="help">Help a learner</button>'
-    : leaf
-      ? '<button type="button" class="btn btn-tree" data-demo-action="tree">Preview Tree mode</button>'
-      : '<button type="button" class="btn btn-tree" data-demo-action="teach">Open teaching</button><button type="button" class="btn btn-soft" data-demo-action="classes">Plan a class</button><button type="button" class="btn btn-soft" data-demo-action="community">Show community support</button>';
-  const open=!state.collapsed;
-  host.innerHTML=`<div class="demo-journey-control"><button type="button" class="demo-guide-toggle" id="demoGuideToggle" aria-expanded="${open}">${open?'Hide demo guide':'Show demo guide'}</button><span>Presentation assistance · optional</span></div>${open?`<section class="demo-journey" aria-label="Guided demo journey"><div class="demo-journey-summary"><span><span class="eyebrow">GUIDED DEMO · OPTIONAL</span><strong>${intro}</strong><small>${copy}</small></span><span class="demo-journey-summary-meta">${complete?'Complete':'Open guide'}</span></div><div class="demo-journey-body"><ol class="demo-journey-steps">${steps.map(([key,num,title,stepCopy])=>`<li class="${state.seen[key]?'is-complete':''}"><span class="demo-step-number">${state.seen[key]?'✓':num}</span><div><strong>${title}</strong><small>${stepCopy}</small></div></li>`).join('')}</ol><div class="demo-journey-actions">${actions}<span class="demo-progress-copy">${complete?'Demo path complete. You can repeat any step.':'Use it only when presenting; your normal navigation is always available.'}</span></div></div></section>`:''}`;
-  $('#demoGuideToggle').onclick=()=>{state.collapsed=!state.collapsed;saveDemoJourney(state);renderDemoJourney();$('#demoGuideToggle')?.focus();};
-  host.querySelectorAll('[data-demo-action]').forEach(button=>button.addEventListener('click',()=>{
-    const action=button.dataset.demoAction;
-    if(action==='learn'){demoJourneyStep('explore');demoJourneyStep('learn');routeApp(context.world==='global'?'explore':'classes');}
-    else if(action==='share'){recordGrowthAction('share');demoJourneyStep('share');}
-    else if(action==='help'){recordGrowthAction('help');demoJourneyStep('help');routeApp('community');}
-    else if(action==='tree'){enterApp('tree');}
-    else {demoJourneyStep(action);routeApp(action);}
-  }));
 }
 
 function renderApp(){
@@ -330,9 +336,9 @@ function renderApp(){
     <header class="app-top"><div class="app-top-inner">
       <button class="app-brand" id="appBrand" aria-label="E-Leaf home">${brandMark()}<span>E-Leaf</span></button>
       <div class="context-identity"><span class="context-icon">${icon(context.world==='global'?'globe':'building')}</span><div><strong>${escapeHtml(contextName)}</strong><small>${spaceLine}</small></div></div>
-      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><div class="profile-btn" aria-label="Signed in as ${escapeHtml(name)}"><span class="profile-avatar">${initials(name)}</span><span>${escapeHtml(name)}</span></div><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
+      <div class="app-actions"><button class="btn btn-soft" id="changeContext">Change world</button><button class="role-switch" id="changeRole" aria-label="Switch to ${context.role==='tree'?'Leaf':'Tree'} mode"><span class="role-switch-icon">${icon(context.role==='tree'?'tree':'leaf')}</span><span>${roleName}</span></button><button type="button" class="profile-btn" id="profileBtn" aria-label="Edit profile for ${escapeHtml(name)}"><span class="profile-avatar">${userProfile?.avatarData?`<img src="${userProfile.avatarData}" alt="">`:initials(name)}</span><span>${escapeHtml(name)}</span></button><button class="btn btn-soft" id="logoutBtn">Log out</button></div>
     </div></header>
-    <main id="appContentStart" class="app-body" tabindex="-1"><aside class="demo-notice" role="note" aria-label="Demonstration build notice"><strong>Demonstration build</strong><span>Sample content and growth actions are simulated. Account access uses the configured Supabase project.</span></aside>${contextOrientation()}<div id="demoJourney"></div><nav class="app-nav" id="appNav"></nav><div id="appContent" class="app-content"></div></main><div id="growthDock"></div>
+    <main id="appContentStart" class="app-body dashboard-layout" tabindex="-1"><aside class="app-sidebar"><div class="sidebar-space-label">${icon(context.world==='global'?'globe':'building')}<span><strong>${escapeHtml(contextName)}</strong><small>${context.world==='global'?'Global Commons':'Institutional Space'}</small></span></div><div class="sidebar-orientation">${contextOrientation()}</div><nav class="app-nav" id="appNav" aria-label="Primary navigation"></nav><div id="growthDock" class="sidebar-growth"></div></aside><section class="app-main"><aside class="demo-notice" role="note" aria-label="Demonstration build notice"><strong>Preview environment</strong><span>${isDemoSession?'Demo session · no email or backend required. Progress resets on a new demo session.':'Sample learning content is illustrative. Account access uses Supabase; Tree review is simulated in this build.'}</span></aside><div id="appContent" class="app-content"></div></section></main>
   </div>`;
   show($('#appView'));
   $('#appBrand').onclick=()=>routeApp('home');
@@ -340,53 +346,24 @@ function renderApp(){
   $('#changeContextMobile').onclick=()=>showContext();
   $('#changeRole').onclick=()=>openRole(context.world,context.institution);
   $('#logoutBtn').onclick=requestLogout;
+  $('#profileBtn').onclick=openProfile;
   const validPages=context.role==='tree'
-    ? (context.world==='institution'?['home','classes','teach','community','college']:['home','explore','teach','community','library','journey'])
-    : (context.world==='institution'?['home','classes','learn','note','community','college']:['home','explore','learn','community','library','journey']);
+    ? ['home','teach','community','journey','classes','college','explore','library']
+    : ['home','learn','community','journey','classes','college','explore','note','library'];
   const page=validPages.includes(document.body.dataset.eLeafPage)?document.body.dataset.eLeafPage:'home';
   routeApp(page);
 }
 function renderGrowthDock(animate=false){
-  const dock=$('#growthDock');
-  if(!dock)return;
+  const dock=$('#growthDock');if(!dock)return;
   if(!session||context.role!=='leaf'){dock.replaceChildren();return;}
-  const growth=growthState();
-  const done=growthDone(), pct=growthPercent();
-  // The growth Tree is a persistent qualification companion. Its geometry is
-  // derived from one canonical progress value; completion is always a true
-  // 100% state rather than an approximation.
-  const fillY=done===3 ? 0 : 204-(Math.max(0,Math.min(100,pct))*1.87);
-  const complete=done===3;
-  const previousWater=dock.querySelector('.growth-water');
-  const previousY=previousWater ? Number(previousWater.getAttribute('y')||fillY) : null;
-  dock.innerHTML=`<aside class="growth-tree-dock growth-stage-${done} ${complete?'growth-complete':''}" aria-label="Your growth${complete?' is complete':''}" tabindex="0" title="${complete?'Demo Tree threshold reached.':'Demo growth: three contributions reveal the Tree transition.'}">
-    <div class="growth-tree-wrap">
-      <svg class="growth-tree-art" viewBox="0 0 180 220" role="img" aria-label="${complete?'A fully grown tree':'A growing tree'}">
-        <defs><clipPath id="growthTreeClip"><path d="M90 204V121C90 101 74 91 59 81C46 72 41 57 48 43C55 28 72 25 84 34C88 20 100 12 113 17C126 22 132 34 128 47C144 47 155 58 155 71C155 87 142 97 125 98C119 99 113 102 110 111C106 122 105 138 105 155V204Z"/></clipPath></defs>
-        <path class="growth-tree-outline" d="M90 204V121C90 101 74 91 59 81C46 72 41 57 48 43C55 28 72 25 84 34C88 20 100 12 113 17C126 22 132 34 128 47C144 47 155 58 155 71C155 87 142 97 125 98C119 99 113 102 110 111C106 122 105 138 105 155V204"/>
-        <g clip-path="url(#growthTreeClip)"><rect class="growth-water" x="24" y="${fillY}" width="132" height="220" rx="12"/><path class="growth-water-ripple" d="M20 ${fillY} C48 ${fillY-5}, 69 ${fillY+5}, 90 ${fillY} S132 ${fillY-5}, 160 ${fillY}"/></g>
-        <path class="growth-trunk-line" d="M90 204V125M90 154 69 135M90 168l22-25M90 141l-13-17M90 183l15-13"/>
-      </svg>
-      <div class="growth-tree-copy"><span>${complete?'TREE READY':'TREE GROWTH'}</span>${complete?'<strong>Your Tree is ready.</strong><button type="button" class="growth-ready-cta">Enter Tree</button>':`<small>${done} of 3 demo steps</small><div class="growth-step-actions"><button type="button" data-growth-action="learn" class="growth-step ${growth.actions.includes('learn')?'done':''}"><span>1</span>Learn</button><button type="button" data-growth-action="share" class="growth-step ${growth.actions.includes('share')?'done':''}"><span>2</span>Share</button><button type="button" data-growth-action="help" class="growth-step ${growth.actions.includes('help')?'done':''}"><span>3</span>Help</button></div>`}</div>
-    </div>
-  </aside>`;
-  const tree=dock.querySelector('.growth-tree-dock');
-  tree.querySelectorAll('[data-growth-action]').forEach(button=>button.addEventListener('click',e=>{
-    e.stopPropagation();
-    recordGrowthAction(button.dataset.growthAction);
-  }));
-  if(animate && previousY!==null){
-    const water=tree.querySelector('.growth-water');
-    water.style.y=`${previousY}px`;
-    requestAnimationFrame(()=>{ water.style.y=`${fillY}px`; });
-  }
-  if(complete && location.hash!=='#tree'){
-    const readyCta=tree.querySelector('.growth-ready-cta');
-    if(readyCta) readyCta.addEventListener('click',e=>{e.stopPropagation();enterApp('tree')});
-    tree.addEventListener('click',()=>enterApp('tree'));
-    tree.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();enterApp('tree')}});
-    if(document.body.dataset.eLeafPage==='home') { tree.classList.remove('growth-home-shake'); void tree.offsetWidth; tree.classList.add('growth-home-shake'); }
-  }
+  const growth=growthState(),done=growthDone(),fillY=done===3?0:204-(Math.max(0,Math.min(100,growthPercent()))*1.87);
+  const ready=['ready_for_review','pending_review','approved'].includes(growth.status);
+  const label=growth.status==='approved'?'TREE APPROVED':growth.status==='pending_review'?'IN REVIEW':growth.status==='ready_for_review'?'READY FOR REVIEW':'TREE LOCKED';
+  const detail=growth.status==='approved'?'Your Tree capability is approved.':growth.status==='pending_review'?'An administrator is reviewing your journey.':growth.status==='ready_for_review'?'Submit your journey for administrator review.':'Start as a Leaf. Tree access follows review and approval.';
+  const previousWater=dock.querySelector('.growth-water'),previousY=previousWater?Number(previousWater.getAttribute('y')||fillY):null;
+  dock.innerHTML=`<aside class="growth-tree-dock growth-stage-${done} ${ready?'growth-complete':''} ${growth.status==='approved'?'is-approved':''}" aria-label="Tree growth status"><div class="growth-tree-wrap"><svg class="growth-tree-art" viewBox="0 0 180 220" role="img" aria-label="Tree growth illustration"><defs><clipPath id="growthTreeClip"><path d="M90 204V121C90 101 74 91 59 81C46 72 41 57 48 43C55 28 72 25 84 34C88 20 100 12 113 17C126 22 132 34 128 47C144 47 155 58 155 71C155 87 142 97 125 98C119 99 113 102 110 111C106 122 105 138 105 155V204Z"/></clipPath></defs><path class="growth-tree-outline" d="M90 204V121C90 101 74 91 59 81C46 72 41 57 48 43C55 28 72 25 84 34C88 20 100 12 113 17C126 22 132 34 128 47C144 47 155 58 155 71C155 87 142 97 125 98C119 99 113 102 110 111C106 122 105 138 105 155V204"/><g clip-path="url(#growthTreeClip)"><rect class="growth-water" x="24" y="${fillY}" width="132" height="220" rx="12"/><path class="growth-water-ripple" d="M20 ${fillY} C48 ${fillY-5},69 ${fillY+5},90 ${fillY} S132 ${fillY-5},160 ${fillY}"/></g><path class="growth-trunk-line" d="M90 204V125M90 154 69 135M90 168l22-25M90 141l-13-17M90 183l15-13"/></svg><div class="growth-tree-copy"><span>${label}</span><small>${detail}</small><button type="button" class="growth-ready-cta">${growth.status==='approved'?(context.role==='tree'?'View journey':'Switch to Tree'):growth.status==='pending_review'?'View review status':growth.status==='ready_for_review'?'Review journey':'View growth journey'}</button></div></div></aside>`;
+  const tree=dock.querySelector('.growth-tree-dock');dock.querySelector('.growth-ready-cta')?.addEventListener('click',()=>growth.status==='approved'?(context.role==='tree'?routeApp('journey'):enterApp('tree')):routeApp('journey'));
+  if(animate&&previousY!==null){const water=tree.querySelector('.growth-water');water.style.y=`${previousY}px`;requestAnimationFrame(()=>{water.style.y=`${fillY}px`;});}
 }
 
 function renderHome(){
@@ -396,34 +373,34 @@ function renderHome(){
   const name=userProfile?.name||'Learner';
   if(context.world==='institution')renderInstitutionHome(name);
   else renderGlobalHome(name);
-  renderDemoJourney();
 }
-function renderInstitutionHome(name){
-  if(context.role==='tree'){
-    $('#appContent').innerHTML=`<div class="welcome institution-welcome"><div><div class="eyebrow">YOUR COLLEGE · TREE</div><h1>Welcome back, ${escapeHtml(name)}.</h1><p>You can still learn here. You can also open the classroom for others.</p></div><button class="btn btn-tree" onclick="routeApp('teach')">Open teaching</button></div>
-    <div class="institution-home-grid"><section><div class="app-card featured-class"><div class="big-meta">Next teaching space</div><h2>Python Fundamentals</h2><p>Your upcoming class · Friday · 4:00 PM</p><div class="card-action-row"><button class="btn btn-tree" onclick="routeApp('teach')">Prepare class</button><span class="quiet">12 learners enrolled</span></div></div><div class="institution-card-row"><button class="app-card small-action" onclick="routeApp('classes')"><span class="eyebrow">Classes</span><strong>See college classes</strong><span>Teach or join what is happening now.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Community</span><strong>Help your classmates</strong><span>Questions, notes, and conversations.</span></button><button class="app-card small-action" onclick="routeApp('college')"><span class="eyebrow">College</span><strong>Stay oriented</strong><span>Schedule, library, and college notices.</span></button></div></section><aside><div class="tree-panel role-tree-panel"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">YOUR TREE</div><h3>Teaching is a responsibility.</h3><p>Your Tree capability here is specific to this institutional space. You can still enter the Global space as a Leaf.</p></div></aside></div>`;
-  }else{
-    $('#appContent').innerHTML=`<div class="welcome institution-welcome"><div><div class="eyebrow">YOUR COLLEGE · LEAF</div><h1>Welcome back, ${escapeHtml(name)}.</h1><p>Your college is your learning world. Start with what is happening around you.</p></div><button class="btn btn-leaf" onclick="routeApp('classes')">See classes</button></div>
-    <div class="institution-home-grid"><section><div class="app-card featured-class"><div class="big-meta">Happening in your college</div><h2>Python Fundamentals</h2><p>Live with Arun · Today · 4:00 PM</p><div class="card-action-row"><button class="btn btn-leaf" onclick="routeApp('classes')">Join class</button><span class="quiet">Your classmate is teaching</span></div></div><div class="institution-card-row"><button class="app-card small-action" onclick="routeApp('classes')"><span class="eyebrow">Classes</span><strong>Upcoming learning</strong><span>See sessions, subjects, and who is teaching.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Community</span><strong>Notes & questions</strong><span>Learn with people from your college.</span></button><button class="app-card small-action" onclick="routeApp('college')"><span class="eyebrow">College</span><strong>More than classes</strong><span>Exam dates, library, notices, and campus resources.</span></button></div></section><aside><div class="leaf-panel"><div class="leaf-symbol">${icon('leaf')}</div><div class="eyebrow">LEAF</div><h3>A place to learn.</h3><p>You can explore freely inside your college. The people, subjects, curriculum, and resources stay within this community.</p></div></aside></div>`;
-  }
+function dashboardSubjectCards(tree,inst,subjects){
+  const all=Array.isArray(DEMO_COURSES)?DEMO_COURSES:[];
+  const scoped=tree&&subjects.length?all.filter(c=>subjects.some(subject=>[c.subject,c.title].some(v=>String(v).toLowerCase().includes(String(subject).toLowerCase())||String(subject).toLowerCase().includes(String(v).toLowerCase())))):all;
+  if(tree&&!subjects.length)return `<div class="dashboard-empty"><span class="dashboard-empty-mark">${icon('tree')}</span><strong>Your teaching scope will appear here.</strong><p>Approved subjects determine what you can teach. Open your teaching space to explore the demo workflow.</p><button class="btn btn-tree" onclick="routeApp('teach')">Open teaching space</button></div>`;
+  if(!scoped.length)return `<div class="dashboard-empty"><strong>No subjects match your approved scope.</strong><p>Check your assigned teaching subjects in Your Journey.</p><button class="btn btn-neutral" onclick="routeApp('journey')">View journey</button></div>`;
+  return `<div class="dashboard-subject-grid">${scoped.map((c,i)=>`<button class="dashboard-subject-card" onclick="routeApp('${tree?'teach':inst?'classes':'learn'}')"><span class="subject-card-top"><span class="subject-code">${escapeHtml(inst?['CS 101','PHYS 110','PHIL 102'][i%3]:'OPEN SUBJECT')}</span><span class="subject-card-arrow" aria-hidden="true">↗</span></span><strong>${escapeHtml(c.title)}</strong><p>${escapeHtml(c.detail)}</p><span class="subject-card-divider"></span><span class="subject-card-meta"><span>${tree?'Teaching workspace':c.meta.split(' · ')[0]}</span><span>${tree?'Open subject':'Continue'} →</span></span></button>`).join('')}</div>`;
 }
-function renderGlobalHome(name){
-  const tree=context.role==='tree';
-  $('#appContent').innerHTML=`<div class="welcome global-welcome"><div><div class="eyebrow">GLOBAL · ${tree?'TREE':'LEAF'}</div><h1>${tree?'Teach where your knowledge fits.':'What would you like to learn?'}</h1><p>${tree?'The wider E-Leaf is open to you. Keep learning as a Leaf while teaching only within your approved areas.':'The world is your learning space. Learn from people, classes, and ideas beyond one institution.'}</p></div><button class="btn ${tree?'btn-tree':'btn-global'}" onclick="routeApp('${tree?'teach':'explore'}')">${tree?'Open teaching':'Explore learning'}</button></div>
-  <section class="global-search-card"><div><span class="eyebrow">FIND YOUR NEXT THING</span><h2>Search the wider E-Leaf.</h2><p>Look across subjects, Trees, courses, classes, notes, and questions.</p></div><div class="global-search-wrap"><span class="search-mark">${icon('search')}</span><input id="homeGlobalSearch" aria-label="Search Global E-Leaf" placeholder="Try “physics”, “probability”, or a subject…"><button class="btn ${tree?'btn-tree':'btn-global'}" id="homeSearchButton">Search</button></div></section>
-  <div class="global-home-grid"><section><div class="section-inline-heading"><div><div class="eyebrow">CONTINUE</div><h2>${tree?'Your next teaching space':'Keep learning'}</h2></div><button class="text-button" onclick="routeApp('${tree?'teach':'learn'}')">Open</button></div><div class="app-card global-feature"><div class="big-meta">${tree?'NEXT TEACHING SPACE':'CURRENT LEARNING'}</div><h2>${tree?'Thinking clearly about probability':'Python Fundamentals'}</h2><p>${tree?'Prepare a short session for people exploring evidence and uncertainty.':'Lesson 4 · Functions and practical problem solving'}</p>${tree?'':'<div class="progress"><span></span></div>'}<div class="card-action-row"><button class="btn ${tree?'btn-tree':'btn-global'}" onclick="routeApp('${tree?'teach':'learn'}')">${tree?'Prepare session':'Continue'}</button><span class="quiet">${tree?'Global learners':'8 lessons'}</span></div></div></section>
-  <aside><div class="app-card next-step-card"><div class="eyebrow">A GOOD NEXT STEP</div><h3>${tree?'Help a learner outside your classroom.':'Learn something, then make it useful to someone else.'}</h3><p>${tree?'Answer a question where your approved teaching area fits.':'Your journey is not only about finishing lessons. Contribution is part of learning here.'}</p><button class="btn ${tree?'btn-tree':'btn-global'}" onclick="routeApp('${tree?'community':'journey'}')">${tree?'Open community':'See your journey'}</button></div></aside></div>
-  <section class="global-discovery-strip"><div class="section-inline-heading"><div><div class="eyebrow">DISCOVER</div><h2>Learning without one curriculum.</h2></div><button class="text-button" onclick="routeApp('explore')">Explore all</button></div><div class="discovery-grid"><button class="app-card discovery-card" onclick="routeApp('explore')"><span class="discovery-icon">${icon('explore')}</span><strong>Explore subjects</strong><span>Move between programming, physics, philosophy, music, and more.</span></button><button class="app-card discovery-card" onclick="routeApp('community')"><span class="discovery-icon">${icon('community')}</span><strong>${tree?'Questions to help':'Learn with the world'}</strong><span>${tree?'Find conversations where your subject knowledge can help.':'Ask questions, read useful explanations, and learn with people anywhere.'}</span></button><button class="app-card discovery-card" onclick="routeApp('library')"><span class="discovery-icon">${icon('library')}</span><strong>Keep what matters</strong><span>Save lessons, notes, and ideas you want to return to.</span></button></div></section>
-  <section class="tree-trust-banner ${tree?'is-tree':''}"><div class="trust-symbol">${icon(tree?'tree':'leaf')}</div><div><div class="eyebrow">${tree?'GLOBAL TREE':'GLOBAL LEAF'}</div><h3>${tree?'Teaching is scoped, not unlimited.':'Every Tree starts here as a learner.'}</h3><p>${tree?'Your demo Tree capability is shown with an approved teaching area. In production, teaching authority will come from qualification and review.':'Learn, share, and help. For this presentation demo, three simple actions demonstrate how the Tree transition works.'}</p></div><button class="btn ${tree?'btn-tree':'btn-global'}" onclick="routeApp('journey')">${tree?'View capability':'View journey'}</button></section>`;
-  const input=$('#homeGlobalSearch'), button=$('#homeSearchButton');
-  if(input&&button){ const go=()=>renderExplore(input.value.trim()); button.onclick=go; input.addEventListener('keydown',e=>{if(e.key==='Enter')go();}); }
+function renderDashboardHome(name,inst){
+  const tree=context.role==='tree',subjects=growthState().approvedSubjects||[],interests=(userProfile?.interests||'').split(',').map(v=>v.trim()).filter(Boolean).slice(0,3);
+  const title=tree?`Welcome back, ${escapeHtml(name)}.`:inst?`Good to see you, ${escapeHtml(name)}.`:`What would you like to learn, ${escapeHtml(name)}?`;
+  const copy=tree?'Your teaching workspace is focused on approved subjects, learner questions, and useful explanations.':inst?'Continue a subject, ask a question, or learn with your college community.':'Explore ideas, subjects, and people beyond one institution.';
+  const action=tree?'Open teaching space':inst?'Explore curriculum':'Explore subjects';
+  const actionRoute=tree?'teach':inst?'classes':'explore';
+  const eyebrow=`${inst?'INSTITUTIONAL':'GLOBAL'} · ${tree?'TREE':'LEAF'} WORKSPACE`;
+  const sectionTitle=tree?'Your teaching subjects':inst?'Curriculum subjects':'Subjects to explore';
+  const sectionCopy=tree?'Support learners in the subject areas approved for you.':inst?'Each subject is a learning journey. Move at your own pace, ask for help, and learn with peers.':'Choose a subject to start learning, find alternate explanations, and share what you discover.';
+  const shortcuts=tree?[['community','Learner questions','Answer a question or support a learner.','community'],['journey','Your journey','Review your teaching scope and growth.','journey'],['teach','Teaching space','Prepare an explanation or learning session.','teach']]:[['community','Peer questions','Ask questions and learn with other people.','community'],['journey','Your journey','See your progress and what comes next.','journey'],[inst?'college':'library',inst?'College space':'Your library',inst?'Academic resources and college context.':'Keep useful notes and ideas close.','library']];
+  $('#appContent').innerHTML=`<section class="reference-dashboard"><div class="dashboard-heading"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${copy}</p></div><button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="routeApp('${actionRoute}')">${action} <span aria-hidden="true">→</span></button></div><div class="dashboard-section-heading"><div><h2>${sectionTitle}</h2><p>${sectionCopy}</p></div><button class="dashboard-text-action" onclick="routeApp('${actionRoute}')">${tree?'View teaching space':'View all'} <span aria-hidden="true">→</span></button></div>${dashboardSubjectCards(tree,inst,subjects)}<div class="dashboard-lower-heading"><div><h2>${tree?'Where you can help':'Keep your learning moving'}</h2><p>${tree?'Choose a useful next step for the people you teach.':interests.length?`Based on your interests: ${escapeHtml(interests.join(', '))}.`:'Small next steps make learning easier to return to.'}</p></div></div><div class="dashboard-shortcut-grid">${shortcuts.map(([route,label,desc,ico])=>`<button class="dashboard-shortcut" onclick="routeApp('${route}')"><span class="dashboard-shortcut-icon">${icon(ico)}</span><span><strong>${label}</strong><small>${desc}</small></span><span class="dashboard-shortcut-arrow" aria-hidden="true">→</span></button>`).join('')}</div></section>`;
 }
+function renderInstitutionHome(name){renderDashboardHome(name,true)}
+function renderGlobalHome(name){renderDashboardHome(name,false)}
 function routeApp(page){
   document.body.dataset.eLeafPage=page||'home';
   if(page==='home'){renderHome();beginPageReveal();return;}
   renderGrowthDock();
   setNav(page);
-  const pages={explore:renderExplore,learn:renderLearn,community:renderCommunity,library:renderLibrary,note:renderLibrary,journey:renderJourney,teach:renderTeach,classes:renderClasses,college:renderCollege};
+  const pages={explore:renderExplore,learn:renderLearn,community:renderCommunity,library:renderLibrary,note:renderLibrary,journey:renderJourney,teach:renderTeach,classes:renderClasses,college:renderCollege,review:renderReviewQueue};
   (pages[page]||renderHome)();
   beginPageReveal();
 }
@@ -431,7 +408,10 @@ function renderClasses(){
   const inst=context.world==='institution';
   const title=inst?'Classes in your college':'Classes across E-Leaf';
   const copy=inst?'See what is happening in your curriculum and community.':'Choose a subject, teacher, or live session from anywhere in the wider community.';
-  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'COLLEGE':'GLOBAL'} · CLASSES</div><h1>${title}</h1><p>${copy}</p></div></div><div class="course-grid">${DEMO_COURSES.map(c=>`<button class="course" style="text-align:left" onclick="routeApp(context.role==='tree'?'teach':'learn')"><span class="course-tag">${c.subject}</span><h3>${c.title}</h3><p>${c.detail}</p><div class="course-meta"><span>${inst?'College class':'Global class'}</span><span>${c.meta.split(' · ')[1]}</span></div><span class="course-action ${context.role==='tree'?'course-action-tree':'course-action-leaf'}">${context.role==='tree'?'Prepare':'Join'}</span></button>`).join('')}</div>`;
+  const approved=growthState().approvedSubjects.map(x=>x.toLowerCase());
+  const courses=context.role==='tree'?DEMO_COURSES.filter(c=>approved.some(subject=>subject.includes(c.subject.toLowerCase())||subject.includes(c.title.toLowerCase())||c.title.toLowerCase().includes(subject))):DEMO_COURSES;
+  const empty=context.role==='tree'?'<div class="empty-state"><strong>No matching teaching area.</strong><span>Your administrator-approved subjects determine which classes you can prepare.</span></div>':'';
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'COLLEGE':'GLOBAL'} · CLASSES</div><h1>${title}</h1><p>${context.role==='tree'?'Prepare classes only within the teaching subjects approved for you.':copy}</p></div></div><div class="course-grid">${courses.map(c=>`<button class="course" style="text-align:left" onclick="routeApp(context.role==='tree'?'teach':'learn')"><span class="course-tag">${c.subject}</span><h3>${c.title}</h3><p>${c.detail}</p><div class="course-meta"><span>${inst?'College class':'Global class'}</span><span>${c.meta.split(' · ')[1]}</span></div><span class="course-action ${context.role==='tree'?'course-action-tree':'course-action-leaf'}">${context.role==='tree'?'Prepare':'Join'}</span></button>`).join('')}${courses.length?'':empty}</div>`;
 }
 function renderCollege(){
   if(context.world!=='institution')return renderLibrary();
@@ -459,18 +439,18 @@ function renderLibrary(){
   $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${inst?'Notes':'Library'}</div><h1>${inst?'Notes worth keeping.':'Things worth returning to.'}</h1><p>${inst?'Useful notes and learning material from your college, kept close to the work.':'Your saved lessons, notes, and ideas in one quiet place.'}</p></div><button class="btn ${context.role==='tree'?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="${context.role==='tree'?"demoAction('Note sharing is represented in this presentation demo.')":"recordGrowthAction('share')"}">Share a note</button></div><div class="list"><div class="list-item"><div><strong>Python Fundamentals</strong><small>Continue learning · Lesson 4</small></div><button class="btn btn-neutral" onclick="demoAction('This saved item opens in the full library experience.')">Open</button></div><div class="list-item"><div><strong>The mathematics of uncertainty</strong><small>Saved learning session</small></div><button class="btn btn-neutral" onclick="demoAction('This saved item opens in the full library experience.')">Open</button></div></div>`;
 }
 function renderJourney(){
-  const tree=context.role==='tree';
-  const inst=context.world==='institution';
-  const worldLabel=inst?'INSTITUTION':'GLOBAL';
-  const growth=growthState();
-  const done=Math.min(3,growth.actions.length);
-  const steps=[['learn','Learn','Attend a learning session from another Tree.'],['share','Share','Plant something useful in your library.'],['help','Help','Help another learner through a useful conversation.']];
-  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${worldLabel} · JOURNEY</div><h1>${tree?'Keep learning. Keep teaching.':'See how learning can become contribution.'}</h1><p>${tree?'You have crossed the demo threshold. The Tree space adds teaching without taking away your learner identity.':'For this presentation demo, three simple actions show the transition from Leaf to Tree. Production qualification will be much more rigorous.'}</p></div><button class="btn ${tree?'btn-tree':'btn-global'}" onclick="${tree?"routeApp('teach')":"routeApp('learn')"}">${tree?'Open teaching':'Start learning'}</button></div>
-  <div class="journey-layout"><section class="journey-card"><div class="journey-header"><div><div class="eyebrow">DEMO GROWTH PATH</div><h2>Learn, Share, Help, Teach</h2></div><span class="journey-count">${tree?3:done} / 3</span></div><div class="journey-steps">${steps.map(([key,title,desc],i)=>`<div class="journey-step ${growth.actions.includes(key)?'done':''} ${!tree&&i===done?'current':''}"><span class="journey-step-mark">${growth.actions.includes(key)?'✓':i+1}</span><div><strong>${title}</strong><p>${desc}</p></div>${!tree&&!growth.actions.includes(key)?`<button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" data-journey-action="${key}">Do this</button>`:'<span class="journey-status">'+(growth.actions.includes(key)?'Complete':'Next')+'</span>'}</div>`).join('')}</div>${tree?'<div class="journey-unlocked"><div class="trust-symbol">'+icon('tree')+'</div><div><div class="eyebrow">TREE READY · DEMO</div><strong>Teaching capability is now visible.</strong><p>This prototype intentionally uses three simple actions so the transition can be demonstrated in a presentation.</p></div></div>':''}</section><aside><div class="tree-panel ${tree?'is-tree':''}"><div class="tree-symbol">${icon(tree?'tree':'leaf')}</div><div class="eyebrow">${worldLabel} ${tree?'TREE':'LEAF'} CAPABILITY</div><h3>${tree?'Approved area: Physics · Demo':'Your growth stays yours.'}</h3><p>${tree?'In production, this would be backed by a reviewed qualification and scoped teaching areas.':'The same E-Leaf identity remains a learner. The demo only reveals the teaching transition after three contributions.'}</p><button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="${tree?"routeApp('teach')":"routeApp('community')"}">${tree?'View teaching space':'Help someone'}</button></div></aside></div>`;
-  $$('#appContent [data-journey-action]').forEach(b=>b.onclick=()=>recordGrowthAction(b.dataset.journeyAction));
+  const tree=context.role==='tree',inst=context.world==='institution',worldLabel=inst?'INSTITUTION':'GLOBAL',growth=growthState();
+  const statusMap={learning:['Learning pattern developing','E-Leaf considers learning behaviour over time. Exact eligibility criteria are not displayed as a fixed checklist.'],ready_for_review:['Ready to request review','Your demo assessment has reached the review stage. Submit it to the administrator queue for a human decision.'],pending_review:['Awaiting administrator review','Your request has been submitted. Tree access stays locked until an administrator approves it.'],approved:['Tree approved','Your teaching capability is active for the subjects assigned by the administrator.'],declined:['Not approved at this time','You can continue learning as a Leaf. Review decisions are part of this demonstration flow.']};
+  const [statusTitle,statusCopy]=statusMap[growth.status]||statusMap.learning,canSubmit=growth.status==='ready_for_review';
+  const actionButtons=tree?'':`<div class="journey-activity-actions"><button class="btn btn-leaf" onclick="routeApp('${inst?'classes':'learn'}')">Continue learning</button><button class="btn btn-neutral" onclick="routeApp('${inst?'note':'library'}')">Share a useful note</button><button class="btn btn-neutral" onclick="routeApp('community')">Help in the community</button></div>`;
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${worldLabel} · YOUR JOURNEY</div><h1>${tree?'Keep learning. Keep teaching.':'Join as a Leaf. Grow through learning.'}</h1><p>${tree?'Your Tree capability adds teaching responsibility without taking away your learner identity.':'Your learning journey can open the possibility of becoming a Tree. The decision is based on an evolving assessment and final administrator review.'}</p></div><button class="btn ${tree?'btn-tree':inst?'btn-leaf':'btn-global'}" onclick="${tree?"routeApp('teach')":`routeApp('${inst?'classes':'learn'}')`}">${tree?'Open teaching':'Continue learning'}</button></div><div class="journey-layout"><section class="journey-card"><div class="journey-header"><div><div class="eyebrow">YOUR GROWTH JOURNEY</div><h2>${tree?'Your teaching capability':'Learning becomes contribution'}</h2></div><span class="journey-status-pill ${growth.status==='approved'?'is-approved':growth.status==='pending_review'?'is-pending':''}">${statusTitle}</span></div><div class="journey-status-panel"><div class="journey-status-icon">${icon(tree?'tree':'leaf')}</div><div><strong>${tree?'You are a Tree and still a Leaf.':statusTitle}</strong><p>${statusCopy}</p></div></div><div class="journey-principles"><div><span class="journey-principle-mark">01</span><strong>Learn with intention</strong><p>Build understanding through subjects, classes, and questions.</p></div><div><span class="journey-principle-mark">02</span><strong>Reflect and contribute</strong><p>Make what you understand useful to someone else.</p></div><div><span class="journey-principle-mark">03</span><strong>Earn teaching trust</strong><p>Readiness is assessed over time, then reviewed by a person.</p></div></div>${actionButtons}${canSubmit?`<div class="journey-submit-panel"><div><strong>Your journey is ready for review.</strong><p>Submit it to the administrator review queue. Approval is not automatic.</p></div><button class="btn btn-leaf" id="submitTreeReview">Submit for review</button></div>`:''}${growth.status==='pending_review'?`<div class="journey-submit-panel"><div><strong>Review requested</strong><p>Your request is waiting in the administrator queue. You remain a Leaf until approval.</p></div><button class="btn btn-neutral" id="previewReviewQueue">View review queue (demo)</button></div>`:''}${growth.status==='approved'?`<div class="journey-submit-panel approved-panel"><div><strong>${tree?'Your Tree capability is active':'Tree capability approved'}</strong><p>Teaching subjects: ${escapeHtml(growth.approvedSubjects.join(', ')||'No subject assigned')}.</p></div>${tree?`<button class="btn btn-tree" onclick="routeApp('teach')">Open teaching space</button>`:`<button class="btn btn-tree" onclick="enterApp('tree')">Switch to Tree</button>`}</div>`:''}${growth.status==='declined'?`<div class="journey-submit-panel"><div><strong>You can keep growing.</strong><p>The review did not grant Tree access this time. Continue learning and revisit your journey later.</p></div><button class="btn btn-leaf" id="continueAfterDecline">Continue journey</button></div>`:''}</section><aside><div class="tree-panel ${tree?'is-tree':''}"><div class="tree-symbol">${icon(tree?'tree':'leaf')}</div><div class="eyebrow">${worldLabel} ${tree?'TREE':'LEAF'} CAPABILITY</div><h3>${tree?'Approved teaching scope':'A possibility, not a promise.'}</h3><p>${tree?`You are authorised to teach: ${escapeHtml(growth.approvedSubjects.join(', ')||'No subject assigned')}. You can still switch back to Leaf mode whenever you want to learn.`:'E-Leaf looks at patterns in how people learn, reflect, and contribute. The exact decision criteria stay private and can evolve with the assessment model.'}</p>${tree?`<button class="btn btn-tree" onclick="routeApp('teach')">View teaching space</button>`:`<div class="journey-trust-note"><strong>Human review stays in the loop.</strong><span>An administrator makes the final decision and assigns the subjects you may teach.</span></div>`}</div></aside></div>`;
+  $('#submitTreeReview')?.addEventListener('click',submitTreeReview);$('#previewReviewQueue')?.addEventListener('click',()=>routeApp('review'));
+  $('#continueAfterDecline')?.addEventListener('click',()=>{const next=growthState();next.status='learning';next.actions=[];next.submittedAt=null;next.approvedSubjects=[];next.decisionNote='';writeGrowthState(next);renderJourney();toast('Your learning journey is open again.');});
 }
+
 function renderTeach(){
-  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${context.world==='institution'?'COLLEGE':'GLOBAL'} · TEACH</div><h1>Help people learn well.</h1><p>Your teaching space should be about learners, sessions, and useful explanations, not vanity metrics.</p></div><button class="btn btn-primary" onclick="demoAction('Session planning is represented in this presentation demo.')">Plan a session</button></div><div class="app-grid"><section><div class="app-card"><div class="eyebrow">Next session</div><h2 style="margin-top:9px">Thinking clearly about probability</h2><p>Prepare a small learning session for people exploring evidence and uncertainty.</p><button class="btn btn-primary" onclick="demoAction('The session workspace is represented in this presentation demo.')">Open session</button></div><div class="card-row"><button class="app-card small-action" onclick="demoAction('Learner management is represented in this presentation demo.')"><span class="eyebrow">Learners</span><strong>See your learners</strong><span>Questions, attendance, and follow-up.</span></button><button class="app-card small-action" onclick="demoAction('Creation tools are represented in this presentation demo.')"><span class="eyebrow">Create</span><strong>Make a learning experience</strong><span>Class, lesson, or useful resource.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Help</span><strong>Answer a question</strong><span>Contribute where your subject knowledge fits.</span></button></div></section><aside><div class="tree-panel"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">CAPABILITY</div><h3>Physics · Demo teaching area</h3><p>This presentation build shows a scoped Tree capability. Production teaching areas will be granted through qualification and review.</p></div></aside></div>`;
+  const growth=growthState();
+  $('#appContent').innerHTML=`<div class="welcome"><div><div class="eyebrow">${context.world==='institution'?'COLLEGE':'GLOBAL'} · TEACH</div><h1>Help people learn well.</h1><p>Your teaching space should be about learners, sessions, and useful explanations, not vanity metrics.</p></div><button class="btn btn-primary" onclick="demoAction('Session planning is represented in this presentation demo.')">Plan a session</button></div><div class="app-grid"><section><div class="app-card"><div class="eyebrow">Next session</div><h2 style="margin-top:9px">Thinking clearly about probability</h2><p>Prepare a small learning session for people exploring evidence and uncertainty.</p><button class="btn btn-primary" onclick="demoAction('The session workspace is represented in this presentation demo.')">Open session</button></div><div class="card-row"><button class="app-card small-action" onclick="demoAction('Learner management is represented in this presentation demo.')"><span class="eyebrow">Learners</span><strong>See your learners</strong><span>Questions, attendance, and follow-up.</span></button><button class="app-card small-action" onclick="demoAction('Creation tools are represented in this presentation demo.')"><span class="eyebrow">Create</span><strong>Make a learning experience</strong><span>Class, lesson, or useful resource.</span></button><button class="app-card small-action" onclick="routeApp('community')"><span class="eyebrow">Help</span><strong>Answer a question</strong><span>Contribute where your subject knowledge fits.</span></button></div></section><aside><div class="tree-panel"><div class="tree-symbol">${icon('tree')}</div><div class="eyebrow">CAPABILITY</div><h3>${escapeHtml(growth.approvedSubjects.join(', ')||'Approved teaching subjects')}</h3><p>Your teaching workspace is limited to the subject areas approved by the administrator. You can return to Leaf mode to keep learning.</p></div></aside></div>`;
 }
 function requestLogout(){
   const modal=$('#logoutConfirm');
@@ -485,8 +465,8 @@ function closeLogout(){
 }
 async function performLogout(){
   closeLogout();
-  await supabaseClient?.auth.signOut();
-  session=null;userProfile=null;context={world:null,institution:null,role:'leaf'};
+  if(!isDemoSession){try{await supabaseClient?.auth.signOut();}catch(err){console.warn('Supabase sign-out did not complete; clearing the local interface session.',err);}}
+  session=null;userProfile=null;isDemoSession=false;context={world:null,institution:null,role:'leaf'};
   hide($('#appView'));show($('#publicView'));updateSkipTarget('#publicMain');window.scrollTo(0,0);
 }
 
@@ -502,6 +482,14 @@ $('#authClose').onclick=closeAuth;
 $('#signupTab').onclick=()=>setAuthMode('signup');
 $('#loginTab').onclick=()=>setAuthMode('login');
 $('#authForm').onsubmit=submitAuth;
+$('#demoLoginBtn').onclick=startDemoSession;
+$('#onboardingForm').onsubmit=(e)=>{e.preventDefault();nextOnboardingStep(false);};
+$('#onboardingBack').onclick=()=>{if(onboardingStepIndex>0){captureOnboardingStep();onboardingStepIndex--;renderOnboardingStep();}};
+$('#onboardingSkip').onclick=()=>nextOnboardingStep(true);
+$('#profileClose').onclick=()=>hide($('#profileOverlay'));
+$('#profileCancel').onclick=()=>hide($('#profileOverlay'));
+$('#profileForm').onsubmit=saveProfileForm;
+$('#profilePhotoInput').onchange=handlePhotoUpload;
 $('#passwordToggle').onclick=()=>setPasswordVisibility('#authPassword','#passwordToggle');
 $('#confirmPasswordToggle').onclick=()=>setPasswordVisibility('#authPasswordConfirm','#confirmPasswordToggle');
 $('#globalChoice').onclick=()=>{if(session)transitionSpace('global');};
@@ -512,13 +500,13 @@ $('#enterLeaf').onclick=()=>enterApp('leaf');
 $('#enterTree').onclick=()=>enterApp('tree');
 $$('[data-public-action="course"]').forEach(b=>b.onclick=()=>openAuth('signup','course'));
 if(supabaseClient){
-  supabaseClient.auth.getSession().then(({data})=>{if(data.session){session=data.session;userProfile=loadProfile(data.session.user)}});
+  supabaseClient.auth.getSession().then(({data})=>{if(data.session){session=data.session;isDemoSession=false;userProfile=loadProfile(data.session.user);if(userProfile.setupComplete)showContext();else showOnboarding();}}).catch(()=>{});
   supabaseClient.auth.onAuthStateChange((_event,s)=>{session=s;if(s)userProfile=loadProfile(s.user)});
 }
 
 window.addEventListener('unhandledrejection',event=>{console.error('E-Leaf action failed',event.reason);toast('That action could not be completed. Please try again.');});
 window.addEventListener('error',event=>{console.error('E-Leaf interface error',event.error||event.message);});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));$('#institutionChoice')?.focus();}else if(!$('#contextOverlay')?.classList.contains('hidden'))closeContext();}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!$('#logoutConfirm')?.classList.contains('hidden'))closeLogout();else if(!$('#authOverlay')?.classList.contains('hidden'))closeAuth();else if(!$('#roleOverlay')?.classList.contains('hidden')){hide($('#roleOverlay'));show($('#contextOverlay'));$('#institutionChoice')?.focus();}else if(!$('#profileOverlay')?.classList.contains('hidden'))hide($('#profileOverlay'));else if(!$('#onboardingOverlay')?.classList.contains('hidden')){hide($('#onboardingOverlay'));show($('#contextOverlay'));}else if(!$('#contextOverlay')?.classList.contains('hidden'))closeContext();}});
 
 // Public growth story: the four steps are an explorable visual, not a passive card grid.
 (function bindPublicGrowthStory(){
